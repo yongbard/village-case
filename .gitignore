@@ -1,0 +1,5 @@
+node_modules/
+dist/
+conversations/raw/
+logs/
+.superpowers/
