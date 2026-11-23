@@ -26,6 +26,8 @@ export interface CaseOpts {
   mode: 'stage' | 'endless';
   stageId?: number;
   rep?: number;
+  /** 무한 모드에서 머리글 제목 (예: 3번째 사건). 없으면 '무한 모드' */
+  title?: string;
   onEnd: (g: Game) => void;
 }
 
@@ -63,6 +65,8 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
   let hint: { text: string; cell?: number } | null = null;
   let picking: { cell: number; picks: number[] } | null = null;
   let ended = false;
+  let endTimer: number | undefined;
+  const endless = opts.mode === 'endless';
   const guide = opts.mode === 'stage' && (opts.stageId === 1 || opts.stageId === 2) ? GUIDE[opts.stageId] : null;
   let guideAt = guide ? 0 : -1;
 
@@ -70,7 +74,20 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
   mount(root);
   render();
 
+  if (import.meta.env.DEV) {
+    // 화면 확인 도구용: 지금 사건과 판 상태를 읽는다
+    (window as unknown as { __game?: unknown }).__game = {
+      get def() {
+        return def;
+      },
+      get g() {
+        return g;
+      },
+    };
+  }
+
   function quit() {
+    window.clearTimeout(endTimer);
     if (opts.mode === 'stage') showStageList();
     else showTitle();
   }
@@ -86,7 +103,9 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
     render();
     if (g.status !== 'playing' && !ended) {
       ended = true;
-      window.setTimeout(() => opts.onEnd(g), 900);
+      endTimer = window.setTimeout(() => {
+        if (root.isConnected) opts.onEnd(g); // 그 사이 나갔으면 결과 화면으로 끌고 가지 않는다
+      }, 900);
     }
     return true;
   }
@@ -95,12 +114,12 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
     const before = g.rep;
     if (!apply(arrest(g, i))) return;
     const r = role(trueRole(def, i));
-    if (g.rep < before) toast(`선(${CAMP_NAME[r.camp]})을 체포했습니다. 평판 -2`);
+    if (g.rep < before) toast(`선(${CAMP_NAME[r.camp]})을 체포했습니다. 평판 -${before - g.rep}`);
     else toast(`악을 체포했습니다: ${r.name}(${CAMP_NAME[r.camp]})`);
   }
 
   async function askHint() {
-    if (thinking || ended) return;
+    if (thinking || ended || (endless && g.rep <= 1)) return;
     thinking = true;
     hint = null;
     const asked = version;
@@ -114,6 +133,11 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
     if (asked !== version || ended || !root.isConnected) return; // 그 사이 판이 바뀌었다
     thinking = false;
     hint = hintMessage(res);
+    // 무한 모드: 힌트가 실제로 나왔을 때(칸을 가리킬 때) 평판 1 을 쓴다
+    if (endless && hint.cell !== undefined) {
+      g = { ...g, rep: Math.max(1, g.rep - 1) };
+      toast('힌트를 썼습니다. 평판 -1');
+    }
     render();
   }
 
@@ -274,7 +298,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
   function header(): HTMLElement {
     const camps = def.inPlay.map((id) => role(id).camp);
     const count = (c: string) => camps.filter((x) => x === c).length;
-    const title = opts.mode === 'stage' ? `${opts.stageId}스테이지` : '무한 모드';
+    const title = opts.mode === 'stage' ? `${opts.stageId}스테이지` : (opts.title ?? '무한 모드');
     return h(
       'header',
       { class: 'case-head' },
@@ -288,12 +312,14 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
           {
             class: 'btn hint-btn',
             'data-action': 'hint',
-            disabled: thinking || ended,
+            disabled: thinking || ended || (endless && g.rep <= 1),
+            title: endless ? '평판 1을 씁니다' : undefined,
             onclick: askHint,
           },
-          thinking ? '생각 중…' : '힌트',
+          thinking ? '생각 중…' : endless ? '힌트 -1' : '힌트',
         ),
       ),
+      endless && h('p', { class: 'seed-line', 'data-seed': def.seed }, `시드 ${def.seed}`),
       h(
         'div',
         { class: 'stats' },

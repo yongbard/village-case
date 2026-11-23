@@ -441,3 +441,36 @@ button { font: inherit; color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---------- 무한 모드·도감·규칙 ---------- */
+.title-row { display: flex; gap: 10px; }
+.title-row .btn { flex: 1; width: auto; }
+.seed-form { display: flex; gap: 8px; }
+.seed-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  font: inherit;
+  color: var(--ink);
+}
+.seed-msg { color: var(--evil); font-size: 13px; }
+.seed-line { color: var(--muted); font-size: 12px; text-align: center; font-variant-numeric: tabular-nums; }
+.loading-screen { display: flex; flex-direction: column; justify-content: center; gap: 12px; min-height: 60vh; }
+.loading-text { text-align: center; font-family: var(--serif); font-size: 20px; }
+.codex-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.codex-item { border: 1.5px solid var(--line); border-radius: var(--radius); background: var(--card); padding: 10px 12px; }
+.codex-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.codex-head span { font-size: 12px; font-weight: 600; padding: 1px 9px; border: 1px solid var(--line); border-radius: 999px; }
+.codex-item p { margin-top: 4px; font-size: 14px; }
+.codex-body { color: var(--muted); }
+.codex-item.unknown { background: var(--paper-deep); color: var(--muted); }
+.rule-block { margin-top: 18px; }
+.rule-block h2 { font-size: 16px; margin-bottom: 6px; }
+.rule-block ul { margin: 0; padding-left: 20px; }
+.rule-block li { margin-bottom: 4px; }
+.concept { border: 1.5px solid var(--line); border-radius: var(--radius); background: var(--card); padding: 10px 12px; margin-bottom: 8px; }
+.concept p { margin-top: 2px; font-size: 14px; color: var(--muted); }

@@ -180,6 +180,85 @@ try {
   check('stage 30: solved with ability facts listed', (await text('[data-result]')) === '해결' && (await page.$$('.abilities li')).length === s30.abilities.length);
   await shot('12-stage30-result', true);
 
+  // 11. 무한 모드: 시작 → 사건(5초 안) → 진짜 악을 모두 체포 → 다음 사건 n = 2
+  const evilOf = (def) => def.truth.roles.flatMap((r, i) => (r !== '*w' && isEvil(role(r).camp) ? [i] : []));
+  await page.evaluate(() => localStorage.clear());
+  await page.reload({ waitUntil: 'networkidle0' });
+  await shot('13-title');
+  const t0 = Date.now();
+  await page.click('[data-action="endless-new"]');
+  await page.waitForSelector('.case-screen .grid', { timeout: 5000 });
+  check('endless: case appears within 5 s', true, `${Date.now() - t0} ms`);
+  check('endless: title says 1st case', /1번째 사건/.test((await text('.case-title')) ?? ''), await text('.case-title'));
+  const seed1 = await text('.seed-line');
+  check('endless: seed shown', /^시드 \d+$/.test(seed1 ?? ''), seed1 ?? 'none');
+  await shot('14-endless-1');
+  const def1 = await page.evaluate(() => window.__game?.def);
+  check('endless: window.__game exposed in dev', !!def1);
+  for (const i of evilOf(def1)) await tapCell(i, 'arrest');
+  await page.waitForSelector('[data-result]', { timeout: 5000 });
+  check('endless: case 1 solved', (await text('[data-result]')) === '해결');
+  await page.waitForSelector('.steps li', { timeout: 30000 }); // 해설은 worker 에서 늦게 온다
+  check('endless: explanation arrives', (await page.$$('.steps li')).length >= 1);
+  await shot('15-endless-result', true);
+  const save11 = await page.evaluate(() => JSON.parse(localStorage.getItem('village-case-save')));
+  check('endless: save has n = 2, rep 10, best 1', save11.endless?.n === 2 && save11.endless?.rep === 10 && save11.endlessBest === 1, JSON.stringify(save11.endless));
+  await page.click('[data-action="next"]');
+  await page.waitForSelector('.case-screen .grid', { timeout: 5000 });
+  check('endless: next case is the 2nd', /2번째 사건/.test((await text('.case-title')) ?? ''), await text('.case-title'));
+  const seed2 = await text('.seed-line');
+  check('endless: next case has a different seed', seed2 !== seed1, `${seed1} -> ${seed2}`);
+
+  // 12. 무한 모드 힌트는 평판 1 (힌트가 나왔을 때)
+  check('endless: rep 10 before hint', (await text('[data-stat="rep"]')) === '10');
+  await page.click('[data-action="hint"]');
+  await page.waitForSelector('[data-hint="result"]', { timeout: 15000 });
+  check('endless: hint costs 1 rep', (await text('[data-stat="rep"]')) === '9', await text('[data-stat="rep"]'));
+  await shot('16-endless-hint');
+
+  // 13. 이어 하기: 나갔다 돌아오면 같은 사건(같은 시드)
+  await page.click('.back');
+  await page.waitForSelector('[data-action="endless-resume"]');
+  await page.click('[data-action="endless-resume"]');
+  await page.waitForSelector('.case-screen .grid', { timeout: 5000 });
+  check('endless: resume gives the same case', (await text('.seed-line')) === seed2 && /2번째 사건/.test((await text('.case-title')) ?? ''), await text('.seed-line'));
+
+  // 14. 도감 / 규칙
+  await page.click('.back');
+  await page.waitForSelector('[data-action="codex"]');
+  await page.click('[data-action="codex"]');
+  await page.waitForSelector('.codex-item');
+  const known = (await page.$$('.codex-item:not(.unknown)')).length;
+  const unknown = (await page.$$('.codex-item.unknown')).length;
+  check('codex: met roles shown, others hidden as ?', known >= 1 && unknown >= 1 && known + unknown === 20, `${known} met, ${unknown} unknown`);
+  check('codex: unknown shows only ?', (await page.$$eval('.codex-item.unknown', (ls) => ls.every((l) => l.querySelector('b').textContent === '?'))));
+  await noSideScroll('codex');
+  await shot('17-codex', true);
+  await page.click('.back');
+  await page.click('[data-action="rules"]');
+  await page.waitForSelector('.concept');
+  check('rules: 4 concept cards', (await page.$$('.concept')).length === 4);
+  await noSideScroll('rules');
+  await shot('18-rules', true);
+  await page.click('.back');
+
+  // 15. 시드로 하기: 잘못된 입력은 막고, 숫자는 그 사건 한 판 (무한 모드 기록은 그대로)
+  const before15 = await page.evaluate(() => localStorage.getItem('village-case-save'));
+  await page.type('.seed-input', '12x');
+  await page.click('[data-action="seed-play"]');
+  check('seed play: rejects bad input', ((await text('[data-seed-msg]')) ?? '').length > 0 && !(await page.$('.case-screen')));
+  await page.$eval('.seed-input', (e) => (e.value = ''));
+  await page.type('.seed-input', '4242');
+  await page.click('[data-action="seed-play"]');
+  await page.waitForSelector('.case-screen .grid', { timeout: 5000 });
+  check('seed play: shows the typed seed', (await text('.seed-line')) === '시드 4242', await text('.seed-line'));
+  await shot('19-seed-case');
+  const def15 = await page.evaluate(() => window.__game?.def);
+  check('seed play: 3x4 grid or larger (endlessParams(10))', def15.w * def15.h >= 12, `${def15.w}x${def15.h}`);
+  const after15 = await page.evaluate(() => JSON.parse(localStorage.getItem('village-case-save')));
+  const b15 = JSON.parse(before15);
+  check('seed play: endless record untouched', after15.endlessBest === b15.endlessBest && JSON.stringify(after15.endless) === JSON.stringify(b15.endless));
+
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (e) {
   check('run', false, e.stack ?? String(e));
