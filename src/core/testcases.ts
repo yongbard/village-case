@@ -3,10 +3,9 @@ import { nbr8 } from './board';
 import { assignTaint, makeClue, makeFaces } from './makeCase';
 import { pick, randInt, shuffle, type Rng } from './rng';
 import { ROLES, role } from './roles';
-import { abilityAnswer, modeAt, pairSameFact } from './rules';
-import { solve, witnessValue } from './solve';
+import { modeAt, pairSameFact } from './rules';
+import { witnessValue } from './solve';
 import { type AbilityObs, type Camp, type CaseDef, type Knowledge, type RoleId, type World } from './types';
-import { abilityCells, fullKnowledge, signature } from './unique';
 
 const idsOf = (camp: Camp): RoleId[] => Object.values(ROLES).filter((d) => d.camp === camp).map((d) => d.id);
 const WITNESSES = idsOf('witness');
@@ -91,33 +90,4 @@ export function emptyKnowledge(w: number, h: number, inPlay: RoleId[]): Knowledg
 /** 아무것도 조사 안 한 상태 */
 export function emptyKnowledgeOf(def: CaseDef): Knowledge {
   return emptyKnowledge(def.w, def.h, def.inPlay);
-}
-
-/**
- * 다 조사한 뒤 능력을 G2 대로 쓴 관찰: 실제 답(abilityAnswer)으로 선·악이 하나로 좁혀지는 대상을 찾아 능력 관찰을 더한다.
- * 능력 칸이 없으면 fullKnowledge 그대로. 좁혀지는 길을 못 찾으면(G2 를 어긴 사건) 능력 없이 돌려준다.
- */
-export function solvedKnowledge(def: CaseDef): Knowledge {
-  const k = fullKnowledge(def);
-  const n = def.w * def.h;
-  const unique = (ws: World[]) => new Set(ws.map(signature)).size <= 1;
-  const search = (ws: World[], left: number[], obs: AbilityObs[]): AbilityObs[] | null => {
-    if (unique(ws)) return obs;
-    for (const cell of left) {
-      const rest = left.filter((x) => x !== cell);
-      for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) {
-        if (a === cell || b === cell) continue;
-        const same = abilityAnswer(def, cell, a, b);
-        const keep = ws.filter((w) => {
-          const m = modeAt(w, cell);
-          return m === 'any' || same === (m === 'true' ? pairSameFact(w, a, b) : !pairSameFact(w, a, b));
-        });
-        const found = search(keep, rest, [...obs, { cell, a, b, same }]);
-        if (found) return found;
-      }
-    }
-    return null;
-  };
-  k.abilities = search(solve(k).worlds, abilityCells(def), []) ?? [];
-  return k;
 }

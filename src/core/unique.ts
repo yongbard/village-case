@@ -1,9 +1,9 @@
 // 유일해 검사 (설계 5.2 G1·G2·G3).
 // 다 조사한 관찰로 맞는 세계를 한 번만 구하고, 능력(G2)은 그 세계 목록을 답으로 나눠 따진다.
 import { isEvil, role } from './roles';
-import { campAt, consistent, modeAt } from './rules';
-import { WORLD_CAP, forEachWorld } from './solve';
-import { type CaseDef, type Knowledge, type Mode, type World } from './types';
+import { abilityAnswer, campAt, consistent, modeAt, pairSameFact } from './rules';
+import { WORLD_CAP, forEachWorld, solve } from './solve';
+import { type AbilityObs, type CaseDef, type Knowledge, type Mode, type World } from './types';
 
 /**
  * 칸마다 선·악 문자 (g 선 = 증인·말썽꾼, e 악 = 공범·주범). G1·G3 은 이 문자열로 비교한다.
@@ -109,4 +109,33 @@ export function checkCase(def: CaseDef): CheckResult {
   if (!g2([...pts.values()], cells, n)) return { ok: false, reason: 'ambiguous' };
   // 실제 세계는 맞는 세계이므로 목록 안에 있고, G2 가 성립하면 실제 답으로 남는 묶음의 배치가 곧 실제 배치다.
   return { ok: true, signature: signature(def.truth) };
+}
+
+/**
+ * 다 조사한 뒤 능력을 G2 대로 쓴 관찰: 실제 답(abilityAnswer)으로 선·악이 하나로 좁혀지는 대상을 찾아 능력 관찰을 더한다.
+ * 능력 칸이 없으면 fullKnowledge 그대로. 좁혀지는 길을 못 찾으면(G2 를 어긴 사건) 능력 없이 돌려준다.
+ */
+export function solvedKnowledge(def: CaseDef): Knowledge {
+  const k = fullKnowledge(def);
+  const n = def.w * def.h;
+  const unique = (ws: World[]) => new Set(ws.map(signature)).size <= 1;
+  const search = (ws: World[], left: number[], obs: AbilityObs[]): AbilityObs[] | null => {
+    if (unique(ws)) return obs;
+    for (const cell of left) {
+      const rest = left.filter((x) => x !== cell);
+      for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) {
+        if (a === cell || b === cell) continue;
+        const same = abilityAnswer(def, cell, a, b);
+        const keep = ws.filter((w) => {
+          const m = modeAt(w, cell);
+          return m === 'any' || same === (m === 'true' ? pairSameFact(w, a, b) : !pairSameFact(w, a, b));
+        });
+        const found = search(keep, rest, [...obs, { cell, a, b, same }]);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+  k.abilities = search(solve(k).worlds, abilityCells(def), []) ?? [];
+  return k;
 }

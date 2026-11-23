@@ -4,9 +4,9 @@ import { endlessParams, generateValid } from './generate';
 import { isEvil } from './roles';
 import { campAt, consistent } from './rules';
 import { solve } from './solve';
-import { emptyKnowledgeOf, solvedKnowledge } from './testcases';
+import { emptyKnowledgeOf } from './testcases';
 import { type CaseDef, type Knowledge, type Side } from './types';
-import { abilityCells, checkCase, fullKnowledge } from './unique';
+import { abilityCells, checkCase, fullKnowledge, solvedKnowledge } from './unique';
 
 const sideOf = (def: CaseDef, i: number): Side => (isEvil(campAt(def.truth, i)) ? 'evil' : 'good');
 

@@ -14,27 +14,32 @@ export interface GenParams {
   accomplice: number;
   pool: RoleId[];
   must?: RoleId[];
+  /** 직업별 뽑기 가중치 배수 (없으면 1). 스테이지가 새 증인 직업을 자주 보이게 할 때 쓴다. */
+  weights?: Partial<Record<RoleId, number>>;
 }
 
 /** 대상 고르는 능력(기자 겉 직업)은 사건당 이만큼까지 */
 const MAX_ABILITY_FACES = 2;
 
-function pickWeighted(r: Rng, ids: RoleId[]): RoleId {
-  const total = ids.reduce((s, id) => s + role(id).weight, 0);
+type Mul = GenParams['weights'];
+const weightOf = (id: RoleId, mul: Mul): number => role(id).weight * (mul?.[id] ?? 1);
+
+function pickWeighted(r: Rng, ids: RoleId[], mul: Mul): RoleId {
+  const total = ids.reduce((s, id) => s + weightOf(id, mul), 0);
   let x = r() * total;
   for (const id of ids) {
-    x -= role(id).weight;
+    x -= weightOf(id, mul);
     if (x < 0) return id;
   }
   return ids[ids.length - 1];
 }
 
 /** 서로 다른 직업 k 개를 weight 로 뽑는다 */
-function drawDistinct(r: Rng, ids: RoleId[], k: number): RoleId[] {
+function drawDistinct(r: Rng, ids: RoleId[], k: number, mul: Mul): RoleId[] {
   const left = [...ids];
   const out: RoleId[] = [];
   while (out.length < k) {
-    const id = pickWeighted(r, left);
+    const id = pickWeighted(r, left, mul);
     out.push(id);
     left.splice(left.indexOf(id), 1);
   }
@@ -56,7 +61,7 @@ export function generateCase(p: GenParams, seed: number): CaseDef | null {
     const forced = ofCamp(must, camp);
     const rest = ofCamp(avail, camp).filter((id) => !forced.includes(id));
     if (forced.length > k || forced.length + rest.length < k) throw new Error(`cannot pick ${k} ${camp} roles`);
-    inPlay.push(...forced, ...drawDistinct(r, rest, k - forced.length));
+    inPlay.push(...forced, ...drawDistinct(r, rest, k - forced.length, p.weights));
   }
   const witnesses = ofCamp(avail, 'witness');
   const mustWitness = ofCamp(must, 'witness');
@@ -71,7 +76,7 @@ export function generateCase(p: GenParams, seed: number): CaseDef | null {
   const roles: RoleId[] = Array(n);
   inPlay.forEach((id, j) => (roles[cells[j]] = id));
   mustWitness.forEach((id, j) => (roles[cells[inPlay.length + j]] = id));
-  for (const i of cells.slice(inPlay.length + mustWitness.length)) roles[i] = pickWeighted(r, witnesses);
+  for (const i of cells.slice(inPlay.length + mustWitness.length)) roles[i] = pickWeighted(r, witnesses, p.weights);
 
   const truth: World = { roles, taint: assignTaint(r, w, h, roles) };
   const faces = makeFaces(r, truth, witnesses);
