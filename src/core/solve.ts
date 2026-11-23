@@ -2,7 +2,7 @@
 // 진술은 참조 칸이 다 정해지는 순간 판정한다. 진짜 증인의 진술은 오염 여부를 모르므로
 // "참으로 말할 수 있나 / 거짓으로 말할 수 있나"만 기록하고, 오염 대상은 끝에서 정확히 맞춘다.
 // 내보내는 세계는 모두 consistent() 로 다시 확인한다.
-import { colOf, nbr4, nbr8, rowOf } from './board';
+import { colOf, nbr4, nbr8, rowOf, steps } from './board';
 import { ROLES, role } from './roles';
 import { cellAdmits, clueFact, consistent, modeAt, pairSameFact } from './rules';
 import { ANY_WITNESS, type Clue, type Knowledge, type RoleId, type World } from './types';
@@ -27,7 +27,7 @@ export function witnessValue(k: Knowledge, i: number): RoleId {
 }
 
 /** 진술의 참·거짓을 정하는 데 필요한 칸 (말하는 칸 제외) */
-function clueRefs(w: number, h: number, c: Clue): number[] {
+export function clueRefs(w: number, h: number, c: Clue): number[] {
   switch (c.kind) {
     case 'evil4': return nbr4(w, h, c.base);
     case 'evil8': return nbr8(w, h, c.base);
@@ -46,8 +46,11 @@ interface Stmt {
   fact: (world: World) => boolean;
 }
 
-/** 관찰과 맞는 세계를 하나씩 visit 에 넘긴다. visit 이 true 를 돌려주면 중단. */
-export function forEachWorld(k: Knowledge, visit: (w: World) => boolean | void): void {
+/**
+ * 관찰과 맞는 세계를 하나씩 visit 에 넘긴다. visit 이 true 를 돌려주면 중단.
+ * order: 칸을 채우는 순서(칸 번호의 순열). 기본은 칸 번호 순. 순서는 찾는 속도만 바꾸고 세계의 집합은 같다.
+ */
+export function forEachWorld(k: Knowledge, visit: (w: World) => boolean | void, order?: readonly number[]): void {
   const { w, h } = k;
   const n = w * h;
   const inPlay = k.inPlay;
@@ -67,24 +70,116 @@ export function forEachWorld(k: Knowledge, visit: (w: World) => boolean | void):
     cand.push(c);
   }
 
+  // pos[칸] = 몇 번째로 채우는가. 아래의 "앞 칸"·"가장 뒤 칸"은 모두 이 순서 기준이다.
+  const ord = order ?? Array.from({ length: n }, (_, i) => i);
+  const pos: number[] = Array(n).fill(-1);
+  ord.forEach((c, p) => (pos[c] = p));
+  if (ord.length !== n || pos.includes(-1)) throw new Error('order must be a permutation of cells');
+  const lastPos = (cells: number[]) => Math.max(...cells.map((c) => pos[c]));
+
   // 진술: 참조 칸 중 가장 뒤 칸이 정해질 때 판정
   const byTrigger: Stmt[][] = Array.from({ length: n }, () => []);
   for (let i = 0; i < n; i++) {
     const c = k.clues[i];
     if (!c) continue;
-    const trig = Math.max(i, ...clueRefs(w, h, c));
+    const trig = lastPos([i, ...clueRefs(w, h, c)]);
     byTrigger[trig].push({ cell: i, fact: (wd) => clueFact(w, h, wd, c) });
   }
   for (const o of k.abilities) {
-    const trig = Math.max(o.cell, o.a, o.b);
+    const trig = lastPos([o.cell, o.a, o.b]);
     byTrigger[trig].push({ cell: o.cell, fact: (wd) => o.same === pairSameFact(wd, o.a, o.b) });
+  }
+
+  // 진술은 참조 칸이 다 정해지는 칸에서 판정하지만, 그 전이라도 앞 칸까지로 사실값이 정해지면 미리 판정한다
+  // (악의 수·가장 가까운 악·주범 줄). 판정은 같은 사실값으로 몇 번 해도 결과가 같다(아래 apply).
+  const early: { cell: number; trig: number; partial: (i: number) => boolean | undefined }[] = [];
+  const isCountedRole = (id: RoleId) => {
+    const rd = role(id);
+    return (rd.camp === 'accomplice' || rd.camp === 'boss') && !rd.hiddenFromCounts;
+  };
+  const counted = (j: number) => isCountedRole(roles[j]);
+  const countedRoles = inPlay.flatMap((id, j) => (isCountedRole(id) ? [j] : []));
+  /** 아직 칸에 안 놓인, 세어지는 직업 수 */
+  const unplacedCounted = () => countedRoles.filter((j) => at[j] < 0).length;
+  for (let s = 0; s < n; s++) {
+    const c = k.clues[s];
+    if (c && (c.kind === 'evil4' || c.kind === 'evil8' || c.kind === 'evilRow' || c.kind === 'evilCol')) {
+      const refs = clueRefs(w, h, c);
+      const N = c.n!;
+      early.push({
+        cell: s,
+        trig: lastPos([s, ...refs]),
+        partial: (i) => {
+          let cnt = 0;
+          let rem = 0;
+          for (const j of refs) {
+            if (pos[j] > i) rem++;
+            else if (counted(j)) cnt++;
+          }
+          // 앞으로 늘 수 있는 수는 남은 참조 칸 수와 남은 세어지는 직업 수 중 작은 것
+          if (cnt > N || cnt + Math.min(rem, unplacedCounted()) < N) return false;
+          return undefined;
+        },
+      });
+    } else if (c?.kind === 'nearest') {
+      const b = c.base;
+      const N = c.n!;
+      const dist = Array.from({ length: n }, (_, j) => steps(w, b, j));
+      let lastBelow = -1; // 거리 N 미만 칸 중 가장 뒤 칸
+      let lastUpTo = -1; // 거리 N 이하 칸 중 가장 뒤 칸
+      for (let j = 0; j < n; j++) {
+        if (j === b) continue;
+        if (dist[j] < N) lastBelow = Math.max(lastBelow, pos[j]);
+        if (dist[j] <= N) lastUpTo = Math.max(lastUpTo, pos[j]);
+      }
+      early.push({
+        cell: s,
+        trig: n - 1,
+        partial: (i) => {
+          let dmin = Infinity;
+          for (let q = 0; q <= i; q++) {
+            const j = ord[q];
+            if (j !== b && counted(j) && dist[j] < dmin) dmin = dist[j];
+          }
+          // 세어지는 직업이 다 놓였으면 더 가까운 악은 생기지 않는다
+          if (unplacedCounted() === 0) return dmin === Infinity ? N === 0 : dmin === N;
+          if (N <= 0) return dmin < Infinity ? false : undefined;
+          if (dmin < N) return false;
+          if (dmin === N) return lastBelow <= i ? true : undefined;
+          return lastUpTo <= i ? false : undefined;
+        },
+      });
+    } else if (c?.kind === 'bossRow') {
+      const N = c.n!;
+      const bosses = inPlay.flatMap((id, j) => (role(id).camp === 'boss' ? [j] : []));
+      const rowLast = N >= 1 && N <= h ? lastPos(Array.from({ length: w }, (_, x) => (N - 1) * w + x)) : -1;
+      early.push({
+        cell: s,
+        trig: n - 1,
+        partial: (i) => {
+          if (N < 1 || N > h) return false;
+          // 주범 직업이 하나면: 놓이면 그 줄로, 그 줄이 다 정해졌는데 없으면 거짓
+          if (bosses.length === 1) {
+            const b = at[bosses[0]];
+            if (b >= 0) return Math.floor(b / w) + 1 === N;
+            return rowLast <= i ? false : undefined;
+          }
+          // 여럿이면 clueFact 처럼 칸 번호가 가장 작은 주범을 본다: 번호 순으로 정해진 칸까지만 따라간다
+          for (let j = 0; j < n; j++) {
+            if (pos[j] > i) return j >= N * w ? false : undefined; // N 번째 줄까지 다 정해졌는데 주범이 없다
+            if (role(roles[j]).camp === 'boss') return Math.floor(j / w) + 1 === N;
+          }
+          return false;
+        },
+      });
+    }
   }
 
   const tainterIdx = inPlay.flatMap((id, j) => (role(id).taint ? [j] : []));
   const nTainters = tainterIdx.length;
   const adj4Only = nTainters > 0 && tainterIdx.every((j) => role(inPlay[j]).taint === 'adj4');
-  const maxN4 = Array.from({ length: n }, (_, i) => Math.max(i, ...nbr4(w, h, i)));
-  const maxN8 = Array.from({ length: n }, (_, i) => Math.max(i, ...nbr8(w, h, i)));
+  const maxN4 = Array.from({ length: n }, (_, i) => lastPos([i, ...nbr4(w, h, i)]));
+  const maxN8 = Array.from({ length: n }, (_, i) => lastPos([i, ...nbr8(w, h, i)]));
   const lookouts = inPlay.flatMap((id, j) => (role(id).place === 'bossIn8' ? [j] : []));
 
   const roles: RoleId[] = Array(n).fill(ANY_WITNESS);
@@ -99,29 +194,33 @@ export function forEachWorld(k: Knowledge, visit: (w: World) => boolean | void):
 
   const isWitness = (i: number) => role(roles[i]).camp === 'witness';
 
-  /** 칸 i 를 정한 직후 검사. 바꾼 상태는 trail 에 적는다. */
+  /** 말한 칸 c 의 진술 사실값이 fact 일 때 판정. 모순이면 false. 같은 사실값으로 다시 불러도 아무것도 바꾸지 않는다. */
+  const apply = (c: number, fact: boolean, trail: number[]): boolean => {
+    const md = modeAt(world, c); // 오염 없는 상태의 말하는 방식
+    const okTrue = md === 'any' || fact === (md === 'true');
+    if (!isWitness(c)) return okTrue;
+    const okFalse = !fact;
+    if ((canTrue[c] && !okTrue) || (canFalse[c] && !okFalse)) {
+      trail.push(c, (canTrue[c] ? 1 : 0) | (canFalse[c] ? 2 : 0));
+      if (canTrue[c] && !okTrue) {
+        mustTaint.push(c);
+        trail.push(-1); // mustTaint 에 넣었다는 표시
+      }
+      canTrue[c] = canTrue[c] && okTrue;
+      canFalse[c] = canFalse[c] && okFalse;
+      if (!canTrue[c] && !canFalse[c]) return false;
+      if (mustTaint.length > nTainters) return false;
+    }
+    return true;
+  };
+
+  /** i 번째 칸(ord[i])을 정한 직후 검사. 바꾼 상태는 trail 에 적는다. */
   const check = (i: number, trail: number[]): boolean => {
-    for (const s of byTrigger[i]) {
-      const fact = s.fact(world);
-      const md = modeAt(world, s.cell); // 오염 없는 상태의 말하는 방식
-      const okTrue = md === 'any' || fact === (md === 'true');
-      if (!isWitness(s.cell)) {
-        if (!okTrue) return false;
-        continue;
-      }
-      const okFalse = !fact;
-      const c = s.cell;
-      if ((canTrue[c] && !okTrue) || (canFalse[c] && !okFalse)) {
-        trail.push(c, (canTrue[c] ? 1 : 0) | (canFalse[c] ? 2 : 0));
-        if (canTrue[c] && !okTrue) {
-          mustTaint.push(c);
-          trail.push(-1); // mustTaint 에 넣었다는 표시
-        }
-        canTrue[c] = canTrue[c] && okTrue;
-        canFalse[c] = canFalse[c] && okFalse;
-        if (!canTrue[c] && !canFalse[c]) return false;
-        if (mustTaint.length > nTainters) return false;
-      }
+    for (const s of byTrigger[i]) if (!apply(s.cell, s.fact(world), trail)) return false;
+    for (const e of early) {
+      if (pos[e.cell] > i || e.trig <= i) continue; // 말한 칸이 아직 안 정해졌거나, 이미 참조 칸이 다 정해짐
+      const fact = e.partial(i);
+      if (fact !== undefined && !apply(e.cell, fact, trail)) return false;
     }
     // 틀린 증인은 adj4 오염원의 이웃이어야 한다 (오염원이 adj4 뿐일 때)
     if (adj4Only) {
@@ -189,12 +288,13 @@ export function forEachWorld(k: Knowledge, visit: (w: World) => boolean | void):
       if (placed === m) emit();
       return;
     }
-    for (const j of cand[i]) {
+    const cell = ord[i];
+    for (const j of cand[cell]) {
       if (j >= 0 && at[j] >= 0) continue;
       const placedAfter = placed + (j >= 0 ? 1 : 0);
       if (m - placedAfter > n - i - 1) continue; // 남은 칸보다 남은 직업이 많다
-      roles[i] = j >= 0 ? inPlay[j] : wv[i];
-      if (j >= 0) at[j] = i;
+      roles[cell] = j >= 0 ? inPlay[j] : wv[cell];
+      if (j >= 0) at[j] = cell;
       placed = placedAfter;
       const trail: number[] = [];
       if (check(i, trail)) fill(i + 1);
@@ -203,7 +303,7 @@ export function forEachWorld(k: Knowledge, visit: (w: World) => boolean | void):
         at[j] = -1;
         placed--;
       }
-      roles[i] = ANY_WITNESS;
+      roles[cell] = ANY_WITNESS;
       if (stop) return;
     }
   };
