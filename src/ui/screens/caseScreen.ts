@@ -1,0 +1,445 @@
+// 사건 화면: 위 줄(시간·평판·비율·직업 목록), 격자, 안내·힌트, 진술 목록. 칸을 누르면 행동 메뉴.
+import { describeStep, type Hint } from '../../core/explain';
+import {
+  arrest,
+  investigate,
+  knowledgeOf,
+  newGame,
+  setNote,
+  useAbility,
+  visibleClue,
+  type Game,
+  type Note,
+} from '../../core/game';
+import { isEvil, role } from '../../core/roles';
+import { ANY_WITNESS, type CaseDef, type RoleId, type Side } from '../../core/types';
+import { GUIDE } from '../../content/tutorial';
+import { abilityText, clueText, pendingText } from '../clueText';
+import { h, mount, overlay, toast } from '../dom';
+import { CAMP_NAME, SIDE_MARK, SIDE_NAME } from '../labels';
+import { guideBubble } from '../tutorialOverlay';
+import { requestHint } from '../workerClient';
+import { showStageList } from './stageList';
+import { showTitle } from './title';
+
+export interface CaseOpts {
+  mode: 'stage' | 'endless';
+  stageId?: number;
+  rep?: number;
+  onEnd: (g: Game) => void;
+}
+
+/** 칸 구석의 메모 표시 */
+const NOTE_MARK: Record<Note, string> = { good: '선', evil: '악', unsure: '?' };
+/** 메뉴의 메모 단추 */
+const NOTE_BUTTON: Record<Note, string> = { good: '○ 선', evil: '● 악', unsure: '?' };
+const NOTE_NAME: Record<Note, string> = { good: '선', evil: '악', unsure: '모름' };
+
+/** 체포로 드러난 진짜 직업 (직업을 모르는 증인은 겉 직업으로) */
+const trueRole = (def: CaseDef, i: number): RoleId =>
+  def.truth.roles[i] === ANY_WITNESS ? def.faces[i] : def.truth.roles[i];
+const sideOf = (id: RoleId): Side => (isEvil(role(id).camp) ? 'evil' : 'good');
+
+/** 칸 i 의 진술 자리 문장들 (진술, 계기 전, 능력) */
+function statements(g: Game, i: number): string[] {
+  const face = role(g.def.faces[i]);
+  const out: string[] = [];
+  const c = visibleClue(g, i);
+  if (c) out.push(clueText(c, i));
+  else if (face.trigger !== undefined && g.def.clues[i]) out.push(pendingText(face.trigger));
+  if (face.ability) {
+    const o = g.abilities.find((a) => a.cell === i);
+    out.push(o ? `(능력) ${abilityText(o)}` : '진술 없음 · 능력을 쓸 수 있음');
+  }
+  if (out.length === 0) out.push('진술 없음');
+  return out;
+}
+
+export function showCase(def: CaseDef, opts: CaseOpts): void {
+  let g = newGame(def, opts.rep ?? 10);
+  /** 관찰이 바뀔 때마다 올린다. 이전 관찰로 받은 힌트는 버린다. */
+  let version = 0;
+  let thinking = false;
+  let hint: { text: string; cell?: number } | null = null;
+  let picking: { cell: number; picks: number[] } | null = null;
+  let ended = false;
+  const guide = opts.mode === 'stage' && (opts.stageId === 1 || opts.stageId === 2) ? GUIDE[opts.stageId] : null;
+  let guideAt = guide ? 0 : -1;
+
+  const root = h('main', { class: 'screen case-screen' });
+  mount(root);
+  render();
+
+  function quit() {
+    if (opts.mode === 'stage') showStageList();
+    else showTitle();
+  }
+
+  function apply(next: Game) {
+    if (next === g) return false;
+    if (next.hour !== g.hour || next.abilities.length !== g.abilities.length || next.rep !== g.rep) {
+      version++;
+      thinking = false;
+      hint = null;
+    }
+    g = next;
+    render();
+    if (g.status !== 'playing' && !ended) {
+      ended = true;
+      window.setTimeout(() => opts.onEnd(g), 900);
+    }
+    return true;
+  }
+
+  function doArrest(i: number) {
+    const before = g.rep;
+    if (!apply(arrest(g, i))) return;
+    const r = role(trueRole(def, i));
+    if (g.rep < before) toast(`선(${CAMP_NAME[r.camp]})을 체포했습니다. 평판 -2`);
+    else toast(`악을 체포했습니다: ${r.name}(${CAMP_NAME[r.camp]})`);
+  }
+
+  async function askHint() {
+    if (thinking || ended) return;
+    thinking = true;
+    hint = null;
+    const asked = version;
+    render();
+    let res: Hint | null = null;
+    try {
+      res = await requestHint(knowledgeOf(g));
+    } catch {
+      res = null;
+    }
+    if (asked !== version || ended || !root.isConnected) return; // 그 사이 판이 바뀌었다
+    thinking = false;
+    hint = hintMessage(res);
+    render();
+  }
+
+  function hintMessage(res: Hint | null): { text: string; cell?: number } {
+    const nothing = { text: '더 알려 줄 것이 없어요.' };
+    if (!res) return { text: '힌트를 찾지 못했어요. 다시 눌러 보세요.' };
+    if (res.kind === 'step') return { text: describeStep(res.step, def), cell: res.step.cell };
+    if (res.kind === 'investigate') {
+      if (g.investigated[res.cell] || g.arrested[res.cell]) return nothing;
+      return { text: `${res.cell + 1}번 칸을 조사해 보세요.`, cell: res.cell };
+    }
+    if (g.used[res.cell]) return nothing;
+    return { text: `${res.cell + 1}번 ${role(def.faces[res.cell]).name}의 능력을 써 보세요.`, cell: res.cell };
+  }
+
+  function onCell(i: number) {
+    if (ended) return;
+    if (picking) {
+      if (i === picking.cell || picking.picks.includes(i)) {
+        toast('다른 칸을 고르세요.');
+        return;
+      }
+      picking.picks.push(i);
+      if (picking.picks.length < 2) {
+        render();
+        return;
+      }
+      const { cell, picks } = picking;
+      picking = null;
+      if (apply(useAbility(g, cell, picks[0], picks[1]))) toast(abilityText(g.abilities[g.abilities.length - 1]));
+      else render();
+      return;
+    }
+    openMenu(i);
+  }
+
+  function openMenu(i: number) {
+    const face = role(def.faces[i]);
+    let close = () => {};
+    const run = (f: () => void) => () => {
+      close();
+      f();
+    };
+    let body: HTMLElement;
+    if (g.arrested[i]) {
+      const r = role(trueRole(def, i));
+      const side = sideOf(r.id);
+      body = h(
+        'div',
+        { class: 'sheet', role: 'dialog', 'aria-modal': 'true' },
+        h('div', { class: 'sheet-head' }, h('b', {}, `${i + 1}번 칸`), h('span', {}, '체포함')),
+        h(
+          'p',
+          { class: `sheet-truth side-${side}` },
+          `${SIDE_MARK[side]} ${r.name} · ${CAMP_NAME[r.camp]} (${SIDE_NAME[side]})`,
+        ),
+        h('p', { class: 'sheet-desc' }, r.desc),
+        g.investigated[i] && h('p', { class: 'sheet-clue' }, `겉 직업 ${face.name}: ${statements(g, i).join(' / ')}`),
+        canUseAbility(i) && abilityButton(i, run),
+        h('button', { class: 'btn wide', onclick: () => close() }, '닫기'),
+      );
+    } else {
+      const note = g.notes[i];
+      body = h(
+        'div',
+        { class: 'sheet', role: 'dialog', 'aria-modal': 'true' },
+        h(
+          'div',
+          { class: 'sheet-head' },
+          h('b', {}, `${i + 1}번 칸`),
+          h('span', {}, g.investigated[i] ? face.name : '조사하지 않음'),
+        ),
+        g.investigated[i] && h('p', { class: 'sheet-clue' }, statements(g, i).join(' / ')),
+        h(
+          'div',
+          { class: 'sheet-actions' },
+          h(
+            'button',
+            {
+              class: 'btn action',
+              'data-action': 'investigate',
+              disabled: g.investigated[i],
+              onclick: run(() => apply(investigate(g, i))),
+            },
+            '조사',
+            h('small', {}, g.investigated[i] ? '조사함' : '2시간'),
+          ),
+          canUseAbility(i) && abilityButton(i, run),
+          h(
+            'button',
+            { class: 'btn action danger', 'data-action': 'arrest', onclick: run(() => doArrest(i)) },
+            '체포',
+            h('small', {}, '1시간'),
+          ),
+        ),
+        h(
+          'div',
+          { class: 'sheet-memo' },
+          h('span', { class: 'memo-label' }, '메모'),
+          (['good', 'evil', 'unsure'] as Note[]).map((n) =>
+            h(
+              'button',
+              {
+                class: `btn memo memo-${n}${note === n ? ' on' : ''}`,
+                'data-note': n,
+                'aria-pressed': note === n ? 'true' : 'false',
+                onclick: run(() => apply(setNote(g, i, n))),
+              },
+              NOTE_BUTTON[n],
+            ),
+          ),
+          h(
+            'button',
+            { class: 'btn memo', 'data-note': 'clear', disabled: !note, onclick: run(() => apply(setNote(g, i))) },
+            '지우기',
+          ),
+        ),
+        h('button', { class: 'btn ghost wide', onclick: () => close() }, '닫기'),
+      );
+    }
+    close = overlay(body);
+  }
+
+  function canUseAbility(i: number): boolean {
+    return g.investigated[i] && !g.used[i] && role(def.faces[i]).ability === 'pairSame';
+  }
+
+  function abilityButton(i: number, run: (f: () => void) => () => void): HTMLElement {
+    return h(
+      'button',
+      {
+        class: 'btn action',
+        'data-action': 'ability',
+        onclick: run(() => {
+          picking = { cell: i, picks: [] };
+          render();
+        }),
+      },
+      '능력',
+      h('small', {}, '0시간'),
+    );
+  }
+
+  function showRole(id: RoleId) {
+    const r = role(id);
+    let close = () => {};
+    close = overlay(
+      h(
+        'div',
+        { class: 'sheet', role: 'dialog', 'aria-modal': 'true' },
+        h('div', { class: 'sheet-head' }, h('b', {}, r.name), h('span', {}, `${CAMP_NAME[r.camp]} · ${SIDE_NAME[sideOf(id)]}`)),
+        h('p', { class: 'sheet-desc' }, r.desc),
+        h('button', { class: 'btn wide', onclick: () => close() }, '닫기'),
+      ),
+    );
+  }
+
+  function header(): HTMLElement {
+    const camps = def.inPlay.map((id) => role(id).camp);
+    const count = (c: string) => camps.filter((x) => x === c).length;
+    const title = opts.mode === 'stage' ? `${opts.stageId}스테이지` : '무한 모드';
+    return h(
+      'header',
+      { class: 'case-head' },
+      h(
+        'div',
+        { class: 'head-row' },
+        h('button', { class: 'btn ghost back', onclick: quit, 'aria-label': '나가기' }, '‹ 나가기'),
+        h('h1', { class: 'case-title' }, title),
+        h(
+          'button',
+          {
+            class: 'btn hint-btn',
+            'data-action': 'hint',
+            disabled: thinking || ended,
+            onclick: askHint,
+          },
+          thinking ? '생각 중…' : '힌트',
+        ),
+      ),
+      h(
+        'div',
+        { class: 'stats' },
+        h('span', { class: 'stat' }, h('small', {}, '경과'), h('b', { 'data-stat': 'hour' }, `${g.hour}시간`)),
+        h(
+          'span',
+          { class: `stat${g.rep <= 4 ? ' low' : ''}` },
+          h('small', {}, '평판'),
+          h('b', { 'data-stat': 'rep' }, String(g.rep)),
+        ),
+        h(
+          'span',
+          { class: 'stat ratio' },
+          h('small', {}, '이번 사건'),
+          h('b', {}, `말썽꾼 ${count('trouble')} · 공범 ${count('accomplice')} · 주범 ${count('boss')}`),
+        ),
+      ),
+      h(
+        'div',
+        { class: 'roles', 'aria-label': '이번 사건의 말썽꾼·악 직업' },
+        def.inPlay.map((id) =>
+          h(
+            'button',
+            { class: `chip camp-${role(id).camp}`, onclick: () => showRole(id) },
+            role(id).name,
+            h('small', {}, CAMP_NAME[role(id).camp]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  function cellEl(i: number): HTMLElement {
+    const guideCell = guide && guideAt >= 0 ? guide[guideAt].cell : undefined;
+    const cls = ['cell'];
+    let inner: (Node | string | false)[] = [];
+    const note = g.notes[i];
+    if (g.arrested[i]) {
+      const r = role(trueRole(def, i));
+      const side = sideOf(r.id);
+      cls.push('arrested', `side-${side}`);
+      inner = [
+        h('span', { class: 'stamp' }, `${SIDE_MARK[side]} ${SIDE_NAME[side]}`),
+        h('span', { class: 'face' }, r.name),
+        h('span', { class: 'sub' }, CAMP_NAME[r.camp]),
+      ];
+    } else if (g.investigated[i]) {
+      cls.push('seen');
+      inner = [h('span', { class: 'face' }, role(def.faces[i]).name)];
+    } else {
+      cls.push('hidden');
+      inner = [h('span', { class: 'face unknown' }, '?')];
+    }
+    if (hint?.cell === i) cls.push('flash');
+    if (guideCell === i) cls.push('guide');
+    if (picking && (picking.cell === i || picking.picks.includes(i))) cls.push(picking.cell === i ? 'picker' : 'picked');
+    const label = `${i + 1}번 칸${g.investigated[i] ? ` ${role(def.faces[i]).name}` : ''}${note ? `, 메모 ${NOTE_NAME[note]}` : ''}`;
+    return h(
+      'button',
+      { class: cls.join(' '), 'data-cell': i, 'aria-label': label, onclick: () => onCell(i) },
+      h('span', { class: 'num' }, String(i + 1)),
+      note && !g.arrested[i] && h('span', { class: `note note-${note}` }, NOTE_MARK[note]),
+      ...inner,
+    );
+  }
+
+  function panel(): HTMLElement | null {
+    const items: HTMLElement[] = [];
+    if (picking) {
+      const p = picking;
+      items.push(
+        h(
+          'div',
+          { class: 'bubble pick-bubble' },
+          h(
+            'p',
+            { class: 'bubble-text' },
+            `${p.cell + 1}번 ${role(def.faces[p.cell]).name}의 능력: 같은 편인지 물어볼 두 칸을 고르세요. (${p.picks.length}/2)`,
+          ),
+          h(
+            'div',
+            { class: 'bubble-nav' },
+            h('span', { class: 'spacer' }),
+            h('button', { class: 'btn', onclick: () => ((picking = null), render()) }, '취소'),
+          ),
+        ),
+      );
+    }
+    if (thinking) items.push(h('div', { class: 'bubble hint-bubble', 'data-hint': 'thinking' }, h('p', { class: 'bubble-text' }, '생각 중…')));
+    if (hint) {
+      items.push(
+        h(
+          'div',
+          { class: 'bubble hint-bubble', 'data-hint': 'result' },
+          h('div', { class: 'bubble-head' }, h('span', { class: 'bubble-tag' }, '힌트')),
+          h('p', { class: 'bubble-text' }, hint.text),
+        ),
+      );
+    }
+    if (guide && guideAt >= 0) {
+      items.push(
+        guideBubble(guide, guideAt, (n) => {
+          guideAt = n;
+          render();
+        }),
+      );
+    }
+    return items.length ? h('section', { class: 'panel' }, items) : null;
+  }
+
+  function clueList(): HTMLElement {
+    const seen = g.investigated.flatMap((v, i) => (v ? [i] : []));
+    return h(
+      'section',
+      { class: 'clues' },
+      h('h2', {}, '진술', h('small', {}, `${seen.length} / ${def.w * def.h}명 조사`)),
+      seen.length === 0
+        ? h('p', { class: 'empty' }, '아직 조사한 사람이 없습니다. 칸을 눌러 조사하세요.')
+        : h(
+            'ol',
+            {},
+            seen.map((i) => {
+              const side = g.arrested[i] ? sideOf(trueRole(def, i)) : undefined;
+              return h(
+                'li',
+                { class: side ? `arrested side-${side}` : '', 'data-line': i },
+                h('span', { class: 'ln-num' }, `${i + 1}번`),
+                h(
+                  'span',
+                  { class: 'ln-body' },
+                  h('b', {}, role(def.faces[i]).name),
+                  `: ${statements(g, i).join(' / ')}`,
+                ),
+                side && h('span', { class: 'ln-tag' }, `${SIDE_MARK[side]} ${SIDE_NAME[side]}`),
+              );
+            }),
+          ),
+    );
+  }
+
+  function render() {
+    const grid = h(
+      'div',
+      { class: 'grid', style: `--w:${def.w}`, role: 'grid', 'aria-label': `${def.w}×${def.h} 마을` },
+      Array.from({ length: def.w * def.h }, (_, i) => cellEl(i)),
+    );
+    root.replaceChildren(header(), grid, panel() ?? '', clueList());
+  }
+}
