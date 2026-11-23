@@ -1,12 +1,12 @@
 import { expect, test } from 'vitest';
-import { crossCheckSlice } from './crossCheck';
+import { CROSS_CASES, crossCheck } from './crossCheck';
 import { forEachWorld, solve } from './solve';
 import { emptyKnowledge, emptyKnowledgeOf } from './testcases';
 
-// 3000판 교차 검증은 6개 파일(solve.test.ts, solve.cross2~6.test.ts)이 나눠 돈다. 파일끼리 병렬로 돈다.
-test('backtracking equals brute force on 3000 random small cases (1/6)', () => {
-  crossCheckSlice(1);
-}, 120_000);
+// 기본 600판(npm test). 3000판 전체는 npm run test:cross (CROSS_CASES=3000).
+test(`backtracking equals brute force on ${CROSS_CASES} random small cases`, () => {
+  crossCheck(0, CROSS_CASES);
+}, Math.max(120_000, CROSS_CASES * 200));
 
 test('cap stops enumeration', () => {
   const k = emptyKnowledge(4, 5, ['gossip', 'thief', 'blackmailer', 'lookout', 'chief']);

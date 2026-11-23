@@ -43,7 +43,8 @@ export function randomKnowledge(r: Rng, truth: World, w: number, h: number): Kno
   const n = w * h;
   const k = emptyKnowledge(w, h, truth.roles.filter((id) => role(id).camp !== 'witness'));
   const faces = makeFaces(r, truth, WITNESSES);
-  // 조사 비율: 1/4 은 전부, 나머지는 50~100%. 이보다 적게 조사하면 맞는 세계가 WORLD_CAP 을 넘는 판이 생긴다.
+  // 조사 비율: 1/4 은 전부, 나머지는 50~100% (적어도 절반은 조사한다).
+  // 이보다 적게 조사하면 맞는 세계가 WORLD_CAP 을 넘어 solve 가 잘리는 판이 생긴다.
   const p = r() < 0.25 ? 1 : 0.5 + 0.5 * r();
   for (let i = 0; i < n; i++) {
     if (r() >= p) continue;

@@ -6,6 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "test": "vitest run",
+    "test:cross": "node src/tools/test-cross.mjs",
     "stages": "tsx src/tools/build-stages.ts"
   },
   "devDependencies": {

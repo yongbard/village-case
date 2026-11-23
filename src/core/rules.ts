@@ -1,6 +1,6 @@
 import { colOf, nbr4, nbr8, rowOf, steps, xy } from './board';
 import { ROLES, isEvil, role } from './roles';
-import { ANY_WITNESS, type Camp, type CaseDef, type Clue, type Knowledge, type Mode, type World } from './types';
+import { ANY_WITNESS, type Camp, type CaseDef, type Clue, type Knowledge, type Mode, type RoleId, type World } from './types';
 
 export function campAt(world: World, i: number): Camp {
   return role(world.roles[i]).camp;
@@ -76,6 +76,37 @@ export function abilityAnswer(def: CaseDef, cell: number, a: number, b: number):
   return mode === 'true' ? fact : !fact;
 }
 
+/** 칸 i 의 진짜 직업이 r 일 때, 그 칸의 겉 직업·체포로 드러난 직업·알려진 진영과 맞는가 */
+export function cellAdmits(k: Knowledge, i: number, r: RoleId): boolean {
+  const rd = role(r);
+
+  // 겉 직업
+  const f = k.faces[i];
+  if (f !== undefined) {
+    const fd = role(f);
+    if (fd.camp === 'witness') {
+      const disguises = rd.camp === 'accomplice' || rd.camp === 'boss' || rd.face === 'witness';
+      if (!disguises && !(rd.camp === 'witness' && (r === ANY_WITNESS || r === f || f === ANY_WITNESS))) return false;
+    } else if (r !== f) {
+      return false;
+    }
+  }
+
+  // 체포로 드러난 진짜 직업
+  const a = k.arrested[i];
+  if (a !== undefined) {
+    if (a === ANY_WITNESS) {
+      if (rd.camp !== 'witness') return false;
+    } else if (r !== a && !(r === ANY_WITNESS && role(a).camp === 'witness')) {
+      return false;
+    }
+  }
+
+  // 알려진 진영
+  const kc = k.knownCamps?.[i];
+  return kc === undefined || kc === rd.camp;
+}
+
 export function consistent(k: Knowledge, world: World): boolean {
   const { w, h } = k;
   const n = w * h;
@@ -98,31 +129,7 @@ export function consistent(k: Knowledge, world: World): boolean {
     const r = world.roles[i];
     const rd = role(r);
 
-    // 겉 직업
-    const f = k.faces[i];
-    if (f !== undefined) {
-      const fd = role(f);
-      if (fd.camp === 'witness') {
-        const disguises = rd.camp === 'accomplice' || rd.camp === 'boss' || rd.face === 'witness';
-        if (!disguises && !(rd.camp === 'witness' && (r === ANY_WITNESS || r === f || f === ANY_WITNESS))) return false;
-      } else if (r !== f) {
-        return false;
-      }
-    }
-
-    // 체포로 드러난 진짜 직업
-    const a = k.arrested[i];
-    if (a !== undefined) {
-      if (a === ANY_WITNESS) {
-        if (rd.camp !== 'witness') return false;
-      } else if (r !== a && !(r === ANY_WITNESS && role(a).camp === 'witness')) {
-        return false;
-      }
-    }
-
-    // 알려진 진영
-    const kc = k.knownCamps?.[i];
-    if (kc !== undefined && kc !== rd.camp) return false;
+    if (!cellAdmits(k, i, r)) return false;
 
     // 배치 규칙
     if (rd.place === 'bossIn8' && !nbr8(w, h, i).some((j) => campAt(world, j) === 'boss')) return false;

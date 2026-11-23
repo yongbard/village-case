@@ -1,21 +1,16 @@
 // 시험 전용: 백트래킹 솔버와 전수 조사 솔버의 교차 검증.
-// seed 7 로 만든 3000판을 여러 시험 파일이 나눠 돈다(파일끼리 병렬로 돌아 시간이 줄어든다).
+// 판 수는 환경 변수 CROSS_CASES (기본 600). 3000판 전체는 npm run test:cross.
 import { expect } from 'vitest';
 import { solveBrute } from './brute';
 import { makeRng, pick } from './rng';
 import { solve, worldKey } from './solve';
 import { normalize, randomInPlay, randomKnowledge, randomTruth } from './testcases';
 
-export const CROSS_CASES = 3000;
-/** 교차 검증을 나눠 도는 시험 파일 수 (solve.test.ts + solve.cross2~6.test.ts) */
-export const CROSS_SLICES = 6;
+// @types/node 없이 읽는다 (시험은 node 에서만 돈다)
+const env = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env ?? {};
+export const CROSS_CASES = Number(env.CROSS_CASES ?? 600);
 
-/** s 번째(1부터) 조각을 돈다 */
-export function crossCheckSlice(s: number): void {
-  crossCheck((CROSS_CASES * (s - 1)) / CROSS_SLICES, (CROSS_CASES * s) / CROSS_SLICES);
-}
-
-/** 3000판 흐름에서 [from, to) 번째 판만 두 솔버로 풀어 비교한다. 앞 판도 만들어 같은 난수 흐름을 쓴다. */
+/** seed 7 흐름에서 [from, to) 번째 판만 두 솔버로 풀어 비교한다. 앞 판도 만들어 같은 난수 흐름을 쓴다. */
 export function crossCheck(from: number, to: number): void {
   const r = makeRng(7);
   for (let t = 0; t < to; t++) {

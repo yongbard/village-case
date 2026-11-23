@@ -4,7 +4,7 @@
 // 내보내는 세계는 모두 consistent() 로 다시 확인한다.
 import { colOf, nbr4, nbr8, rowOf } from './board';
 import { ROLES, role } from './roles';
-import { clueFact, consistent, modeAt, pairSameFact } from './rules';
+import { cellAdmits, clueFact, consistent, modeAt, pairSameFact } from './rules';
 import { ANY_WITNESS, type Clue, type Knowledge, type RoleId, type World } from './types';
 
 export const WORLD_CAP = 20000;
@@ -24,31 +24,6 @@ export function witnessValue(k: Knowledge, i: number): RoleId {
   const f = k.faces[i];
   if (f !== undefined && role(f).camp === 'witness') return f;
   return ANY_WITNESS;
-}
-
-/** consistent() 의 겉 직업·체포·알려진 진영 검사를 한 칸에 대해 (같은 규칙) */
-function cellAdmits(k: Knowledge, i: number, r: RoleId): boolean {
-  const rd = role(r);
-  const f = k.faces[i];
-  if (f !== undefined) {
-    const fd = role(f);
-    if (fd.camp === 'witness') {
-      const disguises = rd.camp === 'accomplice' || rd.camp === 'boss' || rd.face === 'witness';
-      if (!disguises && !(rd.camp === 'witness' && (r === ANY_WITNESS || r === f || f === ANY_WITNESS))) return false;
-    } else if (r !== f) {
-      return false;
-    }
-  }
-  const a = k.arrested[i];
-  if (a !== undefined) {
-    if (a === ANY_WITNESS) {
-      if (rd.camp !== 'witness') return false;
-    } else if (r !== a && !(r === ANY_WITNESS && role(a).camp === 'witness')) {
-      return false;
-    }
-  }
-  const kc = k.knownCamps?.[i];
-  return kc === undefined || kc === rd.camp;
 }
 
 /** 진술의 참·거짓을 정하는 데 필요한 칸 (말하는 칸 제외) */
