@@ -57,6 +57,14 @@ test('hand-made ambiguous case is rejected', () => {
   expect(checkCase(AMBIGUOUS)).toEqual({ ok: false, reason: 'ambiguous' });
 });
 
+test('truth that breaks its own rules is rejected even if its signature fits (G3)', () => {
+  // 좀도둑(3번)이 기자(5번)를 오염시킨 것처럼 적은 불법 실제 세계. 진영 배치는 맞는 세계가 있지만,
+  // 게임은 기자 답을 def.truth 로 계산하므로 이런 사건은 틀린 답으로 이끈다.
+  const bad: CaseDef = { ...NEEDS_REPORTER, truth: { ...NEEDS_REPORTER.truth, taint: NEEDS_REPORTER.truth.taint.map((t, i) => (i === 2 ? 4 : t)) } };
+  expect(consistent(fullKnowledge(bad), bad.truth)).toBe(false);
+  expect(checkCase(bad)).toEqual({ ok: false, reason: 'truthMismatch' });
+});
+
 test('case that needs the reporter is accepted only with the ability', () => {
   expect(abilityCells(NEEDS_REPORTER)).toEqual([4]);
   expect(consistent(fullKnowledge(NEEDS_REPORTER), NEEDS_REPORTER.truth)).toBe(true);

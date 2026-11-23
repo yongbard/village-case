@@ -1,7 +1,7 @@
 // 유일해 검사 (설계 5.2 G1·G2·G3).
 // 다 조사한 관찰로 맞는 세계를 한 번만 구하고, 능력(G2)은 그 세계 목록을 답으로 나눠 따진다.
 import { isEvil, role } from './roles';
-import { campAt, modeAt } from './rules';
+import { campAt, consistent, modeAt } from './rules';
 import { WORLD_CAP, forEachWorld } from './solve';
 import { type CaseDef, type Knowledge, type Mode, type World } from './types';
 
@@ -77,6 +77,10 @@ function g2(ws: Pt[], cells: number[], n: number): boolean {
 }
 
 export function checkCase(def: CaseDef): CheckResult {
+  // G3: 실제 세계가 자기 겉 직업·진술·오염 규칙과 맞아야 한다. 게임은 기자 답을 def.truth 로
+  // 계산하므로, 진영 배치만 맞고 규칙을 어기는 실제 세계는 틀린 답으로 이끈다.
+  const k = fullKnowledge(def);
+  if (!consistent(k, def.truth)) return { ok: false, reason: 'truthMismatch' };
   const cells = abilityCells(def);
   const n = def.w * def.h;
   // 능력 k 번의 답으로 나뉘는 묶음은 많아야 2^k 개이고 묶음마다 선·악 배치가 하나여야 하므로,
@@ -87,7 +91,7 @@ export function checkCase(def: CaseDef): CheckResult {
   const pts = new Map<string, Pt>();
   let count = 0;
   let capped = false;
-  forEachWorld(fullKnowledge(def), (w) => {
+  forEachWorld(k, (w) => {
     if (count >= WORLD_CAP) {
       capped = true;
       return true;
@@ -102,12 +106,7 @@ export function checkCase(def: CaseDef): CheckResult {
   });
   if (sigs.size > maxSigs) return { ok: false, reason: 'ambiguous' };
   if (capped) return { ok: false, reason: 'tooMany' };
-  const ws = [...pts.values()];
-  if (ws.length === 0) return { ok: false, reason: 'truthMismatch' };
-  if (!g2(ws, cells, n)) return { ok: false, reason: 'ambiguous' };
-  // G2 가 성립하면 능력을 쓰기 전 세계들의 선·악 배치가 하나일 필요는 없다. 실제 세계(G3)의 배치가
-  // 세계 목록 안에 있어야 하고, 능력 없이 하나로 정해지면 그것과 같아야 한다.
-  const truthSig = signature(def.truth);
-  if (!sigs.has(truthSig)) return { ok: false, reason: 'truthMismatch' };
-  return { ok: true, signature: truthSig };
+  if (!g2([...pts.values()], cells, n)) return { ok: false, reason: 'ambiguous' };
+  // 실제 세계는 맞는 세계이므로 목록 안에 있고, G2 가 성립하면 실제 답으로 남는 묶음의 배치가 곧 실제 배치다.
+  return { ok: true, signature: signature(def.truth) };
 }
