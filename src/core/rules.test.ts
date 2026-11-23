@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { ROLES, isEvil, role } from './roles';
 import { abilityAnswer, campAt, clueFact, consistent, modeAt, pairSameFact } from './rules';
-import { ANY_WITNESS, type Camp, type CaseDef, type Clue, type Knowledge, type RoleId, type World } from './types';
+import { ANY_WITNESS, type CaseDef, type Side, type Clue, type Knowledge, type RoleId, type World } from './types';
 
 // 3x3, 0 = 좀도둑(thief), 8 = 두목(chief), 나머지 증인
 const W: World = { roles: ['thief','*w','*w','*w','*w','*w','*w','*w','chief'], taint: Array(9).fill(-1) };
@@ -174,13 +174,19 @@ describe('consistent', () => {
     const w = { ...W, roles: ['thief','hidden','*w','*w','*w','*w','*w','*w','chief'] };
     expect(consistent(K(['thief','hidden','chief'], { faces: faceAt({ 1: 'mayor' }) }), w)).toBe(true);
   });
-  test('arrested and knownCamps must match', () => {
+  test('arrested and knownSides must match', () => {
     expect(consistent(K(['thief','chief'], { arrested: faceAt({ 0: 'thief' }) }), W)).toBe(true);
     expect(consistent(K(['thief','chief'], { arrested: faceAt({ 0: 'chief' }) }), W)).toBe(false);
     expect(consistent(K(['thief','chief'], { arrested: faceAt({ 2: ANY_WITNESS }) }), W)).toBe(true);
-    const camps = (set: Record<number, Camp>) => sparse<Camp | undefined>(set, undefined);
-    expect(consistent(K(['thief','chief'], { knownCamps: camps({ 0: 'witness' }) }), W)).toBe(false);
-    expect(consistent(K(['thief','chief'], { knownCamps: camps({ 0: 'accomplice' }) }), W)).toBe(true);
+    const sides = (set: Record<number, Side>) => sparse<Side | undefined>(set, undefined);
+    expect(consistent(K(['thief','chief'], { knownSides: sides({ 0: 'good' }) }), W)).toBe(false);
+    expect(consistent(K(['thief','chief'], { knownSides: sides({ 0: 'evil' }) }), W)).toBe(true);
+    expect(consistent(K(['thief','chief'], { knownSides: sides({ 8: 'evil', 4: 'good' }) }), W)).toBe(true);
+    expect(consistent(K(['thief','chief'], { knownSides: sides({ 4: 'evil' }) }), W)).toBe(false);
+    // 말썽꾼은 선
+    const wh = { ...W, roles: ['thief','hidden','*w','*w','*w','*w','*w','*w','chief'] };
+    expect(consistent(K(['thief','hidden','chief'], { knownSides: sides({ 1: 'good' }) }), wh)).toBe(true);
+    expect(consistent(K(['thief','hidden','chief'], { knownSides: sides({ 1: 'evil' }) }), wh)).toBe(false);
   });
   test('ability observations', () => {
     const ob = (cell: number, a: number, b: number, same: boolean) => K(['thief','chief'], { abilities: [{ cell, a, b, same }] });

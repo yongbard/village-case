@@ -76,7 +76,7 @@ export function abilityAnswer(def: CaseDef, cell: number, a: number, b: number):
   return mode === 'true' ? fact : !fact;
 }
 
-/** 칸 i 의 진짜 직업이 r 일 때, 그 칸의 겉 직업·체포로 드러난 직업·알려진 진영과 맞는가 */
+/** 칸 i 의 진짜 직업이 r 일 때, 그 칸의 겉 직업·체포로 드러난 직업·알려진 선악과 맞는가 */
 export function cellAdmits(k: Knowledge, i: number, r: RoleId): boolean {
   const rd = role(r);
 
@@ -102,9 +102,9 @@ export function cellAdmits(k: Knowledge, i: number, r: RoleId): boolean {
     }
   }
 
-  // 알려진 진영
-  const kc = k.knownCamps?.[i];
-  return kc === undefined || kc === rd.camp;
+  // 알려진 선·악
+  const ks = k.knownSides?.[i];
+  return ks === undefined || ks === (isEvil(rd.camp) ? 'evil' : 'good');
 }
 
 export function consistent(k: Knowledge, world: World): boolean {

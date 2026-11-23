@@ -1,4 +1,5 @@
 export type Camp = 'witness' | 'trouble' | 'accomplice' | 'boss';
+export type Side = 'good' | 'evil'; // 선 = 증인·말썽꾼, 악 = 공범·주범
 export type RoleId = string;
 export const ANY_WITNESS = '*w'; // 직업을 모르는 진짜 증인
 export type Mode = 'true' | 'false' | 'any';
@@ -52,7 +53,7 @@ export interface Knowledge {
   clues: (Clue | null)[]; // 보이는 진술 (없으면 null)
   abilities: AbilityObs[];
   arrested: (RoleId | undefined)[]; // 체포로 드러난 진짜 직업
-  knownCamps?: (Camp | undefined)[]; // 해설용: 이미 추리한 진영
+  knownSides?: (Side | undefined)[]; // 해설용: 이미 추리한 선·악
 }
 export interface CaseDef {
   seed: number;
