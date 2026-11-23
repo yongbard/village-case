@@ -91,3 +91,6 @@ export function emptyKnowledge(w: number, h: number, inPlay: RoleId[]): Knowledg
 export function emptyKnowledgeOf(def: CaseDef): Knowledge {
   return emptyKnowledge(def.w, def.h, def.inPlay);
 }
+
+/** 시간 한도 시험의 배수: CI(GitHub 러너)는 느릴 수 있어 3배로 둔다. 로컬은 1. */
+export const TIME_SCALE = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.CI ? 3 : 1;

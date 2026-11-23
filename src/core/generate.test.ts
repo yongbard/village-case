@@ -2,6 +2,7 @@ import { expect, test } from 'vitest';
 import { endlessParams, generateValid } from './generate';
 import { ROLES } from './roles';
 import { consistent } from './rules';
+import { TIME_SCALE } from './testcases';
 import { abilityCells, checkCase, fullKnowledge, signature } from './unique';
 
 test('generated cases: truth consistent, unique, matches truth', () => {
@@ -31,7 +32,7 @@ test('must roles always present', () => {
 test('endless generation is fast enough', () => { // Review Focus 1
   for (const n of [1, 10, 20, 30]) {
     const t = performance.now(); generateValid(endlessParams(n), n);
-    expect(performance.now() - t).toBeLessThan(1000);
+    expect(performance.now() - t).toBeLessThan(1000 * TIME_SCALE);
   }
 });
 
