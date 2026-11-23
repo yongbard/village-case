@@ -26,7 +26,7 @@ const defs: RoleDef[] = [
   { id: 'gossip', name: '소문쟁이', camp: 'trouble', tier: 3, taint: 'adj4', weight: 1,
     desc: '진술이 없습니다. 이웃 4칸의 진짜 증인 한 명이 거짓을 말하게 만듭니다.' },
   { id: 'hidden', name: '숨은이', camp: 'trouble', tier: 3, face: 'witness', mode: 'true', weight: 1,
-    desc: '증인 직업으로 보이는 선한 사람입니다. 그 진술은 참입니다.' },
+    desc: '증인 직업으로 보이는 선한 사람입니다. 진술과 능력 결과가 참입니다.' },
   // 공범
   { id: 'thief', name: '좀도둑', camp: 'accomplice', tier: 1, weight: 1,
     desc: '증인으로 위장하고 거짓말을 합니다.' },
@@ -35,9 +35,9 @@ const defs: RoleDef[] = [
   { id: 'lookout', name: '망보기', camp: 'accomplice', tier: 2, place: 'bossIn8', weight: 1,
     desc: '위장해 거짓말을 합니다. 주변 8칸 안에 반드시 주범이 있습니다.' },
   { id: 'shill', name: '바람잡이', camp: 'accomplice', tier: 3, mode: 'true', weight: 1,
-    desc: '증인으로 위장했지만 진술은 참입니다.' },
+    desc: '증인으로 위장했지만 진술과 능력 결과가 참입니다.' },
   { id: 'smooth', name: '능청이', camp: 'accomplice', tier: 4, mode: 'any', weight: 1,
-    desc: '위장한 악입니다. 진술이 참일 수도 거짓일 수도 있어 단서가 되지 못합니다.' },
+    desc: '위장한 악입니다. 진술과 능력 결과가 참일 수도 거짓일 수도 있어 단서가 되지 못합니다.' },
   // 주범
   { id: 'chief', name: '두목', camp: 'boss', tier: 1, weight: 1,
     desc: '증인으로 위장하고 거짓말을 합니다.' },
