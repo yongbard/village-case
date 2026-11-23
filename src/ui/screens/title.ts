@@ -2,18 +2,11 @@
 import { ROLES } from '../../core/roles';
 import { h, mount } from '../dom';
 import { startEndless, startSeedCase } from '../endless';
+import { parseCode } from '../seedCode';
 import { getSave } from '../store';
 import { showCodex } from './codex';
 import { showRules } from './rules';
 import { showStageList, STAGES } from './stageList';
-
-/** 시드: 0 이상 4294967295 이하의 정수 */
-function parseSeed(raw: string): number | null {
-  const t = raw.trim();
-  if (!/^\d{1,10}$/.test(t)) return null;
-  const n = Number(t);
-  return n <= 4294967295 ? n : null;
-}
 
 export function showTitle(): void {
   const { cleared, endless, endlessBest, seenCards } = getSave();
@@ -22,18 +15,18 @@ export function showTitle(): void {
     class: 'seed-input',
     type: 'text',
     inputmode: 'numeric',
-    placeholder: '시드 (숫자)',
+    placeholder: '시드 또는 사건 코드',
     'aria-label': '시드',
     autocomplete: 'off',
   });
   const submit = (e: Event) => {
     e.preventDefault();
-    const seed = parseSeed(input.value);
-    if (seed === null) {
-      msg.textContent = '시드는 0 이상의 정수(4294967295 이하)로 넣어 주세요.';
+    const code = parseCode(input.value);
+    if (code === null) {
+      msg.textContent = '시드는 0 이상의 정수이거나 사건 코드(예: 3-12345001)여야 해요.';
       return;
     }
-    startSeedCase(seed);
+    startSeedCase(code.n, code.seed);
   };
   const metRoles = seenCards.filter((k) => k in ROLES).length;
   mount(

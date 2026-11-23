@@ -2,6 +2,7 @@
 import { type Step } from '../core/explain';
 import { type AbilityObs, type CaseDef } from '../core/types';
 import { h, mount } from './dom';
+import { formatCode } from './seedCode';
 import { showCase } from './screens/caseScreen';
 import { showResultView } from './screens/result';
 import { showTitle } from './screens/title';
@@ -75,8 +76,8 @@ function load(get: () => Promise<CaseDef>, then: (def: CaseDef) => void): void {
   );
 }
 
-function explainInto(def: CaseDef, view: { setExplain: (e: { steps: Step[]; abilities: AbilityObs[] }) => void }): void {
-  requestExplain(def).then(view.setExplain, () => view.setExplain({ steps: [], abilities: [] }));
+function explainInto(def: CaseDef, view: { setExplain: (e: { steps: Step[]; abilities: AbilityObs[] } | null) => void }): void {
+  requestExplain(def).then(view.setExplain, () => view.setExplain(null));
 }
 
 export function startEndless(resume: boolean): void {
@@ -95,6 +96,9 @@ function runCase(st: State): void {
         mode: 'endless',
         rep: st.rep,
         title: `무한 · ${st.n}번째 사건`,
+        code: formatCode({ n: st.n, seed: def.seed }),
+        // 잃은 평판은 나갔다 와도 돌아오지 않는다
+        onRep: (rep) => updateSave((s) => ({ ...s, endless: { n: st.n, rep, seed: st.seed } })),
         onEnd: (g) => finish(st, def, g.status === 'solved', g.rep, g.hour),
       });
       void caseFor(st.n + 1, caseSeed(st.seed, st.n + 1)); // 풀고 있는 동안 다음 사건을 만든다
@@ -144,27 +148,29 @@ function finish(st: State, def: CaseDef, solved: boolean, rep: number, hour: num
   }
 }
 
-/** 시드 사건: endlessParams(10) 으로 만든 사건 한 판. 저장 데이터(무한 모드 진행·최고 기록)는 건드리지 않는다. */
-export function startSeedCase(seed: number): void {
+/** 코드(n-시드)로 만든 사건 한 판. 저장 데이터(무한 모드 진행·최고 기록)는 건드리지 않는다. */
+export function startSeedCase(n: number, seed: number): void {
+  const code = formatCode({ n, seed });
   load(
-    () => requestGenerate(10, seed),
+    () => requestGenerate(n, seed),
     (def) => {
       markSeen(def);
       showCase(def, {
         mode: 'endless',
         rep: MAX_REP,
         title: '시드 사건',
+        code,
         onEnd: (g) =>
           explainInto(
             def,
             showResultView({
-              kicker: `시드 ${seed}`,
+              kicker: `시드 ${code}`,
               solved: g.status === 'solved',
               sub: g.status === 'solved' ? `경과 ${g.hour}시간 · 남은 평판 ${g.rep}` : '평판이 바닥났습니다.',
               def,
               explain: null,
               actions: [
-                h('button', { class: 'btn primary wide', 'data-action': 'retry', onclick: () => startSeedCase(seed) }, '같은 사건 다시'),
+                h('button', { class: 'btn primary wide', 'data-action': 'retry', onclick: () => startSeedCase(n, seed) }, '같은 사건 다시'),
                 h('button', { class: 'btn ghost wide', onclick: showTitle }, '처음으로'),
               ],
             }),

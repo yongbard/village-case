@@ -17,8 +17,10 @@ export interface ResultView {
   /** 해설: 아직 계산 중이면 null (setExplain 으로 나중에 채운다) */
   explain: { steps: Step[]; abilities: AbilityObs[] } | null;
 }
+type Explain = { steps: Step[]; abilities: AbilityObs[] };
 
-function explainBody(def: CaseDef, e: { steps: Step[]; abilities: AbilityObs[] } | null): (HTMLElement | false)[] {
+function explainBody(def: CaseDef, e: Explain | null, failed = false): (HTMLElement | false)[] {
+  if (failed) return [h('p', { class: 'explain-note', 'data-explain': 'failed' }, '해설을 만들지 못했어요.')];
   if (!e) return [h('p', { class: 'explain-note', 'data-explain': 'loading' }, '해설 정리 중…')];
   return [
     e.abilities.length > 0 &&
@@ -38,7 +40,7 @@ function explainBody(def: CaseDef, e: { steps: Step[]; abilities: AbilityObs[] }
 }
 
 /** 결과 화면을 띄운다. 돌려주는 setExplain 으로 해설을 나중에 채운다 (화면을 벗어났으면 아무 일도 안 한다). */
-export function showResultView(v: ResultView): { setExplain: (e: { steps: Step[]; abilities: AbilityObs[] }) => void } {
+export function showResultView(v: ResultView): { setExplain: (e: Explain | null) => void } {
   const body = h('div', { class: 'explain-body' }, explainBody(v.def, v.explain));
   const root = h(
     'main',
@@ -62,7 +64,7 @@ export function showResultView(v: ResultView): { setExplain: (e: { steps: Step[]
   mount(root);
   return {
     setExplain(e) {
-      if (root.isConnected) body.replaceChildren(...(explainBody(v.def, e) as HTMLElement[]).filter(Boolean));
+      if (root.isConnected) body.replaceChildren(...(explainBody(v.def, e, e === null) as HTMLElement[]).filter(Boolean));
     },
   };
 }

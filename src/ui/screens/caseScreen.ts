@@ -28,6 +28,10 @@ export interface CaseOpts {
   rep?: number;
   /** 무한 모드에서 머리글 제목 (예: 3번째 사건). 없으면 '무한 모드' */
   title?: string;
+  /** 무한 모드에서 화면에 보이는 사건 코드 (n-시드) */
+  code?: string;
+  /** 평판이 바뀔 때마다 (무한 모드 저장용) */
+  onRep?: (rep: number) => void;
   onEnd: (g: Game) => void;
 }
 
@@ -94,12 +98,14 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
 
   function apply(next: Game) {
     if (next === g) return false;
+    const before = g.rep;
     if (next.hour !== g.hour || next.abilities.length !== g.abilities.length || next.rep !== g.rep) {
       version++;
       thinking = false;
       hint = null;
     }
     g = next;
+    if (g.rep !== before) opts.onRep?.(g.rep);
     render();
     if (g.status !== 'playing' && !ended) {
       ended = true;
@@ -136,6 +142,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
     // 무한 모드: 힌트가 실제로 나왔을 때(칸을 가리킬 때) 평판 1 을 쓴다
     if (endless && hint.cell !== undefined) {
       g = { ...g, rep: Math.max(1, g.rep - 1) };
+      opts.onRep?.(g.rep);
       toast('힌트를 썼습니다. 평판 -1');
     }
     render();
@@ -319,7 +326,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
           thinking ? '생각 중…' : endless ? '힌트 -1' : '힌트',
         ),
       ),
-      endless && h('p', { class: 'seed-line', 'data-seed': def.seed }, `시드 ${def.seed}`),
+      endless && h('p', { class: 'seed-line', 'data-seed': opts.code ?? def.seed }, `시드 ${opts.code ?? def.seed}`),
       h(
         'div',
         { class: 'stats' },

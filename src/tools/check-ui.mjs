@@ -191,7 +191,7 @@ try {
   check('endless: case appears within 5 s', true, `${Date.now() - t0} ms`);
   check('endless: title says 1st case', /1번째 사건/.test((await text('.case-title')) ?? ''), await text('.case-title'));
   const seed1 = await text('.seed-line');
-  check('endless: seed shown', /^시드 \d+$/.test(seed1 ?? ''), seed1 ?? 'none');
+  check('endless: seed shown', /^시드 1-\d+$/.test(seed1 ?? ''), seed1 ?? 'none');
   await shot('14-endless-1');
   const def1 = await page.evaluate(() => window.__game?.def);
   check('endless: window.__game exposed in dev', !!def1);
@@ -207,6 +207,7 @@ try {
   await page.waitForSelector('.case-screen .grid', { timeout: 5000 });
   check('endless: next case is the 2nd', /2번째 사건/.test((await text('.case-title')) ?? ''), await text('.case-title'));
   const seed2 = await text('.seed-line');
+  const def2 = await page.evaluate(() => window.__game?.def);
   check('endless: next case has a different seed', seed2 !== seed1, `${seed1} -> ${seed2}`);
 
   // 12. 무한 모드 힌트는 평판 1 (힌트가 나왔을 때)
@@ -222,6 +223,7 @@ try {
   await page.click('[data-action="endless-resume"]');
   await page.waitForSelector('.case-screen .grid', { timeout: 5000 });
   check('endless: resume gives the same case', (await text('.seed-line')) === seed2 && /2번째 사건/.test((await text('.case-title')) ?? ''), await text('.seed-line'));
+  check('endless: resume keeps the reduced rep', (await text('[data-stat="rep"]')) === '9', await text('[data-stat="rep"]'));
 
   // 14. 도감 / 규칙
   await page.click('.back');
@@ -251,10 +253,18 @@ try {
   await page.type('.seed-input', '4242');
   await page.click('[data-action="seed-play"]');
   await page.waitForSelector('.case-screen .grid', { timeout: 5000 });
-  check('seed play: shows the typed seed', (await text('.seed-line')) === '시드 4242', await text('.seed-line'));
+  check('seed play: plain integer shows its code', (await text('.seed-line')) === '시드 10-4242', await text('.seed-line'));
   await shot('19-seed-case');
   const def15 = await page.evaluate(() => window.__game?.def);
   check('seed play: 3x4 grid or larger (endlessParams(10))', def15.w * def15.h >= 12, `${def15.w}x${def15.h}`);
+  // 사건 코드: 무한 2번째 사건의 코드를 넣으면 같은 사건이 나온다
+  await page.click('.back');
+  await page.waitForSelector('.seed-input');
+  await page.type('.seed-input', seed2.replace('시드 ', ''));
+  await page.click('[data-action="seed-play"]');
+  await page.waitForSelector('.case-screen .grid', { timeout: 5000 });
+  const defC = await page.evaluate(() => window.__game?.def);
+  check('seed play: endless code replays the same case', JSON.stringify(defC.faces) === JSON.stringify(def2.faces) && JSON.stringify(defC.truth) === JSON.stringify(def2.truth) && (await text('.seed-line')) === seed2, `${defC.w}x${defC.h}`);
   const after15 = await page.evaluate(() => JSON.parse(localStorage.getItem('village-case-save')));
   const b15 = JSON.parse(before15);
   check('seed play: endless record untouched', after15.endlessBest === b15.endlessBest && JSON.stringify(after15.endless) === JSON.stringify(b15.endless));
