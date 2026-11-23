@@ -38,7 +38,9 @@ village_case_261123/
 ├── docs/           설계·계획
 │   ├── 2026-11-23-village-case-design.md   설계
 │   ├── 2026-11-23-village-case-plan.md     구현 계획 (작업 10개)
-│   └── 2026-11-23-remaining-work.md        남은 과제 (검토에서 나왔지만 미룬 것)
+│   ├── 2026-11-23-remaining-work.md        남은 과제 (검토에서 나왔지만 미룬 것)
+│   ├── 2026-11-24-casefile-ui-design.md    그래픽·UI 설계 (수사 서류철)
+│   └── mockups/    그래픽 시안 (png, html)
 ├── src/            (Vite root)
 │   ├── index.html  진입 페이지
 │   ├── public/     아이콘 icon-192.png, icon-512.png (make-icons.mjs 가 만듦)

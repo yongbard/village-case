@@ -1,0 +1,183 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Gowun+Dodum&family=Song+Myung&family=Nanum+Myeongjo:wght@400;800&family=Nanum+Pen+Script&family=Hahmlet:wght@500;800&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+
+<h2>1. 인물 사진 — 직업마다 다르게</h2>
+<p class="subtitle">증인 8명을 다시 그렸습니다. 모자·머리·체격·소품·사진 바탕색을 직업마다 다르게 했습니다. (공범·주범은 증인으로 위장하므로 따로 사진이 필요 없고, 말썽꾼 4명은 같은 방식으로 더 그립니다.)</p>
+
+<style>
+  .wall { background:#6f5136; background-image:radial-gradient(#7d5e40 1.2px, transparent 1.2px); background-size:7px 7px; padding:22px 16px; border-radius:12px; display:grid; grid-template-columns:repeat(4,1fr); gap:18px; max-width:620px; margin:0 auto; }
+  .pc { background:#f4efe4; padding:6px 6px 5px; box-shadow:0 4px 8px #0007; position:relative; text-align:center; font-size:14px; font-weight:700; color:#2a241d; font-family:'Gowun Batang',serif; }
+  .pc:nth-child(odd){transform:rotate(-2deg)} .pc:nth-child(even){transform:rotate(1.6deg)} .pc:nth-child(3n){transform:rotate(-0.6deg)}
+  .pc .ph { aspect-ratio:1/1; display:flex; align-items:flex-end; justify-content:center; overflow:hidden; filter:sepia(.35) contrast(1.05); }
+  .pc .ph svg { width:100%; height:100%; display:block; }
+  .pc .pin { position:absolute; top:-5px; left:50%; margin-left:-6px; width:12px; height:12px; border-radius:50%; background:radial-gradient(circle at 35% 35%,#e2574a,#9c2318); box-shadow:0 2px 2px #0008; z-index:2; }
+  .pc .no { position:absolute; top:8px; left:10px; color:#f4efe4; font-size:11px; opacity:.85; font-family:serif; }
+
+  .fonts { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .fs { background:#6f5136; background-image:radial-gradient(#7d5e40 1.2px, transparent 1.2px); background-size:7px 7px; padding:16px 14px; border-radius:10px; }
+  .fs .title { background:#f6efdd; text-align:center; padding:12px 6px; box-shadow:0 3px 6px #0006; }
+  .fs .title .t { font-size:30px; color:#2a241d; }
+  .fs .title .s { font-size:13px; color:#6b5a45; margin-top:2px; }
+  .fs .row { display:flex; gap:10px; margin-top:14px; align-items:flex-start; }
+  .fs .mini { background:#f4efe4; padding:4px 4px 3px; width:84px; text-align:center; font-size:14px; box-shadow:0 3px 6px #0007; transform:rotate(-2deg); color:#2a241d; }
+  .fs .mini .ph { height:70px; background:#3b342c; }
+  .fs .post { background:#fff3a0; padding:6px 10px; transform:rotate(4deg); box-shadow:0 2px 4px #0006; font-size:19px; color:#2a241d; margin-top:10px; }
+  .fs .rep { margin-top:14px; background:#fbf6ea; padding:8px 10px; box-shadow:0 3px 6px #0006; background-image:repeating-linear-gradient(#fbf6ea 0 25px,#e3d7bf 25px 26px); color:#2a241d; }
+  .fs .rep h4 { margin:0 0 2px; font-size:16px; }
+  .fs .rep p { margin:0; font-size:15px; line-height:26px; }
+  .fs .stamp { display:inline-block; border:3px double #b3261e; color:#b3261e; padding:0 8px; transform:rotate(-8deg); font-size:18px; letter-spacing:3px; margin-top:10px; }
+
+  .f1 .t, .f1 .rep h4, .f1 .stamp { font-family:'Song Myung',serif; }
+  .f1 .s, .f1 .mini, .f1 .rep p { font-family:'Gowun Batang',serif; }
+  .f1 .post { font-family:'Nanum Pen Script',cursive; font-size:22px; }
+  .f2 .t, .f2 .rep h4, .f2 .stamp { font-family:'Hahmlet',serif; font-weight:800; }
+  .f2 .s, .f2 .mini, .f2 .rep p { font-family:'Nanum Myeongjo',serif; }
+  .f2 .post { font-family:'Gaegu',cursive; font-weight:700; }
+  .f3 .t, .f3 .rep h4, .f3 .stamp { font-family:'Gowun Batang',serif; font-weight:700; }
+  .f3 .s, .f3 .mini, .f3 .rep p { font-family:'Gowun Dodum',sans-serif; }
+  .f3 .post { font-family:'Nanum Pen Script',cursive; font-size:22px; }
+</style>
+
+<div class="wall">
+  <!-- 우체부: 우편모, 가방끈, 편지 / 바탕 푸른 회색 -->
+  <div class="pc"><span class="pin"></span><div class="ph" style="background:#46505a"><svg viewBox="0 0 60 60">
+    <path d="M8 60 Q9 41 30 39 Q51 41 52 60Z" fill="#5d6874"/>
+    <path d="M14 42 L46 60 L41 60 L12 45Z" fill="#8a7a62"/>
+    <rect x="26" y="33" width="8" height="7" fill="#c9b291"/>
+    <ellipse cx="30" cy="25" rx="9" ry="10" fill="#c9b291"/>
+    <path d="M19 20 Q30 9 41 20 L41 22 L19 22Z" fill="#2f3944"/>
+    <path d="M17 22 H43 Q42 25 30 25 Q18 25 17 22Z" fill="#1f262e"/>
+    <rect x="28" y="15" width="4" height="3" fill="#b9a77a"/>
+    <rect x="37" y="48" width="13" height="9" fill="#e6dccb" transform="rotate(-10 43 52)"/>
+    <path d="M37 48 l6.5 5 l6.5 -5" stroke="#8e4a3c" stroke-width="1.2" fill="none" transform="rotate(-10 43 52)"/>
+  </svg></div><span class="no">1</span>우체부</div>
+
+  <!-- 약사: 올림머리, 동그란 안경, 흰 가운 / 바탕 옅은 녹회색 -->
+  <div class="pc"><span class="pin"></span><div class="ph" style="background:#4e5a4f"><svg viewBox="0 0 60 60">
+    <path d="M10 60 Q11 42 30 40 Q49 42 50 60Z" fill="#e4ddcf"/>
+    <path d="M30 40 L25 60 M30 40 L35 60" stroke="#b8ae9c" stroke-width="1.5"/>
+    <path d="M26 41 L30 50 L34 41Z" fill="#7a8a76"/>
+    <rect x="27" y="33" width="6" height="8" fill="#c9b291"/>
+    <ellipse cx="30" cy="26" rx="8.5" ry="10" fill="#c9b291"/>
+    <path d="M21 25 Q20 14 30 14 Q40 14 39 25 Q36 18 30 18 Q24 18 21 25Z" fill="#3e3025"/>
+    <circle cx="30" cy="11" r="5" fill="#3e3025"/>
+    <circle cx="26.5" cy="27" r="3" fill="none" stroke="#2a241d" stroke-width="1"/>
+    <circle cx="33.5" cy="27" r="3" fill="none" stroke="#2a241d" stroke-width="1"/>
+    <path d="M29.5 27 h1" stroke="#2a241d"/>
+    <path d="M40 48 h3 v-3 h3 v3 h3 v3 h-3 v3 h-3 v-3 h-3z" fill="#6f8a6a"/>
+  </svg></div><span class="no">2</span>약사</div>
+
+  <!-- 이장: 대머리, 콧수염, 양복과 어깨띠 / 바탕 갈색 -->
+  <div class="pc"><span class="pin"></span><div class="ph" style="background:#57483a"><svg viewBox="0 0 60 60">
+    <path d="M5 60 Q6 39 30 37 Q54 39 55 60Z" fill="#3a332c"/>
+    <path d="M25 38 L30 47 L35 38Z" fill="#e4ddcf"/>
+    <path d="M29 41 h2 l1 10 l-2 3 l-2 -3z" fill="#8e4a3c"/>
+    <path d="M12 44 L48 58 L46 61 L10 47Z" fill="#b39b62"/>
+    <rect x="25" y="30" width="10" height="9" fill="#c9b291"/>
+    <ellipse cx="30" cy="24" rx="11" ry="11" fill="#c9b291"/>
+    <path d="M19 23 Q19 29 21 30 L21 22Z M41 23 Q41 29 39 30 L39 22Z" fill="#8f8577"/>
+    <path d="M23 29 Q30 25 37 29 Q34 31 30 29.5 Q26 31 23 29Z" fill="#6f665a"/>
+    <path d="M25 22 h3 M32 22 h3" stroke="#2a241d" stroke-width="1.2"/>
+  </svg></div><span class="no">3</span>이장</div>
+
+  <!-- 경비원: 챙 모자와 휘장, 넓은 어깨, 견장 / 바탕 짙은 남회색 -->
+  <div class="pc"><span class="pin"></span><div class="ph" style="background:#3b4048"><svg viewBox="0 0 60 60">
+    <path d="M2 60 Q3 40 30 38 Q57 40 58 60Z" fill="#4b5563"/>
+    <rect x="6" y="41" width="12" height="3" fill="#b9a77a" transform="rotate(-12 12 42)"/>
+    <rect x="42" y="41" width="12" height="3" fill="#b9a77a" transform="rotate(12 48 42)"/>
+    <path d="M30 40 v20" stroke="#2f3640" stroke-width="1.5"/>
+    <circle cx="30" cy="46" r="1.2" fill="#b9a77a"/><circle cx="30" cy="52" r="1.2" fill="#b9a77a"/>
+    <rect x="25" y="32" width="10" height="8" fill="#c9b291"/>
+    <path d="M20 22 Q20 36 30 36 Q40 36 40 22Z" fill="#c9b291"/>
+    <path d="M17 19 Q30 6 43 19 L41 21 H19Z" fill="#2f3640"/>
+    <path d="M16 21 H44 L40 24 H20Z" fill="#1d2228"/>
+    <path d="M28 12 l2 -2 l2 2 l-2 4z" fill="#b9a77a"/>
+    <path d="M24 27 h4 M32 27 h4" stroke="#2a241d" stroke-width="1.3"/>
+  </svg></div><span class="no">4</span>경비원</div>
+
+  <!-- 빵집 주인: 높은 요리모, 통통한 얼굴, 앞치마, 바게트 / 바탕 따뜻한 갈색 -->
+  <div class="pc"><span class="pin"></span><div class="ph" style="background:#6a523a"><svg viewBox="0 0 60 60">
+    <path d="M6 60 Q6 40 30 38 Q54 40 54 60Z" fill="#d8cdb8"/>
+    <path d="M18 46 H42 V60 H18Z" fill="#efe8da"/>
+    <path d="M22 46 Q30 42 38 46" stroke="#b8ae9c" fill="none"/>
+    <rect x="35" y="40" width="5" height="22" rx="2.5" fill="#a5814f" transform="rotate(25 37 51)"/>
+    <ellipse cx="30" cy="29" rx="11" ry="10" fill="#c9b291"/>
+    <circle cx="24" cy="31" r="2" fill="#c2977a" opacity=".6"/><circle cx="36" cy="31" r="2" fill="#c2977a" opacity=".6"/>
+    <rect x="21" y="16" width="18" height="6" fill="#f1ece2"/>
+    <circle cx="23" cy="12" r="5.5" fill="#f1ece2"/><circle cx="30" cy="9" r="6.5" fill="#f1ece2"/><circle cx="37" cy="12" r="5.5" fill="#f1ece2"/>
+    <path d="M26 34 Q30 37 34 34" stroke="#2a241d" fill="none" stroke-width="1.2"/>
+  </svg></div><span class="no">5</span>빵집 주인</div>
+
+  <!-- 사진사: 베레모, 얼굴 앞의 사진기 / 바탕 검은색 -->
+  <div class="pc"><span class="pin"></span><div class="ph" style="background:#2c2925"><svg viewBox="0 0 60 60">
+    <path d="M8 60 Q9 42 30 40 Q51 42 52 60Z" fill="#6b5f50"/>
+    <path d="M22 41 Q30 48 38 41" stroke="#4a4136" stroke-width="3" fill="none"/>
+    <rect x="27" y="33" width="6" height="8" fill="#c9b291"/>
+    <ellipse cx="30" cy="25" rx="9" ry="10" fill="#c9b291"/>
+    <ellipse cx="29" cy="16" rx="12" ry="5" fill="#8e4a3c"/>
+    <circle cx="29" cy="11.5" r="1.5" fill="#8e4a3c"/>
+    <rect x="17" y="22" width="26" height="14" rx="2" fill="#26221e"/>
+    <rect x="20" y="19" width="7" height="4" fill="#26221e"/>
+    <circle cx="30" cy="29" r="5.5" fill="#55504a"/><circle cx="30" cy="29" r="3" fill="#8c8a86"/>
+    <rect x="12" y="30" width="6" height="8" rx="3" fill="#c9b291"/><rect x="42" y="30" width="6" height="8" rx="3" fill="#c9b291"/>
+  </svg></div><span class="no">6</span>사진사</div>
+
+  <!-- 기자: 중절모와 명찰, 트렌치코트 깃, 수첩과 연필 / 바탕 회색 -->
+  <div class="pc"><span class="pin"></span><div class="ph" style="background:#55534f"><svg viewBox="0 0 60 60">
+    <path d="M7 60 Q8 41 30 39 Q52 41 53 60Z" fill="#9a8a6c"/>
+    <path d="M22 39 L30 52 L38 39 L34 38 L30 45 L26 38Z" fill="#7d6f55"/>
+    <rect x="27" y="32" width="6" height="8" fill="#c9b291"/>
+    <path d="M22 25 Q22 35 30 35 Q38 35 38 25Z" fill="#c9b291"/>
+    <path d="M12 23 Q30 19 48 23 Q44 25 30 25 Q16 25 12 23Z" fill="#3a352e"/>
+    <path d="M20 23 Q20 10 30 11 Q40 10 40 23Z" fill="#4a443b"/>
+    <rect x="20" y="19" width="20" height="3" fill="#2a2620"/>
+    <rect x="34" y="14" width="5" height="6" fill="#e6dccb" transform="rotate(8 36 17)"/>
+    <rect x="39" y="46" width="11" height="13" fill="#e6dccb" transform="rotate(-8 44 52)"/>
+    <path d="M41 50 h7 M41 53 h7 M41 56 h5" stroke="#8a7f6c" stroke-width=".8" transform="rotate(-8 44 52)"/>
+    <rect x="12" y="44" width="2" height="12" fill="#b39b62" transform="rotate(20 13 50)"/>
+  </svg></div><span class="no">7</span>기자</div>
+
+  <!-- 종지기: 두건, 긴 수염 노인, 손에 종 / 바탕 짙은 자주 -->
+  <div class="pc"><span class="pin"></span><div class="ph" style="background:#4a3a42"><svg viewBox="0 0 60 60">
+    <path d="M9 60 Q10 38 30 36 Q50 38 51 60Z" fill="#5e4b3d"/>
+    <path d="M17 32 Q15 12 30 10 Q45 12 43 32 Q42 38 30 38 Q18 38 17 32Z" fill="#5e4b3d"/>
+    <ellipse cx="30" cy="25" rx="8" ry="9" fill="#c9b291"/>
+    <path d="M22 27 Q22 44 30 48 Q38 44 38 27 Q34 31 30 30 Q26 31 22 27Z" fill="#ddd6c8"/>
+    <path d="M25 23 h3 M32 23 h3" stroke="#2a241d" stroke-width="1.1"/>
+    <path d="M41 42 Q41 34 46 34 Q51 34 51 42 L53 46 H39Z" fill="#b39b62"/>
+    <circle cx="46" cy="48" r="1.6" fill="#8c7646"/>
+    <rect x="45" y="30" width="2" height="5" fill="#6f5a33"/>
+  </svg></div><span class="no">8</span>종지기</div>
+</div>
+
+<h2 style="margin-top:34px">2. 글꼴 — 어느 조합이 예쁜가요?</h2>
+<p class="subtitle">셋 다 무료 글꼴(Google Fonts, 오프라인용으로 앱에 넣을 수 있음)입니다. 제목·본문·메모(포스트잇) 글씨를 조합했습니다.</p>
+
+<div class="cards">
+  <div class="card" data-choice="font-songmyung" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="fs f1">
+      <div class="title"><div class="t">마을 수사록</div><div class="s">작은 마을 · 미해결 사건철</div></div>
+      <div class="row"><div class="mini"><div class="ph"></div>우체부</div><div><div class="post">이 사람 수상함?</div><span class="stamp">체 포</span></div></div>
+      <div class="rep"><h4>진술 기록</h4><p>1번 우체부: 상하좌우 2칸에 악이 1명</p><p>2번 약사: 주변 5칸에 악이 2명</p></div>
+    </div></div>
+    <div class="card-body"><h3>가. 붓글씨 제목</h3><p>제목 송명(붓 느낌 명조) · 본문 고운바탕 · 메모 나눔손글씨 펜. 옛 수사 기록 같은 고풍스러움.</p></div>
+  </div>
+
+  <div class="card" data-choice="font-hahmlet" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="fs f2">
+      <div class="title"><div class="t">마을 수사록</div><div class="s">작은 마을 · 미해결 사건철</div></div>
+      <div class="row"><div class="mini"><div class="ph"></div>우체부</div><div><div class="post">이 사람 수상함?</div><span class="stamp">체 포</span></div></div>
+      <div class="rep"><h4>진술 기록</h4><p>1번 우체부: 상하좌우 2칸에 악이 1명</p><p>2번 약사: 주변 5칸에 악이 2명</p></div>
+    </div></div>
+    <div class="card-body"><h3>나. 굵은 신문 제목</h3><p>제목 함렛(굵은 명조) · 본문 나눔명조 · 메모 개구쟁이 손글씨. 신문·공문서처럼 또렷함.</p></div>
+  </div>
+
+  <div class="card" data-choice="font-gowun" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="fs f3">
+      <div class="title"><div class="t">마을 수사록</div><div class="s">작은 마을 · 미해결 사건철</div></div>
+      <div class="row"><div class="mini"><div class="ph"></div>우체부</div><div><div class="post">이 사람 수상함?</div><span class="stamp">체 포</span></div></div>
+      <div class="rep"><h4>진술 기록</h4><p>1번 우체부: 상하좌우 2칸에 악이 1명</p><p>2번 약사: 주변 5칸에 악이 2명</p></div>
+    </div></div>
+    <div class="card-body"><h3>다. 부드러운 고운 글꼴</h3><p>제목 고운바탕 굵게 · 본문 고운돋움 · 메모 나눔손글씨 펜. 폰에서 가장 읽기 편하고 단정함.</p></div>
+  </div>
+</div>

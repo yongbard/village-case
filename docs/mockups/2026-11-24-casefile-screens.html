@@ -1,0 +1,97 @@
+<h2>B. 수사 서류철 — 화면 전체 시안</h2>
+<p class="subtitle">사건 화면과 타이틀을 폰 크기(390px)로 그렸습니다. 글씨가 잘 읽히는지, 분위기가 맞는지 봐 주세요.</p>
+
+<style>
+  .phone { width:390px; max-width:100%; margin:0 auto; border-radius:18px; overflow:hidden; box-shadow:0 6px 24px #0005; font-family:'Noto Sans KR',sans-serif; }
+  .tw { font-family:'Batang','Noto Serif KR',serif; }
+  /* 사건 화면 */
+  .cs { background:#6f5136; background-image:radial-gradient(#7d5e40 1.2px, transparent 1.2px); background-size:7px 7px; padding:14px 14px 18px; color:#2a241d; }
+  .top { display:flex; align-items:center; justify-content:space-between; color:#f4ecdc; }
+  .top .ttl { font-family:serif; font-size:20px; font-weight:800; letter-spacing:1px; }
+  .top .btn { background:#f4ecdc; color:#2a241d; border-radius:4px; padding:6px 12px; font-weight:700; font-size:14px; box-shadow:0 2px 0 #0005; }
+  .memo { margin-top:10px; background:#f7f0de; padding:8px 10px; border-radius:2px; box-shadow:0 2px 5px #0006; transform:rotate(-0.6deg); display:flex; gap:12px; font-size:13px; }
+  .memo b { font-size:16px; }
+  .memo .rep b { color:#a3271d; }
+  .tags { display:flex; gap:8px; margin-top:10px; }
+  .tag { background:#e9dcc0; border:1.5px solid #a3271d; color:#a3271d; padding:4px 10px; font-weight:800; font-size:14px; clip-path:polygon(8px 0,100% 0,100% 100%,8px 100%,0 50%); padding-left:14px; }
+  .tag small { color:#6b5a45; font-weight:600; margin-left:4px; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:16px; }
+  .pc { background:#f4efe4; padding:5px 5px 4px; box-shadow:0 4px 7px #0007; position:relative; text-align:center; font-size:12.5px; font-weight:700; }
+  .pc:nth-child(3n+1){transform:rotate(-2deg)} .pc:nth-child(3n+2){transform:rotate(1.2deg)} .pc:nth-child(3n){transform:rotate(-0.8deg)}
+  .pc .ph { background:#3a332c; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; filter:sepia(.5); }
+  .pc .ph svg { width:78%; }
+  .pc .no { position:absolute; top:7px; left:9px; color:#f4efe4; font-size:11px; opacity:.85; }
+  .pc .pin { position:absolute; top:-5px; left:50%; margin-left:-6px; width:12px; height:12px; border-radius:50%; background:radial-gradient(circle at 35% 35%,#e2574a,#9c2318); box-shadow:0 2px 2px #0008; }
+  .pc.back { background:#d8be8a; }
+  .pc.back .ph { background:repeating-linear-gradient(45deg,#cdb07a 0 6px,#d3b885 6px 12px); filter:none; color:#7a5f30; font-size:30px; font-family:serif; }
+  .pc.back .no { color:#6a5228; }
+  .pc .stamp { position:absolute; top:30%; left:8%; right:8%; transform:rotate(-16deg); border:3px double #b3261e; color:#b3261e; font-size:15px; letter-spacing:3px; background:#f4efe4aa; }
+  .pc .note { position:absolute; bottom:24px; right:2px; background:#fff7a8; color:#2a241d; font-size:11px; padding:1px 5px; transform:rotate(6deg); box-shadow:0 1px 2px #0005; }
+  .pc .sub { font-size:10.5px; color:#a3271d; display:block; }
+  .report { margin-top:18px; background:#fbf6ea; padding:12px 12px 6px; box-shadow:0 3px 8px #0006; background-image:repeating-linear-gradient(#fbf6ea 0 27px,#e3d7bf 27px 28px); }
+  .report h4 { margin:0 0 4px; font-family:serif; font-size:15px; display:flex; justify-content:space-between; }
+  .report h4 small { font-family:sans-serif; font-weight:500; color:#6b5a45; font-size:12px; }
+  .report p { margin:0; line-height:28px; font-size:14px; }
+  .report p u { text-decoration:underline dotted; font-weight:700; }
+  .report p.done { color:#8a7c68; text-decoration:line-through #b3261e; }
+
+  /* 타이틀 */
+  .ts { background:#3b2c1f; padding:30px 22px; min-height:620px; display:flex; flex-direction:column; align-items:center; }
+  .folder { width:100%; background:#d9bd85; border-radius:4px 14px 4px 4px; padding:34px 20px 26px; position:relative; box-shadow:0 8px 18px #0008; margin-top:20px; }
+  .folder:before { content:''; position:absolute; top:-18px; left:0; width:120px; height:22px; background:#d9bd85; border-radius:6px 6px 0 0; }
+  .folder .lbl { background:#f6efdd; padding:14px; text-align:center; box-shadow:inset 0 0 0 1px #b89a63; }
+  .folder .lbl .k { font-size:12px; letter-spacing:4px; color:#6b5a45; }
+  .folder .lbl h1 { font-family:serif; font-size:34px; margin:6px 0 2px; letter-spacing:3px; color:#2a241d; }
+  .folder .conf { position:absolute; right:14px; top:8px; border:2px solid #b3261e; color:#b3261e; padding:0 8px; transform:rotate(8deg); font-weight:800; letter-spacing:3px; }
+  .menu { width:100%; display:flex; flex-direction:column; gap:10px; margin-top:28px; }
+  .menu div { background:#f6efdd; padding:14px; font-weight:800; font-size:17px; border-left:6px solid #b3261e; box-shadow:0 3px 6px #0007; }
+  .menu div small { display:block; font-weight:500; font-size:12px; color:#6b5a45; }
+</style>
+
+<div class="split">
+  <div>
+    <p class="label" style="text-align:center">사건 화면</p>
+    <div class="phone"><div class="cs">
+      <div class="top"><span>‹ 나가기</span><span class="ttl">사건 No.3</span><span class="btn">힌트</span></div>
+      <div class="memo tw"><span>경과<br><b>8시간</b></span><span class="rep">평판<br><b>10</b></span><span>이번 사건<br><b>공범 1 · 주범 1</b></span></div>
+      <div class="tags"><span class="tag">좀도둑<small>공범</small></span><span class="tag">두목<small>주범</small></span></div>
+      <div class="grid tw">
+        <div class="pc"><span class="pin"></span><div class="ph"><svg viewBox="0 0 60 60"><circle cx="30" cy="24" r="10" fill="#bba98f"/><path d="M18 19 Q30 7 42 19Z" fill="#8c7b63"/><rect x="17" y="18" width="26" height="3" fill="#6e5f4a"/><path d="M12 60 Q12 38 30 37 Q48 38 48 60Z" fill="#8c7b63"/><rect x="36" y="44" width="12" height="9" fill="#e8dcc4"/></svg></div><span class="no">1</span>우체부</div>
+        <div class="pc"><span class="pin"></span><div class="ph"><svg viewBox="0 0 60 60"><circle cx="30" cy="24" r="10" fill="#bba98f"/><path d="M20 22 Q20 11 30 11 Q40 11 40 22 Q35 16 30 17 Q25 16 20 22Z" fill="#6e5f4a"/><path d="M12 60 Q12 38 30 37 Q48 38 48 60Z" fill="#d9d0c0"/><path d="M28 45 h4 v-3 h3 v3 h-3 v3 h-4z" fill="#7d9a7d"/></svg></div><span class="no">2</span>약사</div>
+        <div class="pc back"><span class="pin"></span><div class="ph">?</div><span class="no">3</span>조사 전</div>
+        <div class="pc"><span class="pin"></span><div class="ph"><svg viewBox="0 0 60 60"><circle cx="30" cy="24" r="10" fill="#bba98f"/><path d="M19 20 h22 v-4 q-11 -6 -22 0z" fill="#6e5f4a"/><path d="M12 60 Q12 38 30 37 Q48 38 48 60Z" fill="#7d6d58"/><path d="M24 37 l6 8 l6 -8" fill="#d9d0c0"/></svg></div><span class="no">4</span>이장<span class="note">선?</span></div>
+        <div class="pc"><span class="pin"></span><div class="ph"><svg viewBox="0 0 60 60"><circle cx="30" cy="24" r="10" fill="#bba98f"/><path d="M20 22 Q20 11 30 11 Q40 11 40 22 Q35 16 30 17 Q25 16 20 22Z" fill="#6e5f4a"/><path d="M12 60 Q12 38 30 37 Q48 38 48 60Z" fill="#d9d0c0"/><path d="M28 45 h4 v-3 h3 v3 h-3 v3 h-4z" fill="#7d9a7d"/></svg></div><span class="no">5</span>약사</div>
+        <div class="pc"><span class="pin"></span><div class="ph"><svg viewBox="0 0 60 60"><circle cx="30" cy="24" r="10" fill="#bba98f"/><rect x="19" y="20" width="22" height="6" fill="#222"/><path d="M12 60 Q12 38 30 37 Q48 38 48 60Z" fill="#555"/></svg></div><span class="no">6</span>좀도둑<span class="sub">공범</span><span class="stamp">체 포</span></div>
+        <div class="pc back"><span class="pin"></span><div class="ph">?</div><span class="no">7</span>조사 전</div>
+        <div class="pc back"><span class="pin"></span><div class="ph">?</div><span class="no">8</span>조사 전</div>
+        <div class="pc back"><span class="pin"></span><div class="ph">?</div><span class="no">9</span>조사 전</div>
+      </div>
+      <div class="report tw">
+        <h4>진술 기록 <small>5 / 9명 조사</small></h4>
+        <p>1번 <u>우체부</u>: 상하좌우 2칸에 악이 1명</p>
+        <p>2번 <u>약사</u>: 주변 5칸에 악이 2명</p>
+        <p>4번 <u>이장</u>: 내 가로줄 나머지 2칸에 악이 1명</p>
+        <p>5번 <u>약사</u>: 주변 8칸에 악이 2명</p>
+        <p class="done">6번 <u>약사</u>: 상하좌우 3칸에 악이 3명</p>
+      </div>
+    </div></div>
+  </div>
+
+  <div>
+    <p class="label" style="text-align:center">타이틀</p>
+    <div class="phone"><div class="ts">
+      <div class="folder">
+        <span class="conf">기밀</span>
+        <div class="lbl"><div class="k">수 사 기 록</div><h1>마을 수사록</h1><div class="tw" style="font-size:12px;color:#6b5a45">작은 마을 · 미해결 사건철</div></div>
+      </div>
+      <div class="menu">
+        <div>사건 파일 <small>스테이지 30개 · 6장</small></div>
+        <div>끝없는 수사 <small>무한 모드 · 평판 10</small></div>
+        <div>인물 카드철 <small>도감</small></div>
+        <div>수사 규칙 <small>규칙 보기</small></div>
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:18px">눈여겨볼 것: 조사 전 칸은 뒷면(마닐라지) 카드, 조사하면 사진 카드로 뒤집힘 · 메모는 노란 포스트잇 · 체포한 칸은 빨간 도장 · 진술은 줄 공책에 타자기 글씨, 체포로 끝난 줄은 빨간 줄 긋기.</p>
