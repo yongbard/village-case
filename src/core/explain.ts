@@ -1,5 +1,6 @@
 // 단계 솔버 (설계 5.5): 해설·난이도·힌트.
-// 다 정해지는 칸마다 "그 칸이 반대편이면 모순이 되는 가장 작은 사실 묶음"을 찾아 한 단계씩 적는다.
+// 다 정해지는 칸마다 "그 칸이 반대편이면 모순이 되는 가장 작은 진술·능력 묶음"을 찾아 한 단계씩 적는다.
+// 앞 단계에서 정한 선·악은 늘 깔고 따지며 묶음 크기에 세지 않는다.
 // 선·악 단위로 따진다(설계 5.2 G1): 좀도둑↔두목, 숨은이↔증인은 관찰로 구별되지 않는다.
 import { nbr4, steps } from './board';
 import { isEvil, role } from './roles';
@@ -7,16 +8,18 @@ import { campAt, clueFact, consistent, modeAt, pairSameFact } from './rules';
 import { clueRefs, forEachWorld, solve, witnessValue, worldKey, WORLD_CAP } from './solve';
 import { type CaseDef, type Knowledge, type Side, type World } from './types';
 
-export type Fact =
-  | { type: 'clue'; cell: number }
-  | { type: 'ability'; index: number }
-  | { type: 'side'; cell: number; side: Side };
+export type Fact = { type: 'clue'; cell: number } | { type: 'ability'; index: number };
 export interface Step {
   cell: number;
   side: Side;
   because: Fact[] | 'all';
+  /** 이유가 앞 단계에서 정한 선·악에도 기대는가 (because 만으로는 증명되지 않는가) */
+  usesEarlier: boolean;
 }
-export type Hint = { kind: 'step'; step: Step } | { kind: 'investigate'; cell: number };
+export type Hint =
+  | { kind: 'step'; step: Step }
+  | { kind: 'investigate'; cell: number }
+  | { kind: 'ability'; cell: number };
 
 const MAX_REASON = 3;
 const HINT_CAP = 2000;
@@ -43,6 +46,7 @@ function knownSideAt(k: Knowledge, i: number): Side | undefined {
 
 /** 반례 묶음의 세계 하나: 칸마다 악인가, 진술·능력 관찰마다 그 세계에서 맞는가 */
 interface Rec {
+  dead: boolean; // 앞 단계에서 정한 선·악과 어긋나 더는 반례가 될 수 없다
   w: World;
   evil: Uint8Array;
   ok: Uint8Array; // [0, n) 진술(칸 번호), [n, n + 능력 수) 능력 관찰
@@ -57,6 +61,8 @@ interface Ctx {
   cells: Map<Fact, number[]>;
   /** 판 전체를 참조하는 진술(가장 가까운 악, 주범 줄). 이어짐을 넓히지 않는다. */
   global: Set<Fact>;
+  /** 앞 단계에서 정한 선·악 (-1 = 아직, 0 = 선, 1 = 악). 반례 묶음에는 이와 맞는 세계만 둔다. */
+  bg: Int8Array;
   /** 반례 묶음: lists[c * 2 + 악?1:0] = 칸 c 가 그 편인 세계들 */
   lists: Rec[][];
   keys: Set<string>;
@@ -83,18 +89,25 @@ function makeCtx(k: Knowledge, clueFacts: Fact[]): Ctx {
     abilities: [],
     knownSides: Array.from({ length: n }, (_, i) => k.knownSides?.[i]),
   };
-  return { k, n, base, cells, global, lists: Array.from({ length: 2 * n }, () => []), keys: new Set(), size: 0 };
+  const lists: Rec[][] = Array.from({ length: 2 * n }, () => []);
+  return { k, n, base, cells, global, bg: new Int8Array(n).fill(-1), lists, keys: new Set(), size: 0 };
 }
 
-/** 세계를 반례 묶음에 넣는다. w 는 base 와 맞아야 한다. 이미 있거나 묶음이 꽉 차면 undefined. */
+/**
+ * 세계를 반례 묶음에 넣는다. w 는 base 와 맞아야 한다.
+ * 이미 있거나, 앞 단계에서 정한 선·악과 어긋나거나, 묶음이 꽉 차면 undefined.
+ */
 function addWorld(ctx: Ctx, w: World): Rec | undefined {
   if (ctx.size >= POOL_MAX) return undefined;
+  const { k, n } = ctx;
+  const evil = new Uint8Array(n);
+  for (let i = 0; i < n; i++) {
+    evil[i] = isEvil(campAt(w, i)) ? 1 : 0;
+    if (ctx.bg[i] >= 0 && ctx.bg[i] !== evil[i]) return undefined;
+  }
   const key = worldKey(w);
   if (ctx.keys.has(key)) return undefined;
   ctx.keys.add(key);
-  const { k, n } = ctx;
-  const evil = new Uint8Array(n);
-  for (let i = 0; i < n; i++) evil[i] = isEvil(campAt(w, i)) ? 1 : 0;
   const ok = new Uint8Array(n + k.abilities.length);
   for (let i = 0; i < n; i++) {
     const c = k.clues[i];
@@ -107,7 +120,7 @@ function addWorld(ctx: Ctx, w: World): Rec | undefined {
     const fact = pairSameFact(w, o.a, o.b);
     ok[n + j] = m === 'any' || o.same === (m === 'true' ? fact : !fact) ? 1 : 0;
   });
-  const rec: Rec = { w, evil, ok };
+  const rec: Rec = { dead: false, w, evil, ok };
   for (let i = 0; i < n; i++) ctx.lists[i * 2 + evil[i]].push(rec);
   ctx.size++;
   return rec;
@@ -150,17 +163,26 @@ function seedPool(ctx: Ctx, full: World[]): void {
   }
 }
 
+/** 칸 cell 이 side 로 정해졌다: 배경에 더하고, 어긋나는 세계를 반례 묶음에서 뺀다 (배경은 늘기만 한다) */
+function addBackground(ctx: Ctx, cell: number, side: Side): void {
+  const bit = evilBit(side);
+  ctx.bg[cell] = bit;
+  const wrong = ctx.lists[cell * 2 + 1 - bit];
+  for (const r of wrong) r.dead = true;
+  ctx.size -= wrong.length;
+  for (let i = 0; i < ctx.lists.length; i++) ctx.lists[i] = ctx.lists[i].filter((r) => !r.dead);
+}
+
 function holds(ctx: Ctx, r: Rec, f: Fact): boolean {
-  if (f.type === 'clue') return r.ok[f.cell] === 1;
-  if (f.type === 'ability') return r.ok[ctx.n + f.index] === 1;
-  return r.evil[f.cell] === evilBit(f.side);
+  return f.type === 'clue' ? r.ok[f.cell] === 1 : r.ok[ctx.n + f.index] === 1;
 }
 
 /**
- * S 가 "칸 c 는 s" 를 증명하는가: base 에 S 의 진술·능력·선악만 더한 관찰에서 c 가 반대편인 세계가 하나도 없으면 증명한다.
- * 반례 묶음에서 먼저 찾고(consistent 를 base 와 사실별 검사로 나눈 것과 같다), 없으면 풀어서 찾는다.
+ * S 가 "칸 c 는 s" 를 증명하는가: base 에 S 의 진술·능력(+ withBg 면 앞 단계에서 정한 선·악)만 더한 관찰에서
+ * c 가 반대편인 세계가 하나도 없으면 증명한다. 반례 묶음에서 먼저 찾고(consistent 를 base 와 사실별 검사로
+ * 나눈 것과 같다. 묶음의 세계는 배경과 맞으므로 배경이 없는 질문에도 반례가 된다), 없으면 풀어서 찾는다.
  */
-function proves(ctx: Ctx, S: Fact[], c: number, s: Side): boolean {
+function proves(ctx: Ctx, S: Fact[], c: number, s: Side, withBg: boolean): boolean {
   const list = ctx.lists[c * 2 + evilBit(flip(s))];
   outer: for (let i = 0; i < list.length; i++) {
     const r = list[i];
@@ -171,8 +193,8 @@ function proves(ctx: Ctx, S: Fact[], c: number, s: Side): boolean {
     }
     return false;
   }
-  // S 를 만족하고 c 가 s 인 세계에서 c 와 반대편 칸 하나를 맞바꿔 본다
-  const src = ctx.lists[c * 2 + evilBit(s)];
+  // S 를 만족하고 c 가 s 인 세계에서 c 와 반대편 칸(배경 밖) 하나를 맞바꿔 본다
+  const src = withBg ? ctx.lists[c * 2 + evilBit(s)] : [];
   let tried = 0;
   const sat = (r: Rec) => S.every((f) => holds(ctx, r, f));
   for (let i = 0; i < src.length && tried < MUT_SOURCES; i++) {
@@ -180,7 +202,7 @@ function proves(ctx: Ctx, S: Fact[], c: number, s: Side): boolean {
     if (!sat(r0)) continue;
     tried++;
     for (let d = 0; d < ctx.n; d++) {
-      if (r0.evil[d] === r0.evil[c]) continue;
+      if (r0.evil[d] === r0.evil[c] || ctx.bg[d] >= 0) continue;
       const w = swapped(ctx.k, r0.w, c, d);
       if (!consistent(ctx.base, w)) continue;
       const r = addWorld(ctx, w);
@@ -192,16 +214,15 @@ function proves(ctx: Ctx, S: Fact[], c: number, s: Side): boolean {
   const r: Knowledge = { ...base, clues: Array(n).fill(null), abilities: [], knownSides };
   for (const f of S) {
     if (f.type === 'clue') r.clues[f.cell] = k.clues[f.cell];
-    else if (f.type === 'ability') r.abilities.push(k.abilities[f.index]);
-    else knownSides[f.cell] = f.side;
+    else r.abilities.push(k.abilities[f.index]);
   }
+  if (withBg) ctx.bg.forEach((b, i) => b >= 0 && (knownSides[i] = b === 1 ? 'evil' : 'good'));
   knownSides[c] = flip(s);
   // c 와 S 가 닿는 칸을 먼저 채워 모순을 일찍 찾는다. 판 전체 진술은 말한 칸과, 사실값을 가르는 칸
   // (가장 가까운 악: 기준 칸에서 N 걸음 안, 가까운 순 / 주범 줄: 그 줄)
   const first = new Set<number>([c]);
   for (const f of S) {
-    if (f.type === 'side') first.add(f.cell);
-    else if (f.type === 'clue' && ctx.global.has(f)) {
+    if (f.type === 'clue' && ctx.global.has(f)) {
       first.add(f.cell);
       const cl = k.clues[f.cell]!;
       const near = Array.from({ length: n }, (_, j) => j).filter((j) =>
@@ -213,8 +234,7 @@ function proves(ctx: Ctx, S: Fact[], c: number, s: Side): boolean {
   }
   // 거짓말하는 증인은 이웃 4칸의 오염원이 있어야 하므로, 말한 칸의 이웃도 일찍 채운다
   for (const f of S) {
-    if (f.type === 'clue') for (const x of nbr4(k.w, k.h, f.cell)) first.add(x);
-    else if (f.type === 'ability') for (const x of nbr4(k.w, k.h, k.abilities[f.index].cell)) first.add(x);
+    for (const x of nbr4(k.w, k.h, f.type === 'clue' ? f.cell : k.abilities[f.index].cell)) first.add(x);
   }
   const order = [...first];
   for (let i = 0; i < n; i++) if (!first.has(i)) order.push(i);
@@ -232,7 +252,7 @@ function proves(ctx: Ctx, S: Fact[], c: number, s: Side): boolean {
 
 /**
  * 칸 c 의 진술·능력 묶음 (크기 0 ~ 3): 첫 사실은 c 에 닿고, 다음 사실은 c 나 앞에서 고른 사실이 닿는 칸에 닿는다.
- * 판 전체를 참조하는 진술은 어느 칸에나 닿지만 이어짐을 넓히지 않는다. 선·악 사실은 여기에 넣지 않고 따로 붙인다.
+ * 판 전체를 참조하는 진술은 어느 칸에나 닿지만 이어짐을 넓히지 않는다.
  */
 function clueCombos(ctx: Ctx, facts: Fact[], c: number): Fact[][][] {
   const out: Fact[][][] = [[[]], [], [], []];
@@ -256,27 +276,6 @@ function clueCombos(ctx: Ctx, facts: Fact[], c: number): Fact[][][] {
   return out;
 }
 
-/** sides[0, len) 에서 m 개를 고르는 묶음 중 가장 뒤 것이 from 이상인 것 (사전순) */
-function* sideSubsets(len: number, m: number, from: number): Generator<number[]> {
-  if (m === 0) {
-    if (from <= 0) yield [];
-    return;
-  }
-  const pick: number[] = [];
-  function* rec(start: number): Generator<number[]> {
-    if (pick.length === m - 1) {
-      for (let last = Math.max(start, from); last < len; last++) yield [...pick, last];
-      return;
-    }
-    for (let i = start; i < len; i++) {
-      pick.push(i);
-      yield* rec(i + 1);
-      pick.pop();
-    }
-  }
-  yield* rec(0);
-}
-
 /** 모든 세계에서 선·악이 같은데 아직 단계로 안 적은 칸을, 이유가 작은 순으로 limit 개까지 */
 function stepsFrom(k: Knowledge, worlds: World[], limit: number): Step[] {
   const n = k.w * k.h;
@@ -292,51 +291,30 @@ function stepsFrom(k: Knowledge, worlds: World[], limit: number): Step[] {
     return worlds.every((w) => sideOfWorld(w, i) === s) ? s : undefined;
   });
 
-  const sides: Fact[] = []; // 앞 단계에서 정한 선·악
   const combos: (Fact[][][] | undefined)[] = Array(n).fill(undefined);
-  // seenSides[c][size] = 그 크기에서 이미 다 따져 본 선·악 사실 수 (-1 = 아직 안 봄)
-  const seenSides: number[][] = Array.from({ length: n }, () => Array(MAX_REASON + 1).fill(-1));
-
-  /** 칸 c 를 크기 size 의 새 묶음으로 증명해 본다. 앞에서 따져 본 묶음은 결과가 같으므로 다시 보지 않는다. */
-  const search = (c: number, size: number): Fact[] | undefined => {
-    const cc = (combos[c] ??= clueCombos(ctx, facts, c));
-    const from = seenSides[c][size];
-    const s = forced[c]!;
-    for (let m = 0; m <= size; m++) {
-      const group = cc[size - m];
-      if (group.length === 0) continue;
-      for (const sub of sideSubsets(sides.length, m, from < 0 ? 0 : m === 0 ? 1 : from)) {
-        const extra = sub.map((i) => sides[i]);
-        for (const g of group) {
-          const S = [...g, ...extra];
-          if (proves(ctx, S, c, s)) return S;
-        }
-      }
-    }
-    seenSides[c][size] = sides.length;
-    return undefined;
-  };
-
   const steps: Step[] = [];
   const left = new Set(forced.flatMap((s, i) => (s ? [i] : [])));
   while (left.size > 0 && steps.length < limit) {
     let pick: Step | undefined;
-    for (let size = 0; size <= MAX_REASON && !pick; size++) {
+    // 배경이 늘면 전에 안 되던 묶음이 될 수 있으므로 단계마다 다시 따진다
+    search: for (let size = 0; size <= MAX_REASON; size++) {
       for (const c of [...left].sort((a, b) => a - b)) {
-        const S = search(c, size);
-        if (S) {
-          pick = { cell: c, side: forced[c]!, because: S };
-          break;
+        const s = forced[c]!;
+        for (const S of (combos[c] ??= clueCombos(ctx, facts, c))[size]) {
+          if (!proves(ctx, S, c, s, true)) continue;
+          const usesEarlier = steps.length > 0 && !proves(ctx, S, c, s, false);
+          pick = { cell: c, side: s, because: S, usesEarlier };
+          break search;
         }
       }
     }
     if (!pick) {
       const c = Math.min(...left);
-      pick = { cell: c, side: forced[c]!, because: 'all' };
+      pick = { cell: c, side: forced[c]!, because: 'all', usesEarlier: false };
     }
     steps.push(pick);
     left.delete(pick.cell);
-    sides.push({ type: 'side', cell: pick.cell, side: pick.side });
+    addBackground(ctx, pick.cell, pick.side);
   }
   return steps;
 }
@@ -350,11 +328,11 @@ export function explain(k: Knowledge): Step[] {
 
 /**
  * 이유 크기 1 → 1점, 2 → 2점, 3 → 4점, 'all' → 8점(겉 직업만으로 정해진 칸은 0점). 단계당 평균을 1 ~ 5 로 나눈다.
- * 경계값은 무한 모드 n = 1 ~ 30 (각 6판) 분포로 정했다: 3×3 1등급(n 1 ~ 2)은 1.9 ~ 2.9 → 1 ~ 2,
- * 4×5(n 18 ~ 30)는 3.0 ~ 7.2 → 3 ~ 5.
+ * 경계값은 무한 모드 n = 1 ~ 30 (각 6판) 분포로 정했다: 3×3 1등급(n 1 ~ 2)은 0.8 ~ 1.2 → 1 ~ 2,
+ * 4×5(n 18 ~ 30)는 0.7 ~ 5.0 으로 넓게 퍼지고 대부분 3 ~ 5 (스테이지는 난이도로 골라 쓴다).
  */
 const POINTS = [0, 1, 2, 4];
-export const DIFFICULTY_BOUNDS = [2.0, 3.0, 4.5, 6.0] as const; // 평균이 이 값 이상이면 2, 3, 4, 5
+export const DIFFICULTY_BOUNDS = [1.1, 1.8, 2.6, 3.4] as const; // 평균이 이 값 이상이면 2, 3, 4, 5
 export function difficulty(steps: Step[]): 1 | 2 | 3 | 4 | 5 {
   if (steps.length === 0) return 1;
   const total = steps.reduce((s, st) => s + (st.because === 'all' ? 8 : POINTS[st.because.length]), 0);
@@ -364,7 +342,10 @@ export function difficulty(steps: Step[]): 1 | 2 | 3 | 4 | 5 {
   return d as 1 | 2 | 3 | 4 | 5;
 }
 
-/** 다음 한 단계. 관찰이 부족하면(세계가 너무 많거나 정해지는 칸이 없으면) 조사할 칸, 그것도 없으면 능력 칸. */
+/**
+ * 다음 한 단계. 관찰이 부족하면(세계가 너무 많거나 정해지는 칸이 없으면) 조사할 칸, 조사할 칸이 없으면 안 쓴 능력 칸.
+ * 그것도 없으면(유효한 사건에서는 남은 칸이 이미 다 정해진 때뿐) 첫 능력 칸, 능력 칸도 없으면 0번 조사.
+ */
 export function nextHint(k: Knowledge): Hint {
   const n = k.w * k.h;
   try {
@@ -379,7 +360,8 @@ export function nextHint(k: Knowledge): Hint {
   for (let i = 0; i < n; i++) if (k.faces[i] === undefined && k.arrested[i] === undefined) return { kind: 'investigate', cell: i };
   const used = new Set(k.abilities.map((o) => o.cell));
   const abil = k.faces.flatMap((f, i) => (f !== undefined && role(f).ability ? [i] : []));
-  return { kind: 'investigate', cell: abil.find((i) => !used.has(i)) ?? abil[0] ?? 0 };
+  const cell = abil.find((i) => !used.has(i)) ?? abil[0];
+  return cell === undefined ? { kind: 'investigate', cell: 0 } : { kind: 'ability', cell };
 }
 
 const hasBatchim = (s: string): boolean => {
@@ -401,6 +383,7 @@ export function describeStep(step: Step, def: CaseDef): string {
   if (step.because === 'all') return `${head}모든 경우를 따져 보면 이렇게만 맞는다.`;
   const name = (i: number) => `${i + 1}번 ${role(def.faces[i]).name}`;
   if (step.because.length === 0) {
+    if (step.usesEarlier) return `${head}앞에서 정한 것만으로 정해진다.`;
     const fd = role(def.faces[step.cell]);
     if (fd.camp === 'trouble') return `${head}겉 직업이 말썽꾼(${fd.name})이다.`;
     return `${head}겉 직업과 직업 목록만으로 정해진다.`;
@@ -408,15 +391,11 @@ export function describeStep(step: Step, def: CaseDef): string {
   const fs = step.because;
   const phrase = fs.every((f) => f.type === 'clue')
     ? `${joinAnd(fs.map((f) => name(f.cell)))}의 진술`
-    : joinAnd(
-        fs.map((f) =>
-          f.type === 'clue'
-            ? `${name(f.cell)}의 진술`
-            : f.type === 'ability'
-              ? `${f.index + 1}번째 능력 결과`
-              : `${f.cell + 1}번이 ${sideName(f.side)}이라는 것`,
-        ),
-      );
+    : joinAnd(fs.map((f) => (f.type === 'clue' ? `${name(f.cell)}의 진술` : `${f.index + 1}번째 능력 결과`)));
   const opp = sideName(flip(step.side));
+  if (step.usesEarlier) {
+    const all = `앞에서 정한 것${fs.length === 1 ? '과' : ','} ${phrase}`;
+    return `${head}${josa(all, '을', '를')} 함께 보면 ${opp}일 수 없다.`;
+  }
   return fs.length === 1 ? `${head}${phrase}만 보아도 ${opp}일 수 없다.` : `${head}${josa(phrase, '을', '를')} 함께 보면 ${opp}일 수 없다.`;
 }

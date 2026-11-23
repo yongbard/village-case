@@ -28,8 +28,11 @@ const ONE_CLUE: CaseDef = Object.freeze({
   inPlay: ['lost', 'thief', 'chief'],
 }) as CaseDef;
 
-/** 시험 쪽 독립 확인: S 만 남긴 관찰로 풀었을 때 그 칸이 반대편인 세계가 없는가 (상한 없이 전부 푼다) */
-function proves(k: Knowledge, step: Step, earlier: Step[]): boolean {
+/**
+ * 시험 쪽 독립 확인: 겉 직업 + S 의 진술·능력 (+ withEarlier 면 앞 단계에서 정한 선·악 전부) 만 남긴 관찰로 풀었을 때
+ * 그 칸이 반대편인 세계가 없는가 (상한 없이 푼다)
+ */
+function proves(k: Knowledge, step: Step, earlier: Step[], withEarlier: boolean): boolean {
   if (step.because === 'all') return true;
   const r: Knowledge = {
     ...k,
@@ -39,13 +42,9 @@ function proves(k: Knowledge, step: Step, earlier: Step[]): boolean {
   };
   for (const f of step.because) {
     if (f.type === 'clue') r.clues[f.cell] = k.clues[f.cell];
-    else if (f.type === 'ability') r.abilities.push(k.abilities[f.index]);
-    else {
-      // 쓰인 선·악 사실은 앞 단계에서 정한 것이어야 한다
-      expect(earlier.some((e) => e.cell === f.cell && e.side === f.side)).toBe(true);
-      r.knownSides![f.cell] = f.side;
-    }
+    else r.abilities.push(k.abilities[f.index]);
   }
+  if (withEarlier) for (const e of earlier) r.knownSides![e.cell] = e.side;
   r.knownSides![step.cell] = step.side === 'good' ? 'evil' : 'good';
   const res = solve(r, 1);
   return res.worlds.length === 0;
@@ -69,7 +68,7 @@ test('one-clue case is a valid case', () => {
 test('one-clue deduction has reason size 1', () => {
   const steps = explain(fullKnowledge(ONE_CLUE));
   // 겉 직업만으로 정해지는 칸(0번 길치)이 먼저, 이유는 빈 목록
-  expect(steps[0]).toEqual({ cell: 0, side: 'good', because: [] });
+  expect(steps[0]).toEqual({ cell: 0, side: 'good', because: [], usesEarlier: false });
   const first = steps.find((st) => st.because !== 'all' && st.because.length > 0)!;
   expect([2, 3, 4, 5]).toContain(first.cell);
   expect(first.because).toEqual([{ type: 'clue', cell: 0 }]);
@@ -80,23 +79,27 @@ test('every reason really proves its step (small boards)', () => {
     const def = generateValid(endlessParams(n), 500 + s);
     const k = solvedKnowledge(def);
     const steps = explain(k);
-    steps.forEach((st, i) => expect(proves(k, st, steps.slice(0, i))).toBe(true));
+    steps.forEach((st, i) => {
+      // 앞 단계까지 알면 증명되고, usesEarlier 가 아니면 S 만으로도 증명된다
+      expect(proves(k, st, steps.slice(0, i), true)).toBe(true);
+      expect(proves(k, st, steps.slice(0, i), false)).toBe(!st.usesEarlier);
+    });
     // 이유 크기는 줄지 않는 순서가 아니어도 되지만, 'all' 이 아닌 이유는 3개 이하
     for (const st of steps) if (st.because !== 'all') expect(st.because.length).toBeLessThanOrEqual(3);
   }
 }, 120_000);
 
-test('steps pick the smallest reason first', () => {
-  const def = generateValid(endlessParams(6), 7);
-  const steps = explain(fullKnowledge(def));
-  const size = (st: Step) => (st.because === 'all' ? 4 : st.because.length);
-  // 첫 단계는 그 시점에 가장 작은 이유: 겉 직업만으로 정해지는 칸이 있으면 0
-  const zero = steps.filter((st) => size(st) === 0);
-  steps.slice(0, zero.length).forEach((st) => expect(size(st)).toBe(0));
+test('steps fixed by faces alone come first', () => {
+  for (let s = 0; s < 6; s++) {
+    const steps = explain(solvedKnowledge(generateValid(endlessParams(6), 7 + s)));
+    const facesOnly = (st: Step) => st.because !== 'all' && st.because.length === 0 && !st.usesEarlier;
+    const k = steps.filter(facesOnly).length;
+    steps.forEach((st, i) => expect(facesOnly(st)).toBe(i < k));
+  }
 });
 
 test('difficulty is 1..5 and grows with reason size', () => {
-  const st = (because: Step['because']): Step => ({ cell: 0, side: 'good', because });
+  const st = (because: Step['because']): Step => ({ cell: 0, side: 'good', because, usesEarlier: false });
   const c = { type: 'clue' as const, cell: 0 };
   expect(difficulty(Array(9).fill(st([c])))).toBe(1);
   expect(difficulty(Array(9).fill(st('all')))).toBe(5);
@@ -119,17 +122,17 @@ test('difficulty: early endless cases easy, late ones hard', () => {
 
 test('describeStep reads like a deduction', () => {
   const def = ONE_CLUE;
-  expect(describeStep({ cell: 0, side: 'good', because: [] }, def)).toBe('1번은 선: 겉 직업이 말썽꾼(길치)이다.');
-  expect(describeStep({ cell: 2, side: 'good', because: [{ type: 'clue', cell: 0 }] }, def)).toBe(
-    '3번은 선: 1번 길치의 진술만 보아도 악일 수 없다.',
-  );
-  expect(
-    describeStep({ cell: 6, side: 'evil', because: [{ type: 'clue', cell: 3 }, { type: 'clue', cell: 5 }] }, def),
-  ).toBe('7번은 악: 4번 우체부와 6번 우체부의 진술을 함께 보면 선일 수 없다.');
-  expect(
-    describeStep({ cell: 1, side: 'good', because: [{ type: 'clue', cell: 3 }, { type: 'side', cell: 6, side: 'evil' }] }, def),
-  ).toBe('2번은 선: 4번 우체부의 진술과 7번이 악이라는 것을 함께 보면 악일 수 없다.');
-  expect(describeStep({ cell: 7, side: 'evil', because: 'all' }, def)).toBe('8번은 악: 모든 경우를 따져 보면 이렇게만 맞는다.');
+  const d = (cell: number, side: Step['side'], because: Step['because'], usesEarlier = false) =>
+    describeStep({ cell, side, because, usesEarlier }, def);
+  const c3 = { type: 'clue' as const, cell: 3 };
+  const c5 = { type: 'clue' as const, cell: 5 };
+  expect(d(0, 'good', [])).toBe('1번은 선: 겉 직업이 말썽꾼(길치)이다.');
+  expect(d(8, 'evil', [], true)).toBe('9번은 악: 앞에서 정한 것만으로 정해진다.');
+  expect(d(2, 'good', [{ type: 'clue', cell: 0 }])).toBe('3번은 선: 1번 길치의 진술만 보아도 악일 수 없다.');
+  expect(d(6, 'evil', [c3, c5])).toBe('7번은 악: 4번 우체부와 6번 우체부의 진술을 함께 보면 선일 수 없다.');
+  expect(d(1, 'good', [c3], true)).toBe('2번은 선: 앞에서 정한 것과 4번 우체부의 진술을 함께 보면 악일 수 없다.');
+  expect(d(6, 'evil', [c3, c5], true)).toBe('7번은 악: 앞에서 정한 것, 4번 우체부와 6번 우체부의 진술을 함께 보면 선일 수 없다.');
+  expect(d(7, 'evil', 'all')).toBe('8번은 악: 모든 경우를 따져 보면 이렇게만 맞는다.');
 });
 
 test('hint asks to investigate when nothing is investigated', () => {
@@ -154,7 +157,22 @@ test('hint skips investigated cells', () => {
   k.clues[0] = def.clues[0];
   const h = nextHint(k);
   if (h.kind === 'investigate') expect(h.cell).toBe(1);
-  else expect(h.step.side).toBe(sideOf(def, h.step.cell));
+  else if (h.kind === 'step') expect(h.step.side).toBe(sideOf(def, h.step.cell));
+});
+
+test('hint points to an unused ability when nothing is left to investigate or deduce', () => {
+  // 기자 겉 직업이 있는 사건: 다 조사하고, 진술로 정해지는 칸은 이미 안다고 두면 남은 일은 능력뿐
+  const def = generateValid(endlessParams(8), 0);
+  const cells = abilityCells(def);
+  expect(cells.length).toBeGreaterThan(0);
+  const k = fullKnowledge(def);
+  k.knownSides = Array(def.w * def.h).fill(undefined);
+  for (const st of explain(k)) k.knownSides[st.cell] = st.side;
+  expect(nextHint(k)).toEqual({ kind: 'ability', cell: cells[0] });
+  // 그 능력을 썼으면 다음 능력 칸
+  k.abilities.push({ cell: cells[0], a: 0, b: 1, same: true });
+  const h = nextHint(k);
+  if (cells.length > 1 && h.kind === 'ability') expect(h.cell).toBe(cells[1]);
 });
 
 test('explain on 4x4 finishes under 3s', () => {
