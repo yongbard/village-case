@@ -15,7 +15,7 @@
 - 2026-11-23: 구현 10개 작업 완료(브랜치 feat/v1). 스테이지 30개(5스테이지 × 6장), 무한 모드, 오프라인(PWA), GitHub Pages 배포 workflow 까지 만듦.
 - 시험 114개 통과(13 파일), 타입 검사(npm run typecheck), 사건 교차 검증(npm run test:cross) 와 화면 확인(check-ui) 통과.
 - 2026-11-23 최종 검토 수정: 힌트가 같은 칸에 머물지 않고(앞 힌트 답을 알던 선악으로 넘김), 한 번에 1.5초 안에 답하며, 쓸모없어진 힌트는 취소된다.
-- 배포 전: 레포 생성·push 는 사용자 승인 대기. 배포 뒤 폰에서 열고 비행기 모드로 오프라인 확인 필요.
+- 2026-11-23 15:30: 공개 레포 yongbard/village-case 에 push, GitHub Actions(시험·교차 검증 3000·빌드) 통과 후 Pages 배포. 폰에서 열고 비행기 모드로 오프라인 확인은 사용자 확인 대기.
 
 ## 데이터
 
@@ -69,4 +69,5 @@ node src/tools/make-icons.mjs 아이콘 다시 만들기
 
 - 로컬: C:\Users\USER\Desktop\yongbeom\village_case_261123
 - 레포(예정): github.com/yongbard/village-case (공개). push 는 매번 묻는다.
-- 배포 주소(예정, 배포 전): https://yongbard.github.io/village-case/
+- 배포 주소: https://yongbard.github.io/village-case/ (main push 하면 자동 배포, push 는 매번 사용자에게 묻는다)
+- 레포: https://github.com/yongbard/village-case (공개)

@@ -47,3 +47,9 @@
 - 결과: 힌트 시간(스테이지 29, 15칸 조사) 7.0 초 → 1.5 초, 4.0 초 → 1.5 초. 다 조사한 30개 스테이지에서 힌트를 거듭 눌러도 칸이 겹치지 않고 모두 진짜 선·악과 맞음(한 번에 최대 0.6 초). 시험 114개 통과, 타입 검사·빌드·check-ui 전체 OK.
 - 보고서: .superpowers/sdd/2026-11-23-village-case-plan/final-fix-report.md
 
+
+## 2026-11-23 15:30 배포
+
+- 한 일: feat/v1 을 main 에 합침(fast-forward, 시험 114개 통과). 사용자 승인 후 공개 레포 yongbard/village-case 생성, Pages 소스를 GitHub Actions 로 켜고 main push(커밋 29개).
+- 결과: Actions 실행 45125952852 통과(3분 28초, 타입 검사·시험·교차 검증 3000·빌드), https://yongbard.github.io/village-case/ 응답 200.
+- 남은 것: 폰에서 열어 보고 비행기 모드로 오프라인 확인(사용자). Actions 경고: checkout·setup-node·upload-artifact·deploy-pages v4 가 Node 20 대상이라 나중에 새 버전으로 올리기.
