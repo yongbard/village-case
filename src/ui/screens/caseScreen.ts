@@ -32,6 +32,8 @@ export interface CaseOpts {
   code?: string;
   /** 평판이 바뀔 때마다 (무한 모드 저장용) */
   onRep?: (rep: number) => void;
+  /** 사건이 끝난 순간(해결·실패) 한 번. 결과 화면보다 먼저, 타이머 없이 불린다. */
+  onStatus?: (g: Game) => void;
   onEnd: (g: Game) => void;
 }
 
@@ -105,10 +107,11 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
       hint = null;
     }
     g = next;
-    if (g.rep !== before) opts.onRep?.(g.rep);
+    if (g.rep !== before && g.status === 'playing') opts.onRep?.(g.rep);
     render();
     if (g.status !== 'playing' && !ended) {
       ended = true;
+      opts.onStatus?.(g);
       endTimer = window.setTimeout(() => {
         if (root.isConnected) opts.onEnd(g); // 그 사이 나갔으면 결과 화면으로 끌고 가지 않는다
       }, 900);

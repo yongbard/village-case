@@ -269,6 +269,23 @@ try {
   const b15 = JSON.parse(before15);
   check('seed play: endless record untouched', after15.endlessBest === b15.endlessBest && JSON.stringify(after15.endless) === JSON.stringify(b15.endless));
 
+  // 16. 무한 모드 실패: 평판 0 이 되는 순간 저장이 정리돼, 결과 화면 전에 나가도 이어 할 판이 남지 않는다
+  await page.click('.back');
+  await page.evaluate(() => localStorage.clear());
+  await page.reload({ waitUntil: 'networkidle0' });
+  await page.click('[data-action="endless-new"]');
+  await page.waitForSelector('.case-screen .grid', { timeout: 5000 });
+  const defF = await page.evaluate(() => window.__game?.def);
+  const goods = defF.truth.roles.flatMap((r, i) => (r === '*w' || !isEvil(role(r).camp) ? [i] : []));
+  for (let k = 0; k < 5; k++) await tapCell(goods[k], 'arrest'); // 선 체포 -2 씩, 5번이면 평판 0
+  await page.click('.back'); // 900 ms 타이머 전에 나간다
+  await page.waitForSelector('[data-action="endless-new"]');
+  const saveF = await page.evaluate(() => JSON.parse(localStorage.getItem('village-case-save')));
+  check('endless fail: no resumable run after quitting at once', !(await page.$('[data-action="endless-resume"]')) && saveF.endless === undefined, JSON.stringify(saveF.endless));
+  check('endless fail: endlessBest updated (0 solved)', saveF.endlessBest === 0, String(saveF.endlessBest));
+  await new Promise((r) => setTimeout(r, 1500));
+  check('endless fail: no result screen pulled in after quitting', !(await page.$('[data-result]')));
+
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (e) {
   check('run', false, e.stack ?? String(e));

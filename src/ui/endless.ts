@@ -99,6 +99,7 @@ function runCase(st: State): void {
         code: formatCode({ n: st.n, seed: def.seed }),
         // 잃은 평판은 나갔다 와도 돌아오지 않는다
         onRep: (rep) => updateSave((s) => ({ ...s, endless: { n: st.n, rep, seed: st.seed } })),
+        onStatus: (g) => commit(st, g.status === 'solved', g.rep),
         onEnd: (g) => finish(st, def, g.status === 'solved', g.rep, g.hour),
       });
       void caseFor(st.n + 1, caseSeed(st.seed, st.n + 1)); // 풀고 있는 동안 다음 사건을 만든다
@@ -106,17 +107,30 @@ function runCase(st: State): void {
   );
 }
 
+/** 사건이 끝난 순간에 저장한다: 해결 → 다음 사건 상태, 실패 → 진행 삭제와 최고 기록. 결과 화면 타이머를 기다리지 않는다. */
+function commit(st: State, solved: boolean, rep: number): void {
+  if (solved) {
+    const next: State = { n: st.n + 1, rep: Math.min(MAX_REP, rep + 1), seed: st.seed };
+    updateSave((s) => ({ ...s, endless: next, endlessBest: Math.max(s.endlessBest, st.n) }));
+  } else {
+    updateSave((s) => {
+      const { endless: _gone, ...rest } = s;
+      return { ...rest, endlessBest: Math.max(s.endlessBest, st.n - 1) };
+    });
+  }
+}
+
+/** 결과 화면 (저장은 commit 이 이미 했다) */
 function finish(st: State, def: CaseDef, solved: boolean, rep: number, hour: number): void {
   const best = getSave().endlessBest;
   if (solved) {
     const next: State = { n: st.n + 1, rep: Math.min(MAX_REP, rep + 1), seed: st.seed };
-    updateSave((s) => ({ ...s, endless: next, endlessBest: Math.max(s.endlessBest, st.n) }));
     explainInto(
       def,
       showResultView({
         kicker: `무한 모드 · ${st.n}번째 사건`,
         solved: true,
-        sub: `경과 ${hour}시간 · 평판 ${rep} → ${next.rep} · 푼 사건 ${st.n} · 최고 기록 ${Math.max(best, st.n)}`,
+        sub: `경과 ${hour}시간 · 평판 ${rep} → ${next.rep} · 푼 사건 ${st.n} · 최고 기록 ${best}`,
         def,
         explain: null,
         actions: [
@@ -127,16 +141,12 @@ function finish(st: State, def: CaseDef, solved: boolean, rep: number, hour: num
     );
   } else {
     const done = st.n - 1;
-    updateSave((s) => {
-      const { endless: _gone, ...rest } = s;
-      return { ...rest, endlessBest: Math.max(s.endlessBest, done) };
-    });
     explainInto(
       def,
       showResultView({
         kicker: '무한 모드',
         solved: false,
-        sub: `푼 사건 ${done} · 최고 기록 ${Math.max(best, done)}`,
+        sub: `푼 사건 ${done} · 최고 기록 ${best}`,
         def,
         explain: null,
         actions: [
