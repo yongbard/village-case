@@ -12,11 +12,13 @@
 
 ## 현재 상태
 
-- 2026-11-23: 설계 승인(스테이지는 장별 묶음 학습으로 수정). 구현 계획 작성, 실행 방식 결정 대기. 코드 없음.
+- 2026-11-23: 구현 10개 작업 완료(브랜치 feat/v1). 스테이지 30개(5스테이지 × 6장), 무한 모드, 오프라인(PWA), GitHub Pages 배포 workflow 까지 만듦.
+- 시험 110개 통과(13 파일), 사건 교차 검증(npm run test:cross) 와 화면 확인(check-ui) 통과.
+- 배포 전: 레포 생성·push 는 사용자 승인 대기. 배포 뒤 폰에서 열고 비행기 모드로 오프라인 확인 필요.
 
 ## 데이터
 
-없음 (사건은 생성기가 만든다).
+- src/content/stages.json: 고정 스테이지 30개(npm run stages 로 다시 만든다). 무한 모드 사건은 생성기가 그때그때 만든다.
 
 ## 모델(출처)
 
@@ -28,17 +30,40 @@
 village_case_261123/
 ├── README.md       현재 상태
 ├── HISTORY.md      작업 이력
+├── package.json    스크립트·의존성
+├── vite.config.ts  Vite + PWA(vite-plugin-pwa) + vitest 설정, base /village-case/
+├── .github/workflows/pages.yml   main push 시 시험 → 빌드 → Pages 배포
 ├── docs/           설계·계획
 │   ├── 2026-11-23-village-case-design.md   설계
 │   └── 2026-11-23-village-case-plan.md     구현 계획 (작업 10개)
+├── src/            (Vite root)
+│   ├── index.html  진입 페이지
+│   ├── public/     아이콘 icon-192.png, icon-512.png (make-icons.mjs 가 만듦)
+│   ├── core/       규칙·솔버·생성기·게임 상태·저장 (+ 시험)
+│   ├── content/    장 구성, 튜토리얼 카드, stages.json (+ 시험)
+│   ├── ui/         화면(main, screens/, 무한 모드, 워커, 스타일)
+│   └── tools/      build-stages.ts(스테이지 생성), test-cross.mjs(교차 검증 3000건), check-ui.mjs(화면 확인), make-icons.mjs(아이콘 생성)
+├── dist/           빌드 결과 (git 제외)
+├── logs/           화면 확인 스크린샷 (git 제외)
 └── conversations/  대화 기록
 ```
 
 ## 실행
 
-아직 없음.
+Node 24. 프로젝트 루트에서:
+
+```
+npm run dev                 개발 서버
+npm test                    시험 (vitest, 110개)
+npm run test:cross          솔버 교차 검증 3000건
+npm run stages              stages.json 다시 만들기
+npm run build               dist 빌드 (sw.js, manifest.webmanifest 포함)
+node src/tools/check-ui.mjs 화면 확인 (dev 서버 + Chrome 390x844)
+node src/tools/make-icons.mjs 아이콘 다시 만들기
+```
 
 ## 경로
 
 - 로컬: C:\Users\USER\Desktop\yongbeom\village_case_261123
-- 레포(예정): github.com/yongbard/village-case (공개), GitHub Pages 배포. push 는 매번 묻는다.
+- 레포(예정): github.com/yongbard/village-case (공개). push 는 매번 묻는다.
+- 배포 주소(예정, 배포 전): https://yongbard.github.io/village-case/

@@ -17,3 +17,16 @@
 - 결정: 유일해는 칸마다 진영이 아니라 선·악으로 비교한다. 진영으로 비교하면 좀도둑↔두목, 망보기↔두목, 숨은이↔참말하는 증인 맞바꿈 때문에 관찰이 똑같아 3×3 좀도둑+두목 사건이 300판 중 0판만 유일했다(선·악 비교로는 262판). 승리 조건(악 전부 체포)과 벌점(선 체포 -2)이 선·악만 보므로 플레이에 차이가 없다. 설계 5.2 는 관리자가 고친다.
 - 무한 모드 상한을 낮춤: 4×5, 말썽꾼 3, 공범 3 (설계 8장의 공범 4 대신). 4×5 공범 4명은 사건 하나 만드는 데 1 ~ 9초가 걸려 1초 시험을 못 넘었다. 공범 3명은 속도 시험 시드에서 136ms 이하.
 - 결과: 시험 57개 통과, 전체 41초. 상세는 .superpowers/sdd/2026-11-23-village-case-plan/task-4-report.md
+
+## 2026-11-23 구현 완료 (작업 1 ~ 10)
+
+- 한 일: 브랜치 feat/v1 에 구현 10개 작업 완료. 규칙·솔버 2개(백트래킹 + 전수 조사) 교차 검증, 유일해 검사·생성기, 해설·힌트, 게임 상태·저장, 고정 스테이지 30개, 스테이지 화면, 무한 모드(워커 생성), 오프라인(PWA), GitHub Pages workflow.
+- 결정:
+  - 유일해는 칸마다 진영이 아니라 선·악(side) 수준으로 비교한다(작업 4).
+  - 공범은 한 사건에 최대 3명(무한 모드 속도).
+  - 장마다 직업을 소개하는 접두 풀(chapter prefix pools)로 새 직업 묶음을 들인다.
+  - PWA: vite-plugin-pwa 2.0.0, registerType autoUpdate, 빌드 파일 전부 precache. 스테이지 데이터는 메인 JS 청크에 들어 있고 워커 청크도 precache 된다.
+  - 배포 workflow(.github/workflows/pages.yml)는 main push 시 npm ci → npm test → npm run test:cross → npm run build → Pages 배포. 시험이 실패하면 배포하지 않는다.
+- 데이터: src/content/stages.json (스테이지 30개).
+- 결과: 시험 110개 통과(13 파일), check-ui 전체 OK. dist/sw.js 의 precache 11개(index.html, 메인 JS, 워커 JS, css, 아이콘, manifest, registerSW.js). 헤드리스 Chrome 에서 서비스워커 등록 뒤 오프라인으로 새로 고쳐도 앱이 열림. 아이콘은 src/tools/make-icons.mjs 로 생성.
+- 다음: 사용자 승인 뒤 레포 생성 + main push + Pages(Actions) 켜기, 폰에서 오프라인 확인.
