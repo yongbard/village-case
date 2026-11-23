@@ -82,6 +82,6 @@ export function showResult(stage: Stage, g: Game): void {
       hasNext && h('button', { class: 'btn primary wide', 'data-action': 'next', onclick: () => startStage(stage.id + 1) }, '다음 스테이지'),
       h('button', { class: `btn wide${hasNext ? '' : ' primary'}`, 'data-action': 'retry', onclick: () => startStage(stage.id) }, '다시 하기'),
       h('button', { class: 'btn ghost wide', onclick: showStageList }, '스테이지 목록'),
-    ].filter((x): x is HTMLElement => !!x),
+    ].filter((x): x is HTMLButtonElement => !!x),
   });
 }

@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:cross": "node src/tools/test-cross.mjs",
     "stages": "tsx src/tools/build-stages.ts"
