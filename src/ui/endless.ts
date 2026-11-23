@@ -59,8 +59,8 @@ function leave(): void {
   showTitle();
 }
 
-/** 사건을 받아 화면에 올린다. 못 만들면 다시 시도 단추를 보여 준다. */
-function load(get: () => Promise<CaseDef>, then: (def: CaseDef) => void): void {
+/** 사건을 받아 화면에 올린다. 못 만들면 다시 시도 단추를 보여 준다 (누르면 onRetry 뒤에 다시 받는다). */
+function load(get: () => Promise<CaseDef>, then: (def: CaseDef) => void, onRetry?: () => void): void {
   const mine = ++token;
   loading('사건 준비 중…');
   get().then(
@@ -70,7 +70,7 @@ function load(get: () => Promise<CaseDef>, then: (def: CaseDef) => void): void {
     () => {
       if (token !== mine) return;
       loading('사건을 만들지 못했어요.', [
-        h('button', { class: 'btn primary wide', onclick: () => load(get, then) }, '다시 시도'),
+        h('button', { class: 'btn primary wide', onclick: () => (onRetry?.(), load(get, then, onRetry)) }, '다시 시도'),
       ]);
     },
   );
@@ -88,6 +88,11 @@ export function startEndless(resume: boolean): void {
 }
 
 function runCase(st: State): void {
+  // 같은 시드는 같은 사건이라 또 못 만든다: 다시 시도는 도전 시드를 바꿔 새 사건으로, 이어 하기도 그 사건이 나오게 저장한다
+  const retry = () => {
+    st = { ...st, seed: (st.seed + 1) % 1_000_000 };
+    updateSave((s) => ({ ...s, endless: { ...st } }));
+  };
   load(
     () => caseFor(st.n, caseSeed(st.seed, st.n)),
     (def) => {
@@ -104,6 +109,7 @@ function runCase(st: State): void {
       });
       void caseFor(st.n + 1, caseSeed(st.seed, st.n + 1)); // 풀고 있는 동안 다음 사건을 만든다
     },
+    retry,
   );
 }
 

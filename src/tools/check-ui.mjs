@@ -54,6 +54,12 @@ try {
   };
   // 창이 뜨는 움직임이 끝날 때까지 (스크린샷용)
   const settle = () => page.evaluate(() => Promise.all([...document.querySelectorAll('.overlay, .overlay > *')].flatMap((e) => e.getAnimations()).map((a) => a.finished)));
+  // 힌트 단추를 누르고 답을 기다린다 (누르는 순간 '생각 중' 이 뜨고, 답이 오면 사라진다)
+  const askHint = async () => {
+    await page.click('[data-action="hint"]');
+    await page.waitForFunction(() => document.querySelector('[data-hint="result"]') && !document.querySelector('[data-hint="thinking"]'), { timeout: 15000 });
+    return text('[data-hint="result"] .bubble-text');
+  };
   const tapCell = async (i, action) => {
     await page.click(`.cell[data-cell="${i}"]`);
     await page.waitForSelector(`.sheet [data-action="${action}"]`, { timeout: 3000 });
@@ -131,6 +137,18 @@ try {
   await page.waitForSelector('.stage[data-stage="2"]');
   check('stage 2 unlocked', !(await page.$eval('.stage[data-stage="2"]', (e) => e.disabled)));
 
+  // 8-1. 푼 순간 기록: 2스테이지 악을 모두 체포하고 결과 화면 타이머(900 ms) 전에 나가도 해결로 남는다
+  await page.click('.stage[data-stage="2"]');
+  await page.waitForSelector('.case-screen .grid');
+  const s2 = stages[1];
+  for (const i of s2.def.truth.roles.flatMap((r, i) => (r !== '*w' && isEvil(role(r).camp) ? [i] : []))) await tapCell(i, 'arrest');
+  await page.click('.back');
+  await page.waitForSelector('.stage[data-stage="2"]');
+  const save2 = await page.evaluate(() => JSON.parse(localStorage.getItem('village-case-save')));
+  check('stage 2: clear recorded when quitting before the result screen', save2?.cleared?.includes(2), JSON.stringify(save2?.cleared));
+  await new Promise((r) => setTimeout(r, 1200));
+  check('stage 2: no result screen pulled in after quitting', !(await page.$('[data-result]')));
+
   // 9. 가장 큰 판(30스테이지, 4×5) 배치와 카드
   await page.evaluate(() =>
     localStorage.setItem(
@@ -165,6 +183,17 @@ try {
   check('stage 30: bellringer before 12h', (await line(bell))?.endsWith('12시간에 말함'), await line(bell));
   for (let i = 0; i < 20; i++) if (i !== bell) await tapCell(i, 'investigate');
   check('stage 30: bellringer after 12h', /주범은 \d번째 가로줄에 있다$/.test((await line(bell)) ?? ''), await line(bell));
+  // 힌트를 두 번: 겉 직업이 말썽꾼인 칸(보이는 대로 선)은 가리키지 않고, 두 번째 힌트는 다른 칸을 가리킨다
+  const troubleFaces = s30.def.faces.flatMap((f, i) => (role(f).camp === 'trouble' ? [i] : []));
+  const isEvil30 = (i) => s30.def.truth.roles[i] !== '*w' && isEvil(role(s30.def.truth.roles[i]).camp);
+  const sideOk = (m) => !!m && (m[2] === '악') === isEvil30(+m[1] - 1);
+  const h1 = await askHint();
+  const m1 = /^(\d+)번은 (선|악)/.exec(h1 ?? '');
+  const h2 = await askHint();
+  const m2 = /^(\d+)번은 (선|악)/.exec(h2 ?? '');
+  check('stage 30: first hint skips visible troublemaker faces', sideOk(m1) && !troubleFaces.includes(+m1[1] - 1), `troublemakers ${troubleFaces.map((i) => i + 1)}; ${h1}`);
+  check('stage 30: second hint names a different cell', sideOk(m2) && m2[1] !== m1?.[1], h2 ?? 'none');
+  await shot('10-stage30-hint2');
   const rep = s30.def.faces.indexOf('reporter');
   const [a, b] = [0, 1, 2].filter((i) => i !== rep);
   await tapCell(rep, 'ability');
@@ -216,6 +245,8 @@ try {
   await page.waitForSelector('[data-hint="result"]', { timeout: 15000 });
   check('endless: hint costs 1 rep', (await text('[data-stat="rep"]')) === '9', await text('[data-stat="rep"]'));
   await shot('16-endless-hint');
+  const hintAgain = await askHint(); // 관찰이 그대로라 같은 힌트: 평판을 다시 쓰지 않는다
+  check('endless: repeated hint is free', (await text('[data-stat="rep"]')) === '9', `rep ${await text('[data-stat="rep"]')}; ${hintAgain}`);
 
   // 13. 이어 하기: 나갔다 돌아오면 같은 사건(같은 시드)
   await page.click('.back');
@@ -257,6 +288,13 @@ try {
   await shot('19-seed-case');
   const def15 = await page.evaluate(() => window.__game?.def);
   check('seed play: 3x4 grid or larger (endlessParams(10))', def15.w * def15.h >= 12, `${def15.w}x${def15.h}`);
+  // 쓸모없어진 힌트: 힌트를 누르고 곧바로 조사하면 그 힌트는 버려지고(돌고 있으면 worker 를 새로 띄운다),
+  // 다음 힌트와 아래의 사건 만들기가 그대로 된다
+  await page.click('[data-action="hint"]');
+  await tapCell(0, 'investigate');
+  const staleShown = await page.$('[data-hint]');
+  const fresh15 = await askHint();
+  check('seed play: stale hint dropped, next hint answers', !staleShown && /조사해 보세요|번은 (선|악)|능력을 써 보세요/.test(fresh15 ?? ''), fresh15 ?? 'none');
   // 사건 코드: 무한 2번째 사건의 코드를 넣으면 같은 사건이 나온다
   await page.click('.back');
   await page.waitForSelector('.seed-input');

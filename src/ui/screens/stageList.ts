@@ -62,12 +62,13 @@ export function startStage(id: number): void {
   showCase(stage.def, {
     mode: 'stage',
     stageId: id,
-    onEnd: (g) => {
+    // 푼 순간에 저장한다: 결과 화면 타이머(900 ms) 전에 나가도 기록이 남는다
+    onStatus: (g) => {
       if (g.status === 'solved' && !getSave().cleared.includes(id)) {
         updateSave((s) => ({ ...s, cleared: [...s.cleared, id].sort((a, b) => a - b) }));
       }
-      showResult(stage, g);
     },
+    onEnd: (g) => showResult(stage, g),
   });
   const keys = cardsFor(stage, getSave().seenCards);
   const markSeen = (key: string) => updateSave((s) => ({ ...s, seenCards: [...s.seenCards, key] }));
