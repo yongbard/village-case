@@ -18,6 +18,7 @@ import { abilityText, clueText, pendingText } from '../clueText';
 import { h, mount, overlay, toast } from '../dom';
 import { CAMP_NAME, SIDE_MARK, SIDE_NAME } from '../labels';
 import { guideBubble } from '../tutorialOverlay';
+import { speechList } from '../speech';
 import { requestHint } from '../workerClient';
 import { showStageList } from './stageList';
 import { showTitle } from './title';
@@ -53,7 +54,7 @@ function statements(g: Game, i: number): string[] {
   const face = role(g.def.faces[i]);
   const out: string[] = [];
   const c = visibleClue(g, i);
-  if (c) out.push(clueText(c, i));
+  if (c) out.push(clueText(c, i, g.def.w, g.def.h));
   else if (face.trigger !== undefined && g.def.clues[i]) out.push(pendingText(face.trigger));
   if (face.ability) {
     const o = g.abilities.find((a) => a.cell === i);
@@ -245,6 +246,12 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
           h('span', {}, g.investigated[i] ? face.name : '조사하지 않음'),
         ),
         g.investigated[i] && h('p', { class: 'sheet-clue' }, statements(g, i).join(' / ')),
+        g.investigated[i] &&
+          h(
+            'button',
+            { class: 'btn ghost role-link', 'data-action': 'role', onclick: run(() => showRole(face.id, i)) },
+            `${face.name} · 말하는 방식`,
+          ),
         h(
           'div',
           { class: 'sheet-actions' },
@@ -315,7 +322,8 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
     );
   }
 
-  function showRole(id: RoleId) {
+  /** 직업 설명과 말하는 방식. cell 이 있으면 그 칸 기준 숫자로 보여 준다. */
+  function showRole(id: RoleId, cell?: number) {
     const r = role(id);
     let close = () => {};
     close = overlay(
@@ -324,6 +332,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
         { class: 'sheet', role: 'dialog', 'aria-modal': 'true' },
         h('div', { class: 'sheet-head' }, h('b', {}, r.name), h('span', {}, `${CAMP_NAME[r.camp]} · ${SIDE_NAME[sideOf(id)]}`)),
         h('p', { class: 'sheet-desc' }, r.desc),
+        speechList(id, cell === undefined ? undefined : { w: def.w, h: def.h, cell }),
         h('button', { class: 'btn wide', onclick: () => close() }, '닫기'),
       ),
     );
@@ -484,7 +493,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
                 h(
                   'span',
                   { class: 'ln-body' },
-                  h('b', {}, role(def.faces[i]).name),
+                  h('button', { class: 'ln-role', onclick: () => showRole(def.faces[i], i) }, role(def.faces[i]).name),
                   `: ${statements(g, i).join(' / ')}`,
                 ),
                 side && h('span', { class: 'ln-tag' }, `${SIDE_MARK[side]} ${SIDE_NAME[side]}`),

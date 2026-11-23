@@ -15,6 +15,7 @@
 - 2026-11-23: 구현 10개 작업 완료(브랜치 feat/v1). 스테이지 30개(5스테이지 × 6장), 무한 모드, 오프라인(PWA), GitHub Pages 배포 workflow 까지 만듦.
 - 시험 114개 통과(13 파일), 타입 검사(npm run typecheck), 사건 교차 검증(npm run test:cross) 와 화면 확인(check-ui) 통과.
 - 2026-11-23 최종 검토 수정: 힌트가 같은 칸에 머물지 않고(앞 힌트 답을 알던 선악으로 넘김), 한 번에 1.5초 안에 답하며, 쓸모없어진 힌트는 취소된다.
+- 2026-11-23 16:05: 진술 문장을 실제 세는 칸 수로 고치고, 직업 창에 말하는 방식(참말·거짓말 범위)을 붙임. 시험 118개.
 - 2026-11-23 15:30: 공개 레포 yongbard/village-case 에 push, GitHub Actions(시험·교차 검증 3000·빌드) 통과 후 Pages 배포. 폰에서 열고 비행기 모드로 오프라인 확인은 사용자 확인 대기.
 
 ## 데이터
@@ -57,7 +58,7 @@ Node 24. 프로젝트 루트에서:
 ```
 npm run dev                 개발 서버
 npm run typecheck           타입 검사 (tsc --noEmit)
-npm test                    시험 (vitest, 114개)
+npm test                    시험 (vitest, 118개)
 npm run test:cross          솔버 교차 검증 3000건
 npm run stages              stages.json 다시 만들기
 npm run build               dist 빌드 (sw.js, manifest.webmanifest 포함)

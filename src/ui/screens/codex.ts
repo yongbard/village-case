@@ -3,6 +3,7 @@ import { CARDS } from '../../content/tutorial';
 import { ROLES } from '../../core/roles';
 import { h, mount } from '../dom';
 import { CAMP_NAME } from '../labels';
+import { speechList } from '../speech';
 import { getSave } from '../store';
 import { showTitle } from './title';
 
@@ -32,6 +33,7 @@ export function showCodex(): void {
                 h('div', { class: 'codex-head' }, h('b', {}, r.name), h('span', { class: `camp-${r.camp}` }, `${CAMP_NAME[r.camp]} · 등급 ${r.tier}`)),
                 h('p', {}, r.desc),
                 h('p', { class: 'codex-body' }, CARDS[r.id].body),
+                speechList(r.id),
               )
             : h(
                 'li',

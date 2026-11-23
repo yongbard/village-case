@@ -61,7 +61,8 @@ try {
     return text('[data-hint="result"] .bubble-text');
   };
   const tapCell = async (i, action) => {
-    await page.click(`.cell[data-cell="${i}"]`);
+    // 힌트 등으로 판이 다시 그려지는 중이면 찾은 칸이 바로 떨어져 나갈 수 있어, 찾기와 누르기를 한 번에 한다
+    await page.$eval(`.cell[data-cell="${i}"]`, (e) => e.click());
     await page.waitForSelector(`.sheet [data-action="${action}"]`, { timeout: 3000 });
     await page.click(`.sheet [data-action="${action}"]`);
     await page.waitForSelector('.overlay', { hidden: true, timeout: 3000 });
@@ -110,7 +111,29 @@ try {
   await page.waitForSelector('.cell[data-cell="4"] .note-good');
   check('memo mark shows in cell corner', true);
   check('investigate costs 2 hours', (await text('[data-stat="hour"]')) === '2시간');
-  check('clue line in list', /^5번\s*약사: 둘레 8칸에 악이 2명$/.test((await text('.clues li[data-line="4"]')) ?? ''), await text('.clues li[data-line="4"]'));
+  check('clue line in list', /^5번\s*약사: 주변 8칸에 악이 2명$/.test((await text('.clues li[data-line="4"]')) ?? ''), await text('.clues li[data-line="4"]'));
+
+  // 5b. 진술 목록의 직업 이름 → 말하는 방식 (그 칸 기준 범위), 칸 메뉴에서도 열린다
+  await page.click('.clues li[data-line="4"] .ln-role');
+  await page.waitForSelector('.sheet .speech');
+  await settle();
+  await shot('05b-role');
+  const speech = (await text('.sheet .speech')) ?? '';
+  check('role sheet shows truth and lie range for this cell', speech.includes('주변 8칸') && speech.includes('0 ~ 8명 중 실제와 다른 수'), speech);
+  await page.click('.sheet .btn.wide');
+  await page.waitForSelector('.overlay', { hidden: true });
+  await tapCell(0, 'investigate');
+  await page.click('.cell[data-cell="0"]');
+  await page.waitForSelector('.sheet [data-action="role"]');
+  await page.click('.sheet [data-action="role"]');
+  await page.waitForSelector('.sheet .speech');
+  await settle();
+  const corner = (await text('.sheet .speech')) ?? '';
+  check('corner cell counts fewer cells', /[235]칸/.test(corner) && !corner.includes('8칸'), corner);
+  await noSideScroll('role sheet');
+  await shot('05c-role-corner');
+  await page.click('.sheet .btn.wide');
+  await page.waitForSelector('.overlay', { hidden: true });
 
   // 6. 악 칸들을 조사 후 체포
   for (const [k, i] of evilCells.entries()) {

@@ -3,9 +3,9 @@ import { ANY_WITNESS, type Camp, type RoleDef, type RoleId } from './types';
 const defs: RoleDef[] = [
   // 증인
   { id: 'postman', name: '우체부', camp: 'witness', tier: 1, clue: 'evil4', weight: 1,
-    desc: '이웃 4칸에 악이 몇 명 있는지 알려 줍니다. 편지를 돌리다 보면 동네 사정을 압니다.' },
+    desc: '상하좌우로 붙은 칸(가장자리는 더 적음)에 악이 몇 명 있는지 알려 줍니다. 편지를 돌리다 보면 동네 사정을 압니다.' },
   { id: 'pharmacist', name: '약사', camp: 'witness', tier: 1, clue: 'evil8', weight: 1,
-    desc: '주변 8칸에 악이 몇 명 있는지 알려 줍니다.' },
+    desc: '대각선까지 둘러싼 주변 칸(가장자리는 더 적음)에 악이 몇 명 있는지 알려 줍니다.' },
   { id: 'mayor', name: '이장', camp: 'witness', tier: 1, clue: 'evilRow', weight: 1,
     desc: '자기 가로줄(자기 빼고)에 악이 몇 명 있는지 알려 줍니다.' },
   { id: 'guard', name: '경비원', camp: 'witness', tier: 2, clue: 'evilCol', weight: 1,
@@ -24,14 +24,14 @@ const defs: RoleDef[] = [
   { id: 'lost', name: '길치', camp: 'trouble', tier: 2, clue: 'evil8', mode: 'true', shift: 'right', weight: 1,
     desc: '약사처럼 참을 말하지만, 자기 오른쪽 칸(없으면 왼쪽)을 기준으로 셉니다.' },
   { id: 'gossip', name: '소문쟁이', camp: 'trouble', tier: 3, taint: 'adj4', weight: 1,
-    desc: '진술이 없습니다. 이웃 4칸의 진짜 증인 한 명이 거짓을 말하게 만듭니다.' },
+    desc: '진술이 없습니다. 상하좌우로 붙은 진짜 증인 한 명이 거짓을 말하게 만듭니다.' },
   { id: 'hidden', name: '숨은이', camp: 'trouble', tier: 3, face: 'witness', mode: 'true', weight: 1,
     desc: '증인 직업으로 보이는 선한 사람입니다. 진술과 능력 결과가 참입니다.' },
   // 공범
   { id: 'thief', name: '좀도둑', camp: 'accomplice', tier: 1, weight: 1,
     desc: '증인으로 위장하고 거짓말을 합니다.' },
   { id: 'blackmailer', name: '협박꾼', camp: 'accomplice', tier: 2, taint: 'adj4', weight: 1,
-    desc: '위장해 거짓말을 하고, 이웃 4칸의 진짜 증인 한 명도 거짓을 말하게 만듭니다.' },
+    desc: '위장해 거짓말을 하고, 상하좌우로 붙은 진짜 증인 한 명도 거짓을 말하게 만듭니다.' },
   { id: 'lookout', name: '망보기', camp: 'accomplice', tier: 2, place: 'bossIn8', weight: 1,
     desc: '위장해 거짓말을 합니다. 주변 8칸 안에 반드시 주범이 있습니다.' },
   { id: 'shill', name: '바람잡이', camp: 'accomplice', tier: 3, mode: 'true', weight: 1,

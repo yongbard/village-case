@@ -348,6 +348,12 @@ button { font: inherit; color: inherit; }
   font-weight: 600;
 }
 .sheet-desc { color: var(--ink); }
+.speech { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; font-size: 14px; }
+.speech dt { font-weight: 700; color: var(--muted); white-space: nowrap; }
+.speech dd { margin: 0; }
+.codex-item .speech { margin-top: 8px; }
+.btn.role-link { align-self: flex-start; min-height: 44px; text-decoration: underline dotted; text-underline-offset: 4px; }
+.ln-role { font: inherit; font-weight: 700; color: inherit; background: none; border: 0; padding: 0; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }
 .sheet-truth { font-weight: 800; font-size: 17px; }
 .sheet-truth.side-evil { color: var(--evil); }
 .sheet-truth.side-good { color: var(--good); }
