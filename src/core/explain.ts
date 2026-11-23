@@ -5,7 +5,7 @@
 import { nbr4, steps } from './board';
 import { isEvil, role } from './roles';
 import { campAt, clueFact, consistent, modeAt, pairSameFact } from './rules';
-import { clueRefs, forEachWorld, solve, witnessValue, worldKey, WORLD_CAP } from './solve';
+import { clueRefs, forEachWorld, overBudget, solve, witnessValue, worldKey, WORLD_CAP, type Budget } from './solve';
 import { type CaseDef, type Knowledge, type Side, type World } from './types';
 
 export type Fact = { type: 'clue'; cell: number } | { type: 'ability'; index: number };
@@ -23,6 +23,8 @@ export type Hint =
 
 const MAX_REASON = 3;
 const HINT_CAP = 2000;
+/** 힌트 한 번에 쓰는 시간 (ms). 넘으면 그때까지 증명한 것만 쓴다. */
+export const HINT_BUDGET_MS = 1500;
 /** 처음 반례 묶음을 만들 때 맞바꿈의 재료로 쓰는 다 아는 관찰의 세계 수 */
 const SEED_BASES = 8;
 /** 풀어서 반례를 찾을 때 한 번에 더 모아 두는 세계 수 */
@@ -55,7 +57,7 @@ interface Rec {
 interface Ctx {
   k: Knowledge;
   n: number;
-  /** 진술·능력을 뺀 관찰 (겉 직업·inPlay·체포·처음부터 알던 선악) */
+  /** 진술·능력·알던 선악을 뺀 관찰 (겉 직업·inPlay·체포). 알던 선악(knownSides)은 처음 배경으로 둔다. */
   base: Knowledge;
   /** 사실이 닿는 칸: 진술 = 말한 칸 + 참조 칸, 능력 = 쓴 칸 + 두 대상 */
   cells: Map<Fact, number[]>;
@@ -67,9 +69,11 @@ interface Ctx {
   lists: Rec[][];
   keys: Set<string>;
   size: number;
+  /** 힌트용 시간 한도. 넘으면 풀어서 찾는 증명은 실패로 본다. */
+  budget?: Budget;
 }
 
-function makeCtx(k: Knowledge, clueFacts: Fact[]): Ctx {
+function makeCtx(k: Knowledge, clueFacts: Fact[], budget?: Budget): Ctx {
   const n = k.w * k.h;
   const cells = new Map<Fact, number[]>();
   const global = new Set<Fact>();
@@ -87,10 +91,13 @@ function makeCtx(k: Knowledge, clueFacts: Fact[]): Ctx {
     ...k,
     clues: Array(n).fill(null),
     abilities: [],
-    knownSides: Array.from({ length: n }, (_, i) => k.knownSides?.[i]),
+    knownSides: Array(n).fill(undefined),
   };
   const lists: Rec[][] = Array.from({ length: 2 * n }, () => []);
-  return { k, n, base, cells, global, bg: new Int8Array(n).fill(-1), lists, keys: new Set(), size: 0 };
+  // 알던 선악(힌트로 이미 정한 칸 등)은 앞 단계에서 정한 것처럼 배경으로 둔다: 이에 기대는 이유는 usesEarlier 가 된다
+  const bg = new Int8Array(n).fill(-1);
+  k.knownSides?.forEach((s, i) => s !== undefined && (bg[i] = evilBit(s)));
+  return { k, n, base, cells, global, bg, lists, keys: new Set(), size: 0, budget };
 }
 
 /**
@@ -246,8 +253,10 @@ function proves(ctx: Ctx, S: Fact[], c: number, s: Side, withBg: boolean): boole
       return ++found >= DFS_KEEP;
     },
     order,
+    ctx.budget,
   );
-  return found === 0;
+  // 한도로 멈춘 탐색은 반례가 없다는 증명이 아니다
+  return found === 0 && !ctx.budget?.expired;
 }
 
 /**
@@ -276,14 +285,19 @@ function clueCombos(ctx: Ctx, facts: Fact[], c: number): Fact[][][] {
   return out;
 }
 
-/** 모든 세계에서 선·악이 같은데 아직 단계로 안 적은 칸을, 이유가 작은 순으로 limit 개까지 */
-function stepsFrom(k: Knowledge, worlds: World[], limit: number): Step[] {
+/**
+ * 모든 세계에서 선·악이 같은데 아직 단계로 안 적은 칸을, 이유가 작은 순으로 limit 개까지.
+ * worlds 는 관찰과 맞는 세계 전부여야 한다. budget 을 넘으면 더 찾지 않고, 남은 칸은 'all' 로 적는다
+ * (worlds 가 전부이므로 'all' 도 증명이다).
+ */
+function stepsFrom(k: Knowledge, worlds: World[], limit: number, budget?: Budget): Step[] {
   const n = k.w * k.h;
   if (worlds.length === 0) return [];
   const facts: Fact[] = [];
   k.clues.forEach((c, cell) => c && facts.push({ type: 'clue', cell }));
   k.abilities.forEach((_, index) => facts.push({ type: 'ability', index }));
-  const ctx = makeCtx(k, facts);
+  const ctx = makeCtx(k, facts, budget);
+  const knewSides = ctx.bg.some((b) => b >= 0);
   seedPool(ctx, worlds);
   const forced: (Side | undefined)[] = Array.from({ length: n }, (_, i) => {
     if (knownSideAt(k, i) !== undefined) return undefined;
@@ -301,8 +315,10 @@ function stepsFrom(k: Knowledge, worlds: World[], limit: number): Step[] {
       for (const c of [...left].sort((a, b) => a - b)) {
         const s = forced[c]!;
         for (const S of (combos[c] ??= clueCombos(ctx, facts, c))[size]) {
+          if (overBudget(budget)) break search;
           if (!proves(ctx, S, c, s, true)) continue;
-          const usesEarlier = steps.length > 0 && !proves(ctx, S, c, s, false);
+          // 한도로 멈춰 false 가 나와도 'S + 앞 단계' 로는 증명됐으므로 usesEarlier = true 는 맞는 말이다
+          const usesEarlier = (steps.length > 0 || knewSides) && !proves(ctx, S, c, s, false);
           pick = { cell: c, side: s, because: S, usesEarlier };
           break search;
         }
@@ -345,13 +361,16 @@ export function difficulty(steps: Step[]): 1 | 2 | 3 | 4 | 5 {
 /**
  * 다음 한 단계. 관찰이 부족하면(세계가 너무 많거나 정해지는 칸이 없으면) 조사할 칸, 조사할 칸이 없으면 안 쓴 능력 칸.
  * 그것도 없으면(유효한 사건에서는 남은 칸이 이미 다 정해진 때뿐) 첫 능력 칸, 능력 칸도 없으면 0번 조사.
+ * k.knownSides 의 칸(앞 힌트로 정한 칸 등)은 다시 가리키지 않는다.
+ * budgetMs 안에 세계를 다 못 구하면 조사·능력 힌트로, 이유를 다 못 따지면 'all' 단계로 답한다. 단계는 늘 증명된 것이다.
  */
-export function nextHint(k: Knowledge): Hint {
+export function nextHint(k: Knowledge, budgetMs = HINT_BUDGET_MS): Hint {
   const n = k.w * k.h;
+  const budget: Budget = { deadline: performance.now() + budgetMs, expired: false };
   try {
-    const { worlds, capped } = solve(k, HINT_CAP);
-    if (!capped) {
-      const [step] = stepsFrom(k, worlds, 1);
+    const { worlds, capped } = solve(k, HINT_CAP, budget);
+    if (!capped && !budget.expired) {
+      const [step] = stepsFrom(k, worlds, 1, budget);
       if (step) return { kind: 'step', step };
     }
   } catch {

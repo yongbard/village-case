@@ -2,8 +2,8 @@
 import { describeStep, type Hint } from '../../core/explain';
 import {
   arrest,
+  hintKnowledge,
   investigate,
-  knowledgeOf,
   newGame,
   setNote,
   useAbility,
@@ -68,7 +68,13 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
   /** 관찰이 바뀔 때마다 올린다. 이전 관찰로 받은 힌트는 버린다. */
   let version = 0;
   let thinking = false;
+  /** 돌고 있는 힌트 요청을 취소한다 (관찰이 바뀌면 그 힌트는 쓸모없다) */
+  let hintAbort: AbortController | null = null;
   let hint: { text: string; cell?: number } | null = null;
+  /** 앞 힌트가 증명한 선·악. 다음 힌트 요청에 알던 선악으로 넘겨 같은 칸을 다시 가리키지 않게 한다. */
+  const proven: (Side | undefined)[] = Array(def.w * def.h).fill(undefined);
+  /** 이미 보여 준 힌트 (종류:칸). 같은 힌트를 다시 보여 줄 때는 무한 모드 평판을 쓰지 않는다. */
+  const hinted = new Set<string>();
   let picking: { cell: number; picks: number[] } | null = null;
   let ended = false;
   let endTimer: number | undefined;
@@ -92,8 +98,14 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
     };
   }
 
+  function cancelHint() {
+    hintAbort?.abort();
+    hintAbort = null;
+  }
+
   function quit() {
     window.clearTimeout(endTimer);
+    cancelHint();
     if (opts.mode === 'stage') showStageList();
     else showTitle();
   }
@@ -105,6 +117,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
       version++;
       thinking = false;
       hint = null;
+      cancelHint();
     }
     g = next;
     if (g.rep !== before && g.status === 'playing') opts.onRep?.(g.rep);
@@ -132,18 +145,29 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
     thinking = true;
     hint = null;
     const asked = version;
+    const ctrl = new AbortController();
+    hintAbort = ctrl;
     render();
     let res: Hint | null = null;
     try {
-      res = await requestHint(knowledgeOf(g));
+      res = await requestHint(hintKnowledge(g, proven), ctrl.signal);
     } catch {
       res = null;
     }
-    if (asked !== version || ended || !root.isConnected) return; // 그 사이 판이 바뀌었다
+    if (ctrl.signal.aborted || asked !== version || ended || !root.isConnected) return; // 그 사이 판이 바뀌었다
+    hintAbort = null;
     thinking = false;
     hint = hintMessage(res);
-    // 무한 모드: 힌트가 실제로 나왔을 때(칸을 가리킬 때) 평판 1 을 쓴다
-    if (endless && hint.cell !== undefined) {
+    // 처음 보여 주는 힌트인가. 증명된 단계는 다음 요청에 알던 선악으로 넘긴다.
+    let fresh = false;
+    if (res && hint.cell !== undefined) {
+      const key = res.kind === 'step' ? `step:${res.step.cell}` : `${res.kind}:${res.cell}`;
+      fresh = !hinted.has(key);
+      hinted.add(key);
+      if (res.kind === 'step') proven[res.step.cell] = res.step.side;
+    }
+    // 무한 모드: 새 힌트가 나왔을 때(새로 칸을 가리킬 때)만 평판 1 을 쓴다
+    if (endless && fresh) {
       g = { ...g, rep: Math.max(1, g.rep - 1) };
       opts.onRep?.(g.rep);
       toast('힌트를 썼습니다. 평판 -1');

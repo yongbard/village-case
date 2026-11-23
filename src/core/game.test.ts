@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { abilityAnswer } from './rules';
 import type { CaseDef } from './types';
-import { arrest, investigate, knowledgeOf, newGame, setNote, useAbility, visibleClue } from './game';
+import { arrest, hintKnowledge, investigate, knowledgeOf, newGame, setNote, useAbility, visibleClue } from './game';
 
 // 3x3: 0 thief (face postman), 4 chief (face mayor), others genuine witnesses.
 // 1 reporter (ability), 2 bellringer (trigger 12), 5 postman.
@@ -143,4 +143,21 @@ describe('game', () => {
     expect(k.abilities).toEqual(g.abilities);
     expect('knownSides' in k).toBe(false);
   });
+});
+
+test('hintKnowledge adds proven sides and visible troublemaker faces as known sides', () => {
+  // 3×1: 0 허풍쟁이(말썽꾼, 겉 직업 그대로), 1 좀도둑(우체부로 위장), 2 두목(약사로 위장)
+  const def: CaseDef = {
+    seed: 1, w: 3, h: 1,
+    truth: { roles: ['braggart', 'thief', 'chief'], taint: [-1, -1, -1] },
+    faces: ['braggart', 'postman', 'pharmacist'],
+    clues: [{ kind: 'evil8', base: 0, n: 0 }, { kind: 'evil4', base: 1, n: 0 }, { kind: 'evil8', base: 2, n: 0 }],
+    inPlay: ['braggart', 'thief', 'chief'],
+  };
+  let g = newGame(def);
+  expect(hintKnowledge(g, [undefined, 'evil', undefined]).knownSides).toEqual([undefined, 'evil', undefined]);
+  g = investigate(investigate(g, 0), 1);
+  const k = hintKnowledge(g, [undefined, undefined, 'evil']);
+  expect(k.knownSides).toEqual(['good', undefined, 'evil']);
+  expect({ ...k, knownSides: undefined }).toEqual({ ...knowledgeOf(g), knownSides: undefined });
 });

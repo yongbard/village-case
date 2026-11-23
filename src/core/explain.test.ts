@@ -4,7 +4,9 @@ import { endlessParams, generateValid } from './generate';
 import { isEvil } from './roles';
 import { campAt, consistent } from './rules';
 import { solve } from './solve';
-import { emptyKnowledgeOf } from './testcases';
+import stagesJson from '../content/stages.json';
+import { investigate, knowledgeOf, newGame } from './game';
+import { emptyKnowledgeOf, TIME_SCALE } from './testcases';
 import { type CaseDef, type Knowledge, type Side } from './types';
 import { abilityCells, checkCase, fullKnowledge, solvedKnowledge } from './unique';
 
@@ -182,8 +184,68 @@ test('explain on 4x4 finishes under 3s', () => {
     const t0 = performance.now();
     const steps = explain(fullKnowledge(def));
     const ms = performance.now() - t0;
-    expect(ms).toBeLessThan(3000);
+    expect(ms).toBeLessThan(3000 * TIME_SCALE);
     for (const st of steps) expect(st.side).toBe(sideOf(def, st.cell));
     if (abilityCells(def).length === 0) expect(steps.length).toBe(16);
   }
 }, 60_000);
+
+const STAGE_DEFS = (stagesJson as unknown as { id: number; def: CaseDef }[]).map((s) => s.def);
+
+// 힌트를 거듭 눌러도 같은 칸에 머물지 않는다: 앞 힌트의 답을 알던 선악으로 넘기면 다음 힌트는 늘 새 칸이고,
+// 그 이유는 앞 힌트들(+ usesEarlier 가 아니면 이유만)으로 정말 증명된다
+test('repeated hints with fed-back answers name new cells until no step is left', () => {
+  for (const id of [9, 12, 29, 30]) {
+    const def = STAGE_DEFS[id - 1];
+    const n = def.w * def.h;
+    const k = fullKnowledge(def);
+    k.knownSides = Array(n).fill(undefined);
+    const given: Step[] = [];
+    for (;;) {
+      const h = nextHint(k);
+      if (h.kind !== 'step') break;
+      const st = h.step;
+      expect(k.knownSides[st.cell], `stage ${id} cell ${st.cell} repeated`).toBeUndefined();
+      expect(st.side, `stage ${id} cell ${st.cell}`).toBe(sideOf(def, st.cell));
+      if (n <= 16) {
+        expect(proves(k, st, given, true)).toBe(true);
+        expect(proves(k, st, given, false)).toBe(!st.usesEarlier);
+      }
+      given.push(st);
+      k.knownSides[st.cell] = st.side;
+      expect(given.length).toBeLessThanOrEqual(n);
+    }
+    // 능력을 안 쓴 관찰로 정해지는 칸은 모두 힌트로 나왔다
+    expect(new Set(given.map((s) => s.cell)).size).toBe(explain(fullKnowledge(def)).length);
+  }
+}, 120_000);
+
+// 스테이지 29(4×5)를 15칸만 조사한 관찰: 예전에는 힌트 하나에 2 ~ 7초 걸렸다 (세계 구하기 / 이유 찾기)
+test('hint on hard partial knowledge stays within its time budget and is sound', () => {
+  const def = STAGE_DEFS[28];
+  for (const cells of [
+    [0, 1, 3, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18], // 이유를 다 따지려면 7초
+    [1, 3, 6, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], // 세계를 다 구하려면 4초
+  ]) {
+    let g = newGame(def);
+    for (const c of cells) g = investigate(g, c);
+    const k = knowledgeOf(g);
+    const t0 = performance.now();
+    const h = nextHint(k);
+    expect(performance.now() - t0).toBeLessThan(2500 * TIME_SCALE);
+    if (h.kind === 'step') expect(h.step.side).toBe(sideOf(def, h.step.cell));
+    else if (h.kind === 'investigate') expect(cells).not.toContain(h.cell);
+  }
+}, 60_000);
+
+test('hint with an exhausted budget never returns an unproven step', () => {
+  // 한도 0: 세계를 다 구하기 전에 멈추면 단계를 내지 않고, 다 구했으면 이유는 따지지 못해 'all' (세계 전부로 증명)
+  for (const id of [9, 20, 29]) {
+    const def = STAGE_DEFS[id - 1];
+    const h = nextHint(fullKnowledge(def), 0);
+    if (h.kind === 'step') {
+      expect(h.step.because).toBe('all');
+      expect(h.step.side).toBe(sideOf(def, h.step.cell));
+    }
+  }
+});

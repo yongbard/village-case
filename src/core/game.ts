@@ -1,6 +1,6 @@
 import { abilityAnswer, campAt } from './rules';
 import { isEvil, role } from './roles';
-import { ANY_WITNESS, type AbilityObs, type CaseDef, type Clue, type Knowledge } from './types';
+import { ANY_WITNESS, type AbilityObs, type CaseDef, type Clue, type Knowledge, type Side } from './types';
 
 export type Note = 'good' | 'evil' | 'unsure';
 export interface Game {
@@ -87,4 +87,16 @@ export function knowledgeOf(g: Game): Knowledge {
       return r === ANY_WITNESS ? def.faces[i] : r;
     }),
   };
+}
+
+/**
+ * 힌트에 넘길 관찰: knowledgeOf 에 이미 아는 선·악(knownSides)을 더한다. proven 은 앞 힌트가 증명한 칸이고,
+ * 겉 직업이 말썽꾼인 칸은 그 말썽꾼 자신(선)이라 보이는 대로 안다. 다음 힌트는 이 칸들을 다시 가리키지 않는다.
+ */
+export function hintKnowledge(g: Game, proven: readonly (Side | undefined)[]): Knowledge {
+  const k = knowledgeOf(g);
+  k.knownSides = k.faces.map(
+    (f, i) => proven[i] ?? (f !== undefined && role(f).camp === 'trouble' ? 'good' : undefined),
+  );
+  return k;
 }
