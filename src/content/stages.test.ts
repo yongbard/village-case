@@ -1,9 +1,9 @@
 import { expect, test } from 'vitest';
 import { difficulty } from '../core/explain';
 import { ROLES, isEvil, role } from '../core/roles';
-import { campAt } from '../core/rules';
-import { checkCase } from '../core/unique';
-import { CHAPTERS, rolesUpTo, type Stage } from './chapters';
+import { abilityAnswer, campAt } from '../core/rules';
+import { abilityCells, checkCase, solvedKnowledge } from '../core/unique';
+import { CHAPTERS, rolesFor, rolesUpTo, type Stage } from './chapters';
 import stagesJson from './stages.json';
 import { CARDS, GUIDE, cardsFor } from './tutorial';
 
@@ -42,6 +42,26 @@ test('roles only from chapters so far', () => {
   for (const s of stages) {
     const allowed = new Set(rolesUpTo(s.chapter));
     for (const id of rolesIn(s)) expect(allowed.has(id), `stage ${s.id}: ${id}`).toBe(true);
+  }
+});
+
+test('no stage uses a chapter-j new role outside its prefix (ceil(n*k/5); chapter 1 all four)', () => {
+  for (const s of stages) {
+    const allowed = new Set(rolesFor(s.id));
+    for (const id of rolesIn(s)) expect(allowed.has(id), `stage ${s.id}: ${id}`).toBe(true);
+  }
+});
+
+test('abilities are the solvedKnowledge observations the steps index into', () => {
+  for (const s of stages) {
+    const used = s.steps.flatMap((st) => (st.because === 'all' ? [] : st.because)).filter((f) => f.type === 'ability');
+    for (const f of used) expect(f.type === 'ability' && f.index < s.abilities.length, `stage ${s.id}`).toBe(true);
+    for (const o of s.abilities) {
+      expect(abilityCells(s.def), `stage ${s.id}`).toContain(o.cell);
+      expect(o.same, `stage ${s.id}`).toBe(abilityAnswer(s.def, o.cell, o.a, o.b));
+    }
+    if (abilityCells(s.def).length > 0) expect(s.abilities, `stage ${s.id}`).toEqual(solvedKnowledge(s.def).abilities);
+    else expect(s.abilities).toEqual([]);
   }
 });
 
@@ -134,7 +154,7 @@ test('guide: stage 1 walks investigate, read, note, arrest; cells are on the boa
   const arrest = GUIDE[1].filter((g) => g.cell !== undefined && g.text.includes('체포'));
   expect(arrest.length).toBeGreaterThan(0);
   for (const g of arrest) expect(isEvil(campAt(s1.def.truth, g.cell!)), `cell ${g.cell}`).toBe(true);
-  // 안내 문장이 말하는 6번(칸 5)의 거짓 진술: 주변 8칸에 악 4명 (이 사건의 악은 2명뿐)
-  expect(s1.def.clues[5]).toMatchObject({ kind: 'evil8', base: 5, n: 4 });
+  // 안내 문장이 말하는 6번(칸 5)의 거짓 진술: 이웃 4칸에 악 3명 (이 사건의 악은 2명뿐)
+  expect(s1.def.clues[5]).toMatchObject({ kind: 'evil4', base: 5, n: 3 });
   expect(s1.def.inPlay.length).toBe(2);
 });

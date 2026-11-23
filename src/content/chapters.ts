@@ -1,6 +1,6 @@
 // 스테이지 장 정의 (설계 7장). 장마다 새 직업 묶음이 들어오고, 그 장 안에서 되풀이해 나온다.
 import { type Step } from '../core/explain';
-import { type CaseDef, type RoleId } from '../core/types';
+import { type AbilityObs, type CaseDef, type RoleId } from '../core/types';
 
 export interface Chapter {
   no: number;
@@ -21,7 +21,10 @@ export const CHAPTERS: Chapter[] = [
   { no: 6, stages: [26, 30], sizes: [[4, 4], [4, 5]], newRoles: [] },
 ];
 
-/** stages.json 원소. steps 는 explain(solvedKnowledge(def)) 를 미리 계산해 둔 해설 단계다. */
+/**
+ * stages.json 원소. steps 는 explain(solvedKnowledge(def)) 를 미리 계산해 둔 해설 단계이고,
+ * abilities 는 그때 쓴 능력 관찰(solvedKnowledge 가 고른 것)이다. 단계의 { type: 'ability', index } 는 abilities[index] 를 가리킨다.
+ */
 export interface Stage {
   id: number;
   chapter: number;
@@ -29,12 +32,29 @@ export interface Stage {
   difficulty: number;
   /** 이 스테이지에서 처음 나오는 직업 (앞 스테이지들의 inPlay·겉 직업에 없던 것) */
   newRoles: RoleId[];
+  abilities: AbilityObs[];
   steps: Step[];
 }
 
 /** 장 1 ~ j 의 새 직업 전부 */
 export function rolesUpTo(chapter: number): RoleId[] {
   return CHAPTERS.filter((c) => c.no <= chapter).flatMap((c) => c.newRoles);
+}
+
+/**
+ * 스테이지 id 에서 쓸 수 있는 그 장의 새 직업: 앞 ceil(개수 × k / 5)개 (설계 7장: 장이 진행될수록 더 많이).
+ * 1장은 예외로 처음부터 넷 다: 사건마다 공범·주범이 있어야 하는데 1장 밖에는 좀도둑·두목을 대신할 직업이 없다.
+ */
+export function chapterPrefix(id: number): RoleId[] {
+  const { chapter, k } = chapterOf(id);
+  const n = chapter.newRoles.length;
+  return chapter.newRoles.slice(0, chapter.no === 1 ? n : Math.ceil((n * k) / 5));
+}
+
+/** 스테이지 id 에 나올 수 있는 직업: 앞 장들의 새 직업 전부 + 이 장의 chapterPrefix */
+export function rolesFor(id: number): RoleId[] {
+  const { chapter } = chapterOf(id);
+  return [...rolesUpTo(chapter.no - 1), ...chapterPrefix(id)];
 }
 
 /** 스테이지 id 가 속한 장의 몇 번째(1 ~ 5) 스테이지인가 */

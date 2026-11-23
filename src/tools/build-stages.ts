@@ -1,11 +1,11 @@
 // 스테이지 30개를 만들어 src/content/stages.json 에 쓴다 (npm run stages).
 // 장 j 의 k번째 스테이지마다 고정 시드로 후보를 여럿 만들고 난이도를 잰 뒤,
 // 장 안에서 난이도가 줄지 않으면서 목표 난이도에 가장 가깝게 고른다. 한 프로세스에서 차례로 돈다.
-import { CHAPTERS, chapterOf, rolesUpTo, type Chapter, type Stage } from '../content/chapters';
+import { CHAPTERS, chapterOf, chapterPrefix, rolesFor, type Chapter, type Stage } from '../content/chapters';
 import { difficulty, explain, type Step } from '../core/explain';
 import { generateValid, type GenParams } from '../core/generate';
 import { role } from '../core/roles';
-import { type CaseDef, type RoleId } from '../core/types';
+import { type AbilityObs, type CaseDef, type RoleId } from '../core/types';
 import { solvedKnowledge } from '../core/unique';
 
 // @types/node 없이 쓴다 (이 스크립트는 node 에서만 돈다)
@@ -36,8 +36,8 @@ function counts(j: number, k: number): [number, number] {
 function stageParams(id: number): GenParams {
   const { chapter, k } = chapterOf(id);
   const j = chapter.no;
-  const pool = rolesUpTo(j);
-  const prefix = chapter.newRoles.slice(0, Math.ceil((chapter.newRoles.length * k) / 5));
+  const pool = rolesFor(id);
+  const prefix = chapterPrefix(id);
   // 말썽꾼·악만 must. 주범은 한 사건에 한 명이라 가장 늦게 들어온 주범만 둔다.
   let must = prefix.filter((id) => role(id).camp !== 'witness');
   const bosses = must.filter((id) => role(id).camp === 'boss');
@@ -57,6 +57,7 @@ function stageParams(id: number): GenParams {
 
 interface Cand {
   def: CaseDef;
+  abilities: AbilityObs[];
   steps: Step[];
   difficulty: number;
 }
@@ -66,8 +67,9 @@ function candidates(id: number): Cand[] {
   const out: Cand[] = [];
   for (let c = 0; c < CANDIDATES; c++) {
     const def = generateValid(p, id * 1000 + c, 5000);
-    const steps = explain(solvedKnowledge(def));
-    out.push({ def, steps, difficulty: difficulty(steps) });
+    const k = solvedKnowledge(def);
+    const steps = explain(k);
+    out.push({ def, abilities: k.abilities, steps, difficulty: difficulty(steps) });
   }
   return out;
 }
@@ -132,7 +134,7 @@ function main(): void {
       const roles = [...new Set([...c.def.inPlay, ...c.def.faces])];
       const newRoles = roles.filter((r) => !seen.has(r));
       newRoles.forEach((r) => seen.add(r));
-      stages.push({ id, chapter: ch.no, def: c.def, difficulty: c.difficulty, newRoles, steps: c.steps });
+      stages.push({ id, chapter: ch.no, def: c.def, difficulty: c.difficulty, newRoles, abilities: c.abilities, steps: c.steps });
       console.error(`  -> stage ${id}: difficulty ${c.difficulty}, seed ${c.def.seed}, inPlay ${c.def.inPlay.join(' ')}`);
     });
   }
