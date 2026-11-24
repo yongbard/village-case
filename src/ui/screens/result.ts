@@ -57,7 +57,7 @@ export function showResultView(v: ResultView): { setExplain: (e: Explain | null)
       'section',
       { class: 'explain' },
       h('h2', {}, '수사 보고서'),
-      h('p', { class: 'explain-note' }, '처음부터 모든 칸을 조사했을 때 추리하는 순서입니다.'),
+      h('p', { class: 'explain-note' }, '처음부터 모든 칸을 조사했을 때 주범을 찾아가는 순서입니다.'),
       body,
     ),
   );
@@ -75,7 +75,7 @@ export function showResult(stage: Stage, g: Game): void {
   showResultView({
     kicker: `${stage.id}스테이지`,
     solved,
-    sub: solved ? `경과 ${g.hour}시간 · 남은 평판 ${g.rep}` : '평판이 바닥났습니다. 다시 해 보세요.',
+    sub: solved ? `주범을 모두 체포했습니다 · 경과 ${g.hour}시간 · 남은 평판 ${g.rep}` : '평판이 바닥났습니다. 다시 해 보세요.',
     def: stage.def,
     explain: { steps: stage.steps, abilities: stage.abilities },
     actions: [

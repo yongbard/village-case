@@ -1,4 +1,5 @@
-// 사건 화면: 위 줄(시간·평판·비율·직업 목록), 격자, 안내·힌트, 진술 목록. 칸을 누르면 행동 메뉴.
+// 사건 화면: 위 줄(시간·평판·인원표 메모·직업 목록), 격자, 안내·힌트, 진술 기록(+ 자백). 칸을 누르면 행동 메뉴.
+// 사건을 처음 열면 인원표를 보여 주고, 진술을 누르면 그 진술이 가리키는 칸에 빨간 동그라미(관계면 빨간 실)를 그린다.
 import { describeStep, type Hint } from '../../core/explain';
 import {
   arrest,
@@ -14,11 +15,12 @@ import {
 import { isEvil, role } from '../../core/roles';
 import { ANY_WITNESS, type CaseDef, type Claim, type RoleId, type Side } from '../../core/types';
 import { GUIDE } from '../../content/tutorial';
-import { abilityText, clueText, pendingText } from '../clueText';
+import { abilityText, clueMarks, clueText, confessionText, pendingText } from '../clueText';
 import { h, mount, overlay, toast } from '../dom';
 import { CAMP_NAME, SIDE_MARK, SIDE_NAME } from '../labels';
 import { guideBubble } from '../tutorialOverlay';
 import { photo } from '../portraits';
+import { rosterRows } from '../roster';
 import { speechList } from '../speech';
 import { requestHint } from '../workerClient';
 import { showStageList } from './stageList';
@@ -88,10 +90,14 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
   let guideAt = guide ? 0 : -1;
   /** 다음 그리기에서 한 번 보여 줄 연출: 조사하면 카드 뒤집기, 체포하면 도장 */
   let fx: { cell: number; kind: 'reveal' | 'stamp' } | null = null;
+  /** 누른 진술이 가리키는 칸 (빨간 동그라미)과 두 사람 관계의 빨간 실. key 는 누른 줄(같은 줄을 다시 누르면 지운다) */
+  let marks: { key: string; cells: number[]; link?: [number, number] } | null = null;
+  const bossTotal = def.inPlay.filter((id) => role(id).camp === 'boss').length;
 
   const root = h('main', { class: 'screen case-screen' });
   mount(root);
   render();
+  showRoster(true);
 
   if (import.meta.env.DEV) {
     // 화면 확인 도구용: 지금 사건과 판 상태를 읽는다
@@ -147,8 +153,9 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
       return;
     }
     const r = role(trueRole(def, i));
-    if (g.rep < before) toast(`선(${CAMP_NAME[r.camp]})을 체포했습니다. 평판 -${before - g.rep}`);
-    else toast(`악을 체포했습니다: ${r.name}(${CAMP_NAME[r.camp]})`);
+    if (r.camp === 'boss') toast(`주범을 체포했습니다: ${r.name}`);
+    else if (r.camp === 'accomplice') toast(`공범을 체포했습니다: ${r.name}. 평판 -${before - g.rep}, 자백을 받았습니다.`);
+    else toast(`선(${CAMP_NAME[r.camp]})을 체포했습니다. 평판 -${before - g.rep}`);
   }
 
   async function askHint() {
@@ -198,8 +205,58 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
     return { text: `${res.cell + 1}번 ${role(def.faces[res.cell]).name}의 능력을 써 보세요.`, cell: res.cell };
   }
 
+  /** 진술 줄을 눌렀을 때: 가리키는 칸을 표시한다 (같은 줄을 다시 누르면 지운다) */
+  function toggleMarks(key: string, m: { cells: number[]; link?: [number, number] } | null) {
+    marks = !m || marks?.key === key ? null : { key, ...m };
+    render();
+  }
+
+  /** 칸 i 의 진술(또는 능력 결과)이 가리키는 칸 */
+  function marksOf(i: number): { cells: number[]; link?: [number, number] } | null {
+    const c = visibleClue(g, i);
+    if (c) return clueMarks(c, def.w, def.h);
+    const o = g.abilities.find((a) => a.cell === i);
+    return o ? { cells: [o.a, o.b], link: [o.a, o.b] } : null;
+  }
+
+  /** 인원표. first 면 사건을 처음 열 때(버튼 "수사 시작") */
+  function showRoster(first = false) {
+    let close = () => {};
+    close = overlay(
+      h(
+        'div',
+        { class: 'sheet roster-sheet', role: 'dialog', 'aria-modal': 'true', 'data-sheet': 'roster' },
+        h('h2', { class: 'roster-title' }, '이번 사건의 인원'),
+        h('p', { class: 'roster-goal' }, `주범 ${bossTotal}명을 모두 체포하면 해결입니다.`),
+        h(
+          'table',
+          { class: 'roster' },
+          rosterRows(def.roster).map((row) =>
+            h(
+              'tr',
+              { class: `camp-${row.camp}` },
+              h('th', {}, `${row.label} ${row.total}`),
+              h(
+                'td',
+                {},
+                row.items.length === 0
+                  ? '없음'
+                  : row.items.map((x) => h('button', { class: 'roster-role', onclick: () => showRole(x.id) }, `${x.name} ${x.count}`)),
+              ),
+            ),
+          ),
+        ),
+        h('button', { class: 'btn wide', 'data-action': 'roster-close', onclick: () => close() }, first ? '수사 시작' : '닫기'),
+      ),
+    );
+  }
+
   function onCell(i: number) {
     if (ended) return;
+    if (marks) {
+      marks = null;
+      render();
+    }
     if (picking) {
       if (i === picking.cell || picking.picks.includes(i)) {
         toast('다른 칸을 고르세요.');
@@ -256,7 +313,8 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
           h('b', {}, `${i + 1}번 칸`),
           h('span', {}, g.investigated[i] ? face.name : '조사하지 않음'),
         ),
-        g.investigated[i] && h('p', { class: 'sheet-clue' }, statements(g, i).join(' / ')),
+        g.investigated[i] &&
+          h('p', { class: 'sheet-clue', onclick: run(() => toggleMarks(`line:${i}`, marksOf(i))) }, statements(g, i).join(' / ')),
         g.investigated[i] &&
           h(
             'button',
@@ -355,6 +413,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
   function header(): HTMLElement {
     const camps = def.inPlay.map((id) => role(id).camp);
     const count = (c: string) => camps.filter((x) => x === c).length;
+    const caught = g.arrested.filter((a, i) => a && role(trueRole(def, i)).camp === 'boss').length;
     const title = opts.mode === 'stage' ? `${opts.stageId}스테이지` : (opts.title ?? '무한 모드');
     return h(
       'header',
@@ -388,16 +447,16 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
           h('b', { 'data-stat': 'rep' }, String(g.rep)),
         ),
         h(
-          'span',
-          { class: 'stat ratio' },
-          h('small', {}, '이번 사건'),
-          h('b', {}, `말썽꾼 ${count('trouble')} · 공범 ${count('accomplice')} · 주범 ${count('boss')}`),
+          'button',
+          { class: 'stat ratio', 'data-action': 'roster', onclick: () => showRoster() },
+          h('small', {}, '인원표 보기'),
+          h('b', { 'data-stat': 'bosses' }, `주범 ${caught}/${bossTotal} 체포 · 공범 ${count('accomplice')} · 말썽꾼 ${count('trouble')}`),
         ),
       ),
       h(
         'div',
         { class: 'roles', 'aria-label': '이번 사건의 말썽꾼·악 직업' },
-        def.inPlay.map((id) =>
+        [...new Set(def.inPlay)].map((id) =>
           h(
             'button',
             { class: `chip camp-${role(id).camp}`, onclick: () => showRole(id) },
@@ -417,12 +476,12 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
     if (g.arrested[i]) {
       const r = role(trueRole(def, i));
       const side = sideOf(r.id);
-      cls.push('arrested', `side-${side}`);
+      cls.push('arrested', `side-${side}`, `camp-${r.camp}`);
       inner = [
         photo(r.id),
         h('span', { class: 'face' }, r.name),
         h('span', { class: 'sub' }, `${CAMP_NAME[r.camp]} · ${SIDE_NAME[side]}`),
-        h('span', { class: 'stamp stamp-ink' }, side === 'evil' ? '체포' : '오인 체포'),
+        h('span', { class: 'stamp stamp-ink' }, r.camp === 'boss' ? '주범 체포' : r.camp === 'accomplice' ? '공범 체포' : '오인 체포'),
       ];
     } else if (g.investigated[i]) {
       cls.push('seen');
@@ -434,6 +493,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
     if (fx?.cell === i) cls.push(fx.kind === 'reveal' ? 'fx-reveal' : 'fx-stamp');
     if (hint?.cell === i) cls.push('flash');
     if (guideCell === i) cls.push('guide');
+    if (marks?.cells.includes(i)) cls.push('mark');
     if (picking && (picking.cell === i || picking.picks.includes(i))) cls.push(picking.cell === i ? 'picker' : 'picked');
     const label = `${i + 1}번 칸${g.investigated[i] ? ` ${role(def.faces[i]).name}` : ''}${note ? `, 메모 ${NOTE_NAME[note]}` : ''}`;
     return h(
@@ -509,15 +569,48 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
                 h('span', { class: 'ln-num' }, `${i + 1}번`),
                 h(
                   'span',
-                  { class: 'ln-body' },
+                  { class: `ln-body${marks?.key === `line:${i}` ? ' marked' : ''}` },
                   h('button', { class: 'ln-role', onclick: () => showRole(def.faces[i], i) }, role(def.faces[i]).name),
-                  `: ${statements(g, i).join(' / ')}`,
+                  h('span', { class: 'ln-text', 'data-mark': i, onclick: () => toggleMarks(`line:${i}`, marksOf(i)) }, `: ${statements(g, i).join(' / ')}`),
                 ),
                 side && h('span', { class: 'ln-tag' }, `${SIDE_MARK[side]} ${SIDE_NAME[side]}`),
               );
             }),
           ),
+      g.confessions.length > 0 &&
+        h(
+          'ol',
+          { class: 'confessions' },
+          g.confessions.map((cf) =>
+            h(
+              'li',
+              { class: 'ln-confession', 'data-confession': cf.cell },
+              h('span', { class: 'ln-num' }, `${cf.cell + 1}번`),
+              h('span', { class: 'ln-body' }, confessionText(cf, def.w, def.h)),
+            ),
+          ),
+        ),
     );
+  }
+
+  /** 두 사람 관계 진술의 빨간 실: 판 위에 겹친 SVG 선 (칸 가운데끼리) */
+  function linkEl(): SVGSVGElement | null {
+    if (!marks?.link) return null;
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('class', 'red-string');
+    svg.setAttribute('viewBox', `0 0 ${def.w} ${def.h}`);
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.setAttribute('aria-hidden', 'true');
+    const [a, b] = marks.link;
+    const line = document.createElementNS(ns, 'line');
+    line.setAttribute('x1', String((a % def.w) + 0.5));
+    line.setAttribute('y1', String(Math.floor(a / def.w) + 0.5));
+    line.setAttribute('x2', String((b % def.w) + 0.5));
+    line.setAttribute('y2', String(Math.floor(b / def.w) + 0.5));
+    line.setAttribute('vector-effect', 'non-scaling-stroke');
+    svg.appendChild(line);
+    return svg;
   }
 
   function render() {
@@ -526,6 +619,8 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
       { class: 'grid', style: `--w:${def.w}`, role: 'grid', 'aria-label': `${def.w}×${def.h} 마을` },
       Array.from({ length: def.w * def.h }, (_, i) => cellEl(i)),
     );
+    const link = linkEl();
+    if (link) grid.appendChild(link);
     root.replaceChildren(header(), grid, panel() ?? '', clueList());
     fx = null;
   }

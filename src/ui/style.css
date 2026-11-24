@@ -675,3 +675,36 @@ h1, h2 { font-family: var(--title); font-weight: 400; }
 
 /* ---------- 새 직업 카드 사진 ---------- */
 .card-photo { width: 96px; height: 96px; align-self: center; border: 5px solid #fff; box-shadow: 0 3px 6px rgba(20, 12, 4, 0.45); transform: rotate(-2deg); }
+
+/* 주범 사냥: 인원표, 진술이 가리키는 칸, 빨간 실, 자백, 진영별 도장 */
+.grid { position: relative; }
+.cell.mark::after {
+  content: '';
+  position: absolute;
+  inset: -6px -4px;
+  border: 2.5px solid var(--red);
+  border-radius: 50%;
+  transform: rotate(4deg);
+  pointer-events: none;
+  z-index: 3;
+}
+.red-string { position: absolute; inset: 4px 2px 2px; width: calc(100% - 4px); height: calc(100% - 6px); pointer-events: none; z-index: 4; overflow: visible; }
+.red-string line { stroke: var(--red); stroke-width: 3; stroke-linecap: round; opacity: 0.85; }
+.ln-text { cursor: pointer; }
+.ln-body.marked .ln-text { background: var(--red-soft); }
+.sheet-clue { cursor: pointer; }
+button.stat.ratio { text-align: left; background: none; border: none; padding: 0; color: inherit; font: inherit; cursor: pointer; }
+button.stat.ratio small { text-decoration: underline dotted; }
+.clues .confessions { margin-top: 10px; border-top: 1.5px solid var(--red); }
+.ln-confession .ln-body { font-family: var(--hand); font-size: 19px; line-height: 1.25; color: var(--ink); }
+.cell.camp-accomplice .stamp { font-size: 15px; letter-spacing: 0; }
+.grid[style*='--w:4'] .cell.camp-accomplice .stamp, .grid[style*='--w:5'] .cell.camp-accomplice .stamp { font-size: 12px; }
+.grid[style*='--w:4'] .cell.camp-boss .stamp, .grid[style*='--w:5'] .cell.camp-boss .stamp { font-size: 13px; }
+.roster-sheet .roster-title { font-family: var(--title); font-weight: 400; font-size: 22px; margin: 0 0 4px; }
+.roster-goal { color: var(--red); font-weight: 700; margin: 0 0 10px; }
+table.roster { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+table.roster th { text-align: left; white-space: nowrap; padding: 8px 10px 8px 0; vertical-align: top; font-size: 15px; width: 1%; }
+table.roster td { padding: 6px 0; display: flex; flex-wrap: wrap; gap: 6px; }
+table.roster tr { border-bottom: 1px dashed var(--line); }
+table.roster tr.camp-boss th { color: var(--red); }
+.roster-role { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 3px 10px; font: inherit; font-size: 14px; color: var(--ink); cursor: pointer; }
