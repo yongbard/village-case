@@ -32,7 +32,7 @@
 
 ---
 
-### 작업 1: 규칙의 뜻 (타입·직업표·판정)
+### Task 1 (작업 1): 규칙의 뜻 (타입·직업표·판정)
 
 파일
 - 고침: src/core/types.ts, src/core/roles.ts, src/core/rules.ts, src/core/board.ts
@@ -138,7 +138,7 @@ test('abilityTruth: shielded reporter answers as if bosses were good')
 - [ ] 4단계: npx vitest run src/core/rules.test.ts src/core/board.test.ts 통과, npm run typecheck 통과.
 - [ ] 5단계: 커밋 "feat(core): boss-hunt roles and rule semantics".
 
-### 작업 2: 솔버와 전수 조사 (교차 검증)
+### Task 2 (작업 2): 솔버와 전수 조사 (교차 검증)
 
 파일
 - 고침: src/core/solve.ts, src/core/brute.ts, src/core/testcases.ts, src/core/crossCheck.ts
@@ -171,7 +171,7 @@ test('cross-check', …)                          // 기존 crossCheck(0, CROSS_
 - [ ] 5단계: npx vitest run src/core/solve.test.ts 통과 (CROSS_CASES 600). 이어서 npm run test:cross (3000) 통과.
 - [ ] 6단계: 커밋 "feat(core): solver and brute force for duplicates, roster and new effects".
 
-### 작업 3: 생성기와 유일해 검사
+### Task 3 (작업 3): 생성기와 유일해 검사
 
 파일
 - 고침: src/core/generate.ts, src/core/makeCase.ts, src/core/unique.ts
@@ -220,7 +220,7 @@ test('generated cases pass checkCase and truth is consistent') // 기존 시험 
 - [ ] 4단계: 같은 명령 통과. 생성 시간 재기: tsx 로 endlessParams(30) 시드 10개 generateValid 시간을 logs/gen-time.txt 에 적는다. 중앙값 2초 이하가 목표. 넘으면 작업 8 에서 매개변수를 조정한다(작업 기록에 Ruling 으로 남김).
 - [ ] 5단계: 커밋 "feat(core): generator and boss-only uniqueness".
 
-### 작업 4: 힌트와 해설 (주범 기준)
+### Task 4 (작업 4): 힌트와 해설 (주범 기준)
 
 파일
 - 고침: src/core/types.ts (Claim), src/core/rules.ts (cellAdmits), src/core/explain.ts, src/core/game.ts (hintKnowledge 만)
@@ -251,7 +251,7 @@ test('two bosses: both get boss steps')
 - [ ] 3단계: 구현.
 - [ ] 4단계: 통과. 커밋 "feat(core): hints and explanations aim at the boss".
 
-### 작업 5: 게임 상태와 저장
+### Task 5 (작업 5): 게임 상태와 저장
 
 파일
 - 고침: src/core/game.ts, src/core/save.ts
@@ -290,7 +290,7 @@ test('v1 save migrates: keeps cleared, seenCards, endlessBest; drops endless')
 - [ ] 2단계: npx vitest run src/core/game.test.ts src/core/save.test.ts → 실패.
 - [ ] 3단계: 구현. 4단계: 통과. 5단계: 커밋 "feat(core): boss-hunt arrests, confessions, save v2".
 
-### 작업 6: 문장 (증언·말하는 방식·해설·자백)
+### Task 6 (작업 6): 문장 (증언·말하는 방식·해설·자백)
 
 파일
 - 고침: src/ui/clueText.ts, src/ui/speech.ts, src/core/explain.ts (describeStep)
@@ -354,7 +354,7 @@ test('same sentence whatever the speaker’s true role')   // 같은 clue·face 
 - [ ] 2단계: 실패 확인. 3단계: 구현. 4단계: npx vitest run src/ui src/core/explain.test.ts 통과.
 - [ ] 5단계: 커밋 "feat(ui): statements in each job's voice with explicit cells".
 
-### 작업 7: 사건 화면
+### Task 7 (작업 7): 사건 화면
 
 파일
 - 새로: src/ui/roster.ts (+ roster.test.ts)
@@ -380,7 +380,7 @@ test('same sentence whatever the speaker’s true role')   // 같은 clue·face 
 - [ ] 3단계: 화면 구현. npm run dev 로 직접 보고, node src/tools/check-ui.mjs 통과 (스테이지가 아직 옛것이면 이 확인은 작업 8 뒤에 다시 돌린다. 이 작업에서는 무한 모드 사건으로 확인).
 - [ ] 4단계: 커밋 "feat(ui): roster sheet, statement marks, boss-hunt stamps and confessions".
 
-### 작업 8: 장 구성과 스테이지 다시 만들기
+### Task 8 (작업 8): 장 구성과 스테이지 다시 만들기
 
 파일
 - 고침: src/content/chapters.ts, src/tools/build-stages.ts, src/content/stages.json(생성), src/content/stages.test.ts, src/core/generate.ts(endlessParams 조정 시)
@@ -422,7 +422,7 @@ test('same sentence whatever the speaker’s true role')   // 같은 clue·face 
 - [ ] 3단계: 무한 모드 생성 시간 다시 재기(작업 3 의 측정). 중앙값 2초를 넘으면 endlessParams 의 공범·주범 수를 줄이고 다시 잰다.
 - [ ] 4단계: npx vitest run src/content 통과. 커밋 "feat(content): chapters and stages for boss hunt".
 
-### 작업 9: 튜토리얼·규칙·카드철·인물 사진·글꼴
+### Task 9 (작업 9): 튜토리얼·규칙·카드철·인물 사진·글꼴
 
 파일
 - 고침: src/content/tutorial.ts, src/ui/screens/rules.ts, src/ui/screens/codex.ts, src/ui/tutorialOverlay.ts, src/ui/portraits.ts, src/public/fonts/*(생성)
@@ -442,7 +442,7 @@ test('same sentence whatever the speaker’s true role')   // 같은 clue·face 
 - [ ] 3단계: npm test 전체 통과.
 - [ ] 4단계: 커밋 "feat(ui): tutorial, rules, codex and portraits for boss hunt".
 
-### 작업 10: 전체 확인과 기록
+### Task 10 (작업 10): 전체 확인과 기록
 
 - [ ] 1단계: npm run typecheck, npm test, npm run test:cross, npm run build, node src/tools/check-ui.mjs, node src/tools/check-offline.mjs 모두 통과. 결과를 logs/2026-11-24-boss-hunt-ledger.md 에 적는다.
 - [ ] 2단계: README(현재 상태·실행·폴더 구조·시험 수), HISTORY(2026-11-24 항목), conversations/2026-11-24.md 에 덧붙인다. docs/2026-11-23-remaining-work.md 에서 이번에 없어진 항목(숨은이·능청이 관련)이 있으면 고친다.
