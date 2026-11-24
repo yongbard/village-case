@@ -1,5 +1,5 @@
 // 오래 걸리는 계산을 화면 밖에서 돌린다: 힌트(nextHint), 사건 생성(generateValid), 해설(explain).
-import { explain, nextHint, type Hint, type Step } from '../core/explain';
+import { explainWithin, nextHint, type Hint, type Step } from '../core/explain';
 import { endlessParams, generateValid } from '../core/generate';
 import { solvedKnowledge } from '../core/unique';
 import { type AbilityObs, type CaseDef, type Knowledge } from '../core/types';
@@ -14,6 +14,9 @@ export type WorkerReply =
   | { id: number; type: 'explain'; steps: Step[]; abilities: AbilityObs[] }
   | { id: number; type: 'error'; error: string };
 
+/** 무한 모드 결과 화면 해설에 쓰는 시간 (ms) */
+const EXPLAIN_MS = 10_000;
+
 function run(req: WorkerRequest): WorkerReply {
   const { id } = req;
   switch (req.type) {
@@ -23,7 +26,8 @@ function run(req: WorkerRequest): WorkerReply {
       return { id, type: 'generate', def: generateValid(endlessParams(req.n), req.seed) };
     case 'explain': {
       const k = solvedKnowledge(req.def);
-      return { id, type: 'explain', steps: explain(k), abilities: k.abilities };
+      // 큰 판은 해설이 아주 오래 걸릴 수 있다: 시간 안에 못 따지면 빈 해설(결과 화면이 그렇게 알린다)
+      return { id, type: 'explain', steps: explainWithin(k, EXPLAIN_MS) ?? [], abilities: k.abilities };
     }
   }
 }

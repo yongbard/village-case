@@ -45,7 +45,7 @@ test('roles only from chapters so far', () => {
   }
 });
 
-test('no stage uses a chapter-j new role outside its prefix (ceil(n*k/5); chapter 1 all four)', () => {
+test('no stage uses a chapter-j new role outside its prefix (ceil(n*k/5); chapter 1 at least three)', () => {
   for (const s of stages) {
     const allowed = new Set(rolesFor(s.id));
     for (const id of rolesIn(s)) expect(allowed.has(id), `stage ${s.id}: ${id}`).toBe(true);
@@ -71,26 +71,40 @@ test('each chapter last stage has all its new trouble/evil roles somewhere in th
     for (const id of c.newRoles.filter((id) => role(id).camp !== 'witness')) {
       expect(used.has(id), `chapter ${c.no}: ${id}`).toBe(true);
     }
-    // 끝 스테이지는 그 장의 새 말썽꾼·악을 (주범은 한 명뿐이라 가장 늦게 들어온 주범만) 모두 쓴다
+    // 끝 스테이지는 그 장의 새 말썽꾼·악을 모두 쓴다
     const last = stages[c.stages[1] - 1].def.inPlay;
-    const newEvilOrTrouble = c.newRoles.filter((id) => role(id).camp !== 'witness');
-    const bosses = newEvilOrTrouble.filter((id) => role(id).camp === 'boss');
-    for (const id of newEvilOrTrouble.filter((id) => role(id).camp !== 'boss' || id === bosses[bosses.length - 1])) {
+    for (const id of c.newRoles.filter((id) => role(id).camp !== 'witness')) {
       expect(last, `chapter ${c.no} last stage: ${id}`).toContain(id);
     }
   }
 });
 
-test('stage 1 is 3x3 with thief and chief only', () => {
-  expect([stages[0].def.w, stages[0].def.h]).toEqual([3, 3]);
-  expect([...stages[0].def.inPlay].sort()).toEqual(['chief', 'thief']);
-});
-
-test('stages 1-2: 3x3, thief + chief, no trouble, witness faces only postman/pharmacist', () => {
+test('stages 1-2: 3x3, the chief alone, witness faces only postman/pharmacist', () => {
   for (const s of stages.slice(0, 2)) {
     expect([s.def.w, s.def.h]).toEqual([3, 3]);
-    expect([...s.def.inPlay].sort()).toEqual(['chief', 'thief']);
+    expect(s.def.inPlay).toEqual(['chief']);
     expect(s.def.faces.every((f) => f === 'postman' || f === 'pharmacist'), `stage ${s.id}`).toBe(true);
+  }
+});
+
+test('roster is the whole board and matches the truth', () => {
+  for (const s of stages) {
+    const total = Object.values(s.def.roster).reduce((a, b) => a + b, 0);
+    expect(total, `stage ${s.id}`).toBe(s.def.w * s.def.h);
+    for (const [id, c] of Object.entries(s.def.roster)) expect(s.def.truth.roles.filter((r) => r === id).length, `stage ${s.id} ${id}`).toBe(c);
+  }
+});
+
+test('explanations end on the bosses', () => {
+  for (const s of stages) {
+    const bosses = s.def.truth.roles.flatMap((r, i) => (role(r).camp === 'boss' ? [i] : []));
+    expect(s.steps.filter((st) => st.claim === 'boss').map((st) => st.cell).sort((a, b) => a - b), `stage ${s.id}`).toEqual(bosses);
+  }
+});
+
+test('the first accomplice comes after a boss-pointing witness (dog) is available', () => {
+  for (const s of stages) {
+    if (s.def.inPlay.some((id) => role(id).camp === 'accomplice')) expect(rolesFor(s.id), `stage ${s.id}`).toContain('dog');
   }
 });
 
@@ -107,8 +121,8 @@ test('stage newRoles are the roles first seen in that stage', () => {
   }
 });
 
-test('cards: one per role plus the four concepts', () => {
-  expect(Object.keys(CARDS).sort()).toEqual([...Object.keys(ROLES), 'ability', 'taint', 'trigger', 'trouble'].sort());
+test('cards: one per role plus the six concepts', () => {
+  expect(Object.keys(CARDS).sort()).toEqual([...Object.keys(ROLES), 'ability', 'confession', 'roster', 'taint', 'trigger', 'trouble'].sort());
   for (const id of Object.keys(ROLES)) expect(CARDS[id].title).toBe(ROLES[id].name);
   for (const c of Object.values(CARDS)) expect(c.body.length).toBeGreaterThan(0);
 });
@@ -132,12 +146,12 @@ test('cardsFor shows a card once', () => {
 
 test('cardsFor: role order follows ROLES, a concept key comes right before its first role', () => {
   const s = (inPlay: string[], faces: string[]) => ({ def: { inPlay, faces } }) as unknown as Stage;
-  expect(cardsFor(s(['thief', 'chief'], ['postman', 'postman']), [])).toEqual(['postman', 'thief', 'chief']);
-  expect(cardsFor(s(['braggart', 'thief', 'chief'], ['braggart']), ['thief', 'chief'])).toEqual(['trouble', 'braggart']);
-  expect(cardsFor(s(['blackmailer', 'chief'], ['reporter', 'bellringer']), ['chief'])).toEqual(
+  expect(cardsFor(s(['chief'], ['postman', 'postman']), [])).toEqual(['roster', 'postman', 'chief']);
+  expect(cardsFor(s(['braggart', 'lookout', 'chief'], ['braggart']), ['roster', 'chief'])).toEqual(['trouble', 'braggart', 'confession', 'lookout']);
+  expect(cardsFor(s(['blackmailer', 'chief'], ['reporter', 'bellringer']), ['roster', 'chief', 'confession'])).toEqual(
     ['ability', 'reporter', 'trigger', 'bellringer', 'taint', 'blackmailer'],
   );
-  expect(cardsFor(s(['gossip', 'chief'], []), ['chief', 'trouble', 'taint'])).toEqual(['gossip']);
+  expect(cardsFor(s(['gossip', 'chief'], []), ['roster', 'chief', 'trouble'])).toEqual(['gossip']);
 });
 
 test('guide: stage 1 walks investigate, read, note, arrest; cells are on the board', () => {
@@ -148,13 +162,18 @@ test('guide: stage 1 walks investigate, read, note, arrest; cells are on the boa
     if (g.cell !== undefined) expect(g.cell >= 0 && g.cell < n).toBe(true);
   }
   const text = GUIDE[1].map((g) => g.text).join('\n');
-  for (const word of ['조사', '진술', '메모', '체포', '거짓말']) expect(text).toContain(word);
+  for (const word of ['조사', '진술', '메모', '체포', '거짓말', '인원표', '주범']) expect(text).toContain(word);
   expect(GUIDE[2].length).toBeLessThan(GUIDE[1].length);
   // 체포를 안내하는 칸은 실제로 악이다
   const arrest = GUIDE[1].filter((g) => g.cell !== undefined && g.text.includes('체포'));
   expect(arrest.length).toBeGreaterThan(0);
   for (const g of arrest) expect(isEvil(campAt(s1.def.truth, g.cell!)), `cell ${g.cell}`).toBe(true);
-  // 안내 문장이 말하는 6번(칸 5)의 거짓 진술: 이웃 4칸에 악 3명 (이 사건의 악은 2명뿐)
-  expect(s1.def.clues[5]).toMatchObject({ kind: 'evil4', base: 5, n: 3 });
-  expect(s1.def.inPlay.length).toBe(2);
+  // 안내 문장이 말하는 사건: 우체부는 인원표에 1명인데 4번·7번(칸 3·6)이 우체부로 보이고,
+  // 1번 약사(칸 0)가 4번을 포함한 둘러싼 칸에 악이 없다고 한다. 주범은 7번(칸 6).
+  expect(s1.def.inPlay).toEqual(['chief']);
+  expect(s1.def.roster.postman).toBe(1);
+  expect(s1.def.faces.flatMap((f, i) => (f === 'postman' ? [i] : []))).toEqual([3, 6]);
+  expect(s1.def.faces[0]).toBe('pharmacist');
+  expect(s1.def.clues[0]).toMatchObject({ kind: 'evil8', base: 0, n: 0 });
+  expect(s1.def.truth.roles[6]).toBe('chief');
 });

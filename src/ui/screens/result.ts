@@ -22,6 +22,7 @@ type Explain = { steps: Step[]; abilities: AbilityObs[] };
 function explainBody(def: CaseDef, e: Explain | null, failed = false): (HTMLElement | false)[] {
   if (failed) return [h('p', { class: 'explain-note', 'data-explain': 'failed' }, '해설을 만들지 못했어요.')];
   if (!e) return [h('p', { class: 'explain-note', 'data-explain': 'loading' }, '해설 정리 중…')];
+  if (e.steps.length === 0) return [h('p', { class: 'explain-note', 'data-explain': 'too-long' }, '이 사건은 따질 경우가 너무 많아 해설을 정리하지 못했어요.')];
   return [
     e.abilities.length > 0 &&
       h(

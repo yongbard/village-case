@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { describeStep, difficulty, explain, nextHint, type Step } from './explain';
+import { describeStep, difficulty, explain, explainWithin, nextHint, type Step } from './explain';
 import { endlessParams, generateValid } from './generate';
 import { claimHolds, campAt, consistent } from './rules';
 import { solve } from './solve';
@@ -111,6 +111,13 @@ test('difficulty is 1..5 and grows with reason size', () => {
   const d3 = difficulty(Array(9).fill(st([c, c, c])));
   expect(d3).toBeGreaterThanOrEqual(d2);
   expect(5).toBeGreaterThanOrEqual(d3);
+});
+
+test('difficulty ignores steps that need no statement (faces and roster alone)', () => {
+  const st = (because: Step['because'], usesEarlier = false): Step => ({ cell: 0, claim: 'good', because, usesEarlier });
+  const c = { type: 'clue' as const, cell: 0 };
+  const hard = [st([c, c, c]), st([c, c])];
+  expect(difficulty([...Array(9).fill(st([])), st([], true), ...hard])).toBe(difficulty(hard));
 });
 
 test('describeStep reads like a deduction', () => {
@@ -228,3 +235,10 @@ test('hint with an exhausted budget never returns an unproven step', () => {
     }
   }
 });
+
+test('explainWithin: null when the budget runs out, same as explain otherwise', () => {
+  const def = generateValid(endlessParams(14), 3);
+  const k = solvedKnowledge(def);
+  expect(explainWithin(k, 0)).toBeNull();
+  expect(explainWithin(k, 60_000)).toEqual(explain(k));
+}, 60_000);

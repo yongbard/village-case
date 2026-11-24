@@ -13,12 +13,14 @@ export interface Chapter {
 }
 
 export const CHAPTERS: Chapter[] = [
-  { no: 1, stages: [1, 5], sizes: [[3, 3]], newRoles: ['postman', 'pharmacist', 'thief', 'chief'] },
-  { no: 2, stages: [6, 10], sizes: [[3, 3], [3, 4]], newRoles: ['mayor', 'guard', 'braggart'] },
-  { no: 3, stages: [11, 15], sizes: [[3, 4]], newRoles: ['baker', 'photographer', 'lost', 'blackmailer'] },
-  { no: 4, stages: [16, 20], sizes: [[4, 4]], newRoles: ['lookout', 'shill', 'gossip', 'hidden', 'reporter'] },
-  { no: 5, stages: [21, 25], sizes: [[4, 4]], newRoles: ['bellringer', 'shadow', 'smooth', 'briber'] },
-  { no: 6, stages: [26, 30], sizes: [[4, 4], [4, 5]], newRoles: [] },
+  // 1장: 처음 4스테이지는 주범 혼자(거짓말쟁이 한 명). 공범(망보기)은 주범을 가리키는 개 주인 다음에 들어온다:
+  // 주범을 가리키는 진술이 없으면 위장한 공범과 주범은 자리를 맞바꿔도 진술이 다 맞아 주범이 하나로 정해지지 않는다.
+  { no: 1, stages: [1, 5], sizes: [[3, 3]], newRoles: ['postman', 'pharmacist', 'chief', 'grandma', 'dog', 'lookout'] },
+  { no: 2, stages: [6, 10], sizes: [[3, 3], [3, 4]], newRoles: ['mayor', 'guard', 'restaurant', 'braggart', 'thief'] },
+  { no: 3, stages: [11, 15], sizes: [[3, 4]], newRoles: ['baker', 'photographer', 'taxi', 'lost', 'shill'] },
+  { no: 4, stages: [16, 20], sizes: [[4, 4]], newRoles: ['operator', 'priest', 'reporter', 'gossip', 'blackmailer', 'briber'] },
+  { no: 5, stages: [21, 25], sizes: [[4, 4]], newRoles: ['barber', 'laundry', 'bellringer', 'decoy', 'shadow'] },
+  { no: 6, stages: [26, 30], sizes: [[4, 4], [4, 5]], newRoles: ['framer'] },
 ];
 
 /**
@@ -43,12 +45,13 @@ export function rolesUpTo(chapter: number): RoleId[] {
 
 /**
  * 스테이지 id 에서 쓸 수 있는 그 장의 새 직업: 앞 ceil(개수 × k / 5)개 (설계 7장: 장이 진행될수록 더 많이).
- * 1장은 예외로 처음부터 넷 다: 사건마다 공범·주범이 있어야 하는데 1장 밖에는 좀도둑·두목을 대신할 직업이 없다.
+ * 1장은 처음부터 적어도 셋(우체부·약사·두목): 사건마다 주범이 있어야 한다.
  */
 export function chapterPrefix(id: number): RoleId[] {
   const { chapter, k } = chapterOf(id);
   const n = chapter.newRoles.length;
-  return chapter.newRoles.slice(0, chapter.no === 1 ? n : Math.ceil((n * k) / 5));
+  const take = Math.ceil((n * k) / 5);
+  return chapter.newRoles.slice(0, chapter.no === 1 ? Math.max(3, take) : take);
 }
 
 /** 스테이지 id 에 나올 수 있는 직업: 앞 장들의 새 직업 전부 + 이 장의 chapterPrefix */

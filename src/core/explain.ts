@@ -393,13 +393,28 @@ export function explain(k: Knowledge): Step[] {
 }
 
 /**
- * 이유 크기 1 → 1점, 2 → 2점, 3 → 4점, 'all' → 8점(겉 직업만으로 정해진 칸은 0점). 단계당 평균을 1 ~ 5 로 나눈다.
+ * explain 을 ms 안에서만: 시간 안에 다 따지면 explain 과 같은 단계, 넘으면 null.
+ * 주범 3명·모사꾼이 있는 큰 판은 해설에 수십 초가 걸릴 수 있어, 스테이지 고르기와 무한 모드 결과 화면이 쓴다.
+ */
+export function explainWithin(k: Knowledge, ms: number): Step[] | null {
+  const budget: Budget = { deadline: performance.now() + ms, expired: false };
+  const { worlds, capped } = solve(k, WORLD_CAP, budget);
+  if (overBudget(budget)) return null;
+  const out = stepsFrom(k, worlds, capped, Infinity, budget);
+  return budget.expired ? null : out;
+}
+
+/**
+ * 이유 크기 1 → 1점, 2 → 2점, 3 → 4점, 'all' → 8점. 진술이 필요한 단계의 평균을 1 ~ 5 로 나눈다.
  * 경계값은 무한 모드 n = 1 ~ 30 (각 6판) 분포로 정했다: 3×3 1등급(n 1 ~ 2)은 0.8 ~ 1.2 → 1 ~ 2,
  * 4×5(n 18 ~ 30)는 0.7 ~ 5.0 으로 넓게 퍼지고 대부분 3 ~ 5 (스테이지는 난이도로 골라 쓴다).
  */
 const POINTS = [0, 1, 2, 4];
 export const DIFFICULTY_BOUNDS = [1.1, 1.8, 2.6, 3.4] as const; // 평균이 이 값 이상이면 2, 3, 4, 5
-export function difficulty(stepList: Step[]): 1 | 2 | 3 | 4 | 5 {
+export function difficulty(all: Step[]): 1 | 2 | 3 | 4 | 5 {
+  // 진술 없이 정해지는 단계(겉 직업·인원표만, 앞에서 정한 것만)는 0점이라 평균만 끌어내리므로 뺀다.
+  // 주범 사냥에서는 인원표로 정해지는 칸이 많다.
+  const stepList = all.filter((st) => st.because === 'all' || st.because.length > 0);
   if (stepList.length === 0) return 1;
   const total = stepList.reduce((s, st) => s + (st.because === 'all' ? 8 : POINTS[st.because.length]), 0);
   const avg = total / stepList.length;

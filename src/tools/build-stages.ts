@@ -2,7 +2,7 @@
 // 장 j 의 k번째 스테이지마다 고정 시드로 후보를 여럿 만들고 난이도를 잰 뒤,
 // 장 안에서 난이도가 줄지 않으면서 목표 난이도에 가장 가깝게 고른다. 한 프로세스에서 차례로 돈다.
 import { CHAPTERS, chapterOf, chapterPrefix, rolesFor, type Chapter, type Stage } from '../content/chapters';
-import { difficulty, explain, type Step } from '../core/explain';
+import { difficulty, explainWithin, type Step } from '../core/explain';
 import { generateValid, type GenParams } from '../core/generate';
 import { role } from '../core/roles';
 import { type AbilityObs, type CaseDef, type RoleId } from '../core/types';
@@ -12,8 +12,10 @@ import { solvedKnowledge } from '../core/unique';
 const { writeFileSync } = (await import('node:fs' as string)) as { writeFileSync(path: URL, data: string): void };
 const OUT = new URL('../content/stages.json', import.meta.url);
 
-/** 스테이지당 후보 수 (4×5 는 후보 하나에 1초 안팎, 전체 빌드 2분쯤) */
+/** 스테이지당 후보 수 */
 const CANDIDATES = 40;
+/** 후보 하나의 해설에 쓰는 시간 (ms). 넘으면 그 후보를 버린다. */
+const EXPLAIN_MS = 3000;
 /** 장마다 목표 난이도 [첫 스테이지, 끝 스테이지]. 사이는 고르게 올린다. */
 const TARGET: Record<number, [number, number]> = { 1: [1, 2], 2: [1, 3], 3: [2, 3], 4: [2, 4], 5: [3, 4], 6: [3, 5] };
 /** 이 장의 난이도 하한. 아래는 큰 벌점이라, 넘는 후보가 없을 때만 하한에 가장 가까운(가장 어려운) 후보를 쓴다. */
@@ -21,15 +23,18 @@ const FLOOR: Record<number, number> = { 6: 3 };
 /** 새 증인 직업의 뽑기 가중치 배수 */
 const NEW_WITNESS_WEIGHT = 3;
 
-/** 장 j 의 k번째 스테이지: [말썽꾼 수, 공범 수] 기본값 */
-function counts(j: number, k: number): [number, number] {
+/**
+ * 장 j 의 k번째 스테이지: [말썽꾼 수, 공범 수, 주범 수] 기본값. 주범 3명은 4×5(6장 끝 두 스테이지)에서만이고,
+ * 그때 공범은 1명 (주범 3 + 공범 2 는 사건 하나 만드는 데 몇 초씩 걸린다. 무한 모드 상한과 같다).
+ */
+function counts(j: number, k: number): [number, number, number] {
   switch (j) {
-    case 1: return [0, 1];
-    case 2: return [k < 4 ? 0 : 1, 1];
-    case 3: return [1, k < 4 ? 1 : 2];
-    case 4: return [k < 4 ? 1 : 2, 2];
-    case 5: return [2, 2];
-    default: return [k < 4 ? 2 : 3, k < 3 ? 2 : 3];
+    case 1: return [0, k < 5 ? 0 : 1, 1];
+    case 2: return [k < 4 ? 0 : 1, 1, 1];
+    case 3: return [1, k < 4 ? 1 : 2, 1];
+    case 4: return [k < 4 ? 1 : 2, 2, k < 4 ? 1 : 2];
+    case 5: return [2, 2, 2];
+    default: return k < 4 ? [2, 2, 2] : [3, 1, 3];
   }
 }
 
@@ -38,21 +43,19 @@ function stageParams(id: number): GenParams {
   const j = chapter.no;
   const pool = rolesFor(id);
   const prefix = chapterPrefix(id);
-  // 말썽꾼·악만 must. 주범은 한 사건에 한 명이라 가장 늦게 들어온 주범만 둔다.
-  let must = prefix.filter((id) => role(id).camp !== 'witness');
-  const bosses = must.filter((id) => role(id).camp === 'boss');
-  must = must.filter((id) => role(id).camp !== 'boss' || id === bosses[bosses.length - 1]);
+  // 말썽꾼·악만 must (진영 인원이 must 보다 적으면 인원을 늘린다)
+  const must = prefix.filter((id) => role(id).camp !== 'witness');
   const weights: Partial<Record<RoleId, number>> = {};
   for (const id of prefix) if (role(id).camp === 'witness') weights[id] = NEW_WITNESS_WEIGHT;
   const [w, h] = chapter.sizes[Math.floor(((k - 1) * chapter.sizes.length) / 5)];
-  const avail = (camp: string) => pool.filter((id) => role(id).camp === camp).length;
+  const avail = (camp: string) => pool.some((id) => role(id).camp === camp);
   const mustOf = (camp: string) => must.filter((id) => role(id).camp === camp).length;
-  const [t, a] = counts(j, k);
+  const [t, a, b] = counts(j, k);
   return {
     w, h, pool, must, weights,
-    boss: 1, // 작업 8 에서 장별 주범 수로
-    trouble: Math.min(Math.max(t, mustOf('trouble')), avail('trouble')),
-    accomplice: Math.min(Math.max(a, mustOf('accomplice')), avail('accomplice')),
+    trouble: avail('trouble') ? Math.max(t, mustOf('trouble')) : 0,
+    accomplice: avail('accomplice') ? Math.max(a, mustOf('accomplice')) : 0,
+    boss: Math.max(b, mustOf('boss')),
   };
 }
 
@@ -66,11 +69,12 @@ interface Cand {
 function candidates(id: number): Cand[] {
   const p = stageParams(id);
   const out: Cand[] = [];
-  for (let c = 0; c < CANDIDATES; c++) {
+  // 해설이 EXPLAIN_MS 안에 안 끝나는 후보는 건너뛴다 (주범 3명·모사꾼 판은 수십 초 걸리기도 한다)
+  for (let c = 0; out.length < CANDIDATES && c < CANDIDATES * 3; c++) {
     const def = generateValid(p, id * 1000 + c, 5000);
     const k = solvedKnowledge(def);
-    const steps = explain(k);
-    out.push({ def, abilities: k.abilities, steps, difficulty: difficulty(steps) });
+    const steps = explainWithin(k, EXPLAIN_MS);
+    if (steps) out.push({ def, abilities: k.abilities, steps, difficulty: difficulty(steps) });
   }
   return out;
 }
