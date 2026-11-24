@@ -32,7 +32,7 @@
   /* 글꼴 (fonts.css): 제목·도장 송명, 본문 고운바탕, 메모 손글씨 */
   --title: 'Song Myung', 'Gowun Batang', 'Noto Serif KR', Batang, serif;
   --body: 'Gowun Batang', 'Noto Serif KR', AppleMyungjo, Batang, serif;
-  --hand: 'Nanum Pen Script', 'Gowun Batang', cursive;
+  --hand: 'Village Hand', 'Gowun Batang', cursive;
   --serif: var(--title);
   --sans: var(--body);
   color-scheme: light;

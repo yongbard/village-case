@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import subsetFont from 'subset-font';
+import { renameFamily } from './fontName';
 import { displayGlyphs } from './glyphs';
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
@@ -12,11 +13,12 @@ const RAW = join(ROOT, 'data', 'fonts-src');
 const OUT = join(SRC, 'public', 'fonts');
 const BASE = 'https://github.com/google/fonts/raw/main/ofl';
 
-const FONTS = [
+// rename: OFL 예약 글꼴 이름이 있는 글꼴은 부분 집합(수정본)을 이 이름으로 바꿔 낸다 (나눔손글씨 펜 → Village Hand)
+const FONTS: { src: string; out: string; rename?: string }[] = [
   { src: 'songmyung/SongMyung-Regular.ttf', out: 'song-myung.woff2' },
   { src: 'gowunbatang/GowunBatang-Regular.ttf', out: 'gowun-batang-400.woff2' },
   { src: 'gowunbatang/GowunBatang-Bold.ttf', out: 'gowun-batang-700.woff2' },
-  { src: 'nanumpenscript/NanumPenScript-Regular.ttf', out: 'nanum-pen.woff2' },
+  { src: 'nanumpenscript/NanumPenScript-Regular.ttf', out: 'hand-pen.woff2', rename: 'Village Hand' },
 ];
 
 async function fetchOnce(path: string): Promise<string> {
@@ -34,7 +36,8 @@ mkdirSync(OUT, { recursive: true });
 const glyphs = displayGlyphs(SRC);
 let total = 0;
 for (const f of FONTS) {
-  const out = await subsetFont(readFileSync(await fetchOnce(f.src)), glyphs, { targetFormat: 'woff2' });
+  const raw = new Uint8Array(readFileSync(await fetchOnce(f.src)));
+  const out = await subsetFont(Buffer.from(f.rename ? renameFamily(raw, f.rename) : raw), glyphs, { targetFormat: 'woff2' });
   writeFileSync(join(OUT, f.out), out);
   total += out.length;
   console.log(`${f.out}  ${(out.length / 1024).toFixed(1)} KB`);

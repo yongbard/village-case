@@ -36,7 +36,7 @@ try {
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForSelector('.game-title', { timeout: 10000 });
   check('offline: title screen opens', (await page.$eval('.game-title', (e) => e.textContent)) === '마을 수사록');
-  for (const family of ['Song Myung', 'Gowun Batang', 'Nanum Pen Script']) {
+  for (const family of ['Song Myung', 'Gowun Batang', 'Village Hand']) {
     const loaded = await page.evaluate(async (f) => (await document.fonts.load(`16px "${f}"`, '마을 수사록')).length > 0, family);
     check(`offline: font ${family} loads from cache`, loaded);
   }

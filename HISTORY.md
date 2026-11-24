@@ -74,3 +74,4 @@
 - 데이터: 글꼴 원본은 google/fonts 저장소(SIL OFL)에서 data/fonts-src/ 에 내려받음(git 제외). 글자 601개.
 - 결과: 글꼴 4개 343KB. 미리 받기 138KiB → 502KiB(글꼴 343KB, JS +16KB, CSS +5KB). 시험 124개, 타입 검사, 빌드, check-ui 80개(새 확인 18개: 사진·뒷면·도장·연출·동작 줄이기·4×5 판 글씨와 누르는 자리·결과 도장 등), check-offline(서버 끄고 오프라인으로 글꼴·화면 확인) 통과. 글꼴을 미리 받기에서 빼면 check-offline 이 실패하는 것도 확인.
 - 결과 파일: 인물 사진 대조표 logs/portraits.png, 화면 스크린샷 logs/ui-check/ (git 제외).
+- 최종 검토 수정: 나눔손글씨 펜 라이선스(OFL)는 "Nanum" 을 예약 글꼴 이름으로 두어, 부분 집합(수정본)은 다른 이름이어야 한다. 부분 집합을 만들 때 글꼴 안의 이름을 Village Hand 로 바꾸고(src/tools/fontName.ts) 파일 이름도 hand-pen.woff2 로 바꿈. 저작권·라이선스 기록은 그대로. 시험 fontName.test.ts 가 내보내는 글꼴과 CSS 에 예약 이름이 없는지 확인.
