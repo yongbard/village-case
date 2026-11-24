@@ -47,7 +47,7 @@ export function showRules(): void {
         'header',
         { class: 'list-head' },
         h('button', { class: 'btn ghost back', onclick: showTitle }, '‹ 처음'),
-        h('h1', {}, '규칙'),
+        h('h1', {}, '수사 규칙'),
         h('span', { class: 'list-count' }),
       ),
       SUMMARY.map((s) => h('section', { class: 'rule-block' }, h('h2', {}, s.head), h('ul', {}, s.items.map((t) => h('li', {}, t))))),

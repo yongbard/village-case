@@ -46,7 +46,11 @@ try {
   page.on('response', (r) => r.status() >= 400 && !r.url().endsWith('/favicon.ico') && errors.push(`${r.status()} ${r.url()}`));
   page.on('console', (m) => m.type() === 'error' && !/Failed to load resource/.test(m.text()) && errors.push(m.text()));
 
-  const shot = (name, fullPage = false) => page.screenshot({ path: join(SHOTS, `${name}.png`), fullPage });
+  // 스크린샷은 연출(도장·뒤집기)이 끝난 뒤에 찍는다. 무한히 도는 애니메이션은 없다.
+  const shot = async (name, fullPage = false) => {
+    await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {}))));
+    await page.screenshot({ path: join(SHOTS, `${name}.png`), fullPage });
+  };
   const text = (sel) => page.$eval(sel, (el) => el.textContent.trim()).catch(() => null);
   const noSideScroll = async (where) => {
     const sw = await page.evaluate(() => document.documentElement.scrollWidth);
@@ -164,6 +168,7 @@ try {
   // 7. 결과 화면
   await page.waitForSelector('[data-result]', { timeout: 5000 });
   check('result: 해결', (await text('[data-result]')) === '해결');
+  check('result: verdict is a stamp', await page.$eval('[data-result]', (e) => e.classList.contains('stamp-ink')));
   const steps = await page.$$eval('.steps li', (ls) => ls.map((l) => l.textContent));
   check('result: explanation lines', steps.length >= 1, `${steps.length} lines, first: ${steps[0]}`);
   await noSideScroll('result');
@@ -202,12 +207,15 @@ try {
   await page.waitForSelector('.card-box');
   await settle();
   await shot('08-card');
+  let cardPhoto = false;
   let cards = 0;
   while (await page.$('.card-box')) {
+    if (!cardPhoto) cardPhoto = !!(await page.$('.card-box .photo'));
     await page.click('[data-action="card-ok"]');
     cards++;
   }
   check('stage 30: cards shown one by one', cards >= 1, `${cards} cards`);
+  check('stage 30: first role card shows its photo', cardPhoto);
   check('stage 30: grid has 20 cells', (await page.$$('.cell')).length === 20);
   const g30 = await (await page.$('.grid')).boundingBox();
   check('stage 30: grid fits width', g30.x >= 0 && g30.x + g30.width <= W, `x ${g30.x} w ${g30.width}`);
@@ -328,6 +336,8 @@ try {
   const known = (await page.$$('.codex-item:not(.unknown)')).length;
   const unknown = (await page.$$('.codex-item.unknown')).length;
   check('codex: met roles shown, others hidden as ?', known >= 1 && unknown >= 1 && known + unknown === 20, `${known} met, ${unknown} unknown`);
+  check('codex: titled 인물 카드철', (await text('.codex-screen h1')) === '인물 카드철');
+  check('codex: met roles have photos, unknown do not', (await page.$$('.codex-item:not(.unknown) .photo')).length === known && (await page.$$('.codex-item.unknown .photo')).length === 0);
   check('codex: unknown shows only ?', (await page.$$eval('.codex-item.unknown', (ls) => ls.every((l) => l.querySelector('b').textContent === '?'))));
   await noSideScroll('codex');
   await shot('17-codex', true);
@@ -335,6 +345,7 @@ try {
   await page.click('[data-action="rules"]');
   await page.waitForSelector('.concept');
   check('rules: 4 concept cards', (await page.$$('.concept')).length === 4);
+  check('rules: titled 수사 규칙', (await text('.rules-screen h1')) === '수사 규칙');
   await noSideScroll('rules');
   await shot('18-rules', true);
   await page.click('.back');
@@ -387,6 +398,15 @@ try {
   check('endless fail: endlessBest updated (0 solved)', saveF.endlessBest === 0, String(saveF.endlessBest));
   await new Promise((r) => setTimeout(r, 1500));
   check('endless fail: no result screen pulled in after quitting', !(await page.$('[data-result]')));
+  // 실패 결과는 '미해결' 도장
+  await page.click('[data-action="endless-new"]');
+  await page.waitForSelector('.case-screen .grid', { timeout: 5000 });
+  const defF2 = await page.evaluate(() => window.__game?.def);
+  const goods2 = defF2.truth.roles.flatMap((r, i) => (r === '*w' || !isEvil(role(r).camp) ? [i] : []));
+  for (let k = 0; k < 5; k++) await tapCell(goods2[k], 'arrest');
+  await page.waitForSelector('[data-result]', { timeout: 5000 });
+  check('endless fail: result stamped 미해결', (await text('[data-result]')) === '미해결', await text('[data-result]'));
+  await shot('20-endless-failed', true);
 
   check('no page errors', errors.length === 0, errors.join(' | '));
 } catch (e) {

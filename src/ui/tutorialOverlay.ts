@@ -2,6 +2,7 @@
 import { ROLES } from '../core/roles';
 import { CARDS } from '../content/tutorial';
 import { h, overlay } from './dom';
+import { photo } from './portraits';
 import { CAMP_NAME } from './labels';
 
 /** 카드를 한 장씩 띄운다. 한 장을 넘길 때마다 onSeen(key). */
@@ -15,6 +16,7 @@ export function showCards(keys: string[], onSeen: (key: string) => void): void {
       h(
         'div',
         { class: 'card-box', role: 'dialog', 'aria-modal': 'true' },
+        r && photo(key, 'card-photo'),
         h('p', { class: 'kicker' }, r ? `새 직업 · ${CAMP_NAME[r.camp]}` : '새 규칙'),
         h('h2', {}, card.title),
         h('p', { class: 'card-body' }, card.body),

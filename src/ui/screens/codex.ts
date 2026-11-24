@@ -3,6 +3,7 @@ import { CARDS } from '../../content/tutorial';
 import { ROLES } from '../../core/roles';
 import { h, mount } from '../dom';
 import { CAMP_NAME } from '../labels';
+import { photo } from '../portraits';
 import { speechList } from '../speech';
 import { getSave } from '../store';
 import { showTitle } from './title';
@@ -19,7 +20,7 @@ export function showCodex(): void {
         'header',
         { class: 'list-head' },
         h('button', { class: 'btn ghost back', onclick: showTitle }, '‹ 처음'),
-        h('h1', {}, '도감'),
+        h('h1', {}, '인물 카드철'),
         h('span', { class: 'list-count', 'data-codex-count': met }, `${met} / ${all.length}`),
       ),
       h(
@@ -30,14 +31,23 @@ export function showCodex(): void {
             ? h(
                 'li',
                 { class: 'codex-item', 'data-role': r.id },
-                h('div', { class: 'codex-head' }, h('b', {}, r.name), h('span', { class: `camp-${r.camp}` }, `${CAMP_NAME[r.camp]} · 등급 ${r.tier}`)),
-                h('p', {}, r.desc),
+                h(
+                  'div',
+                  { class: 'codex-top' },
+                  photo(r.id, 'codex-photo'),
+                  h(
+                    'div',
+                    { class: 'codex-title' },
+                    h('div', { class: 'codex-head' }, h('b', {}, r.name), h('span', { class: `camp-${r.camp}` }, `${CAMP_NAME[r.camp]} · 등급 ${r.tier}`)),
+                    h('p', {}, r.desc),
+                  ),
+                ),
                 h('p', { class: 'codex-body' }, CARDS[r.id].body),
                 speechList(r.id),
               )
             : h(
                 'li',
-                { class: 'codex-item unknown', 'data-role': r.id },
+                { class: 'codex-item unknown manila', 'data-role': r.id },
                 h('div', { class: 'codex-head' }, h('b', {}, '?'), h('span', {}, CAMP_NAME[r.camp])),
               ),
         ),
