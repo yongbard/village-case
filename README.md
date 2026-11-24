@@ -6,12 +6,13 @@
 
 ## 목적
 
-출퇴근길에 폰으로 혼자 하는 추리 퍼즐 웹게임(PC 웹도 됨). 격자에 숨은 용의자를 조사해 진술을 모으고, 거짓말을 가려 공범·주범을 모두 체포한다.
+출퇴근길에 폰으로 혼자 하는 추리 퍼즐 웹게임(PC 웹도 됨). 격자에 숨은 용의자를 조사해 진술을 모으고, 거짓말을 가려 주범을 모두 체포한다(주범 사냥).
 장르 구조는 Dupery 같은 1인 추리 게임에서 가져오고, 직업은 전부 새로 만든다. 모든 사건은 솔버로 답이 정확히 하나인지 확인한다.
-상세 설계: docs/2026-11-23-village-case-design.md
+상세 설계: docs/2026-11-23-village-case-design.md, 규칙 개편(주범 사냥): docs/2026-11-24-boss-hunt-design.md
 
 ## 현재 상태
 
+- 2026-11-24 오후: 규칙 개편 1단계 "주범 사냥" 구현(브랜치 feat/boss-hunt, main 합치기·push 는 사용자 확인 대기). 목표는 주범 모두 체포, 직업 28개, 칸 번호를 밝힌 직업 말투 진술, 인원표, 거짓일 수 있는 자백. 스테이지 30개 새로 만듦. 시험 162개, check-ui 90개, check-offline, 교차 검증 3000 통과. 2단계(시간 사건: 두목 살인·의사·술꾼)와 3단계(인상착의)는 설계 7장.
 - 2026-11-23: 구현 10개 작업 완료(브랜치 feat/v1). 스테이지 30개(5스테이지 × 6장), 무한 모드, 오프라인(PWA), GitHub Pages 배포 workflow 까지 만듦.
 - 시험 114개 통과(13 파일), 타입 검사(npm run typecheck), 사건 교차 검증(npm run test:cross) 와 화면 확인(check-ui) 통과.
 - 2026-11-23 최종 검토 수정: 힌트가 같은 칸에 머물지 않고(앞 힌트 답을 알던 선악으로 넘김), 한 번에 1.5초 안에 답하며, 쓸모없어진 힌트는 취소된다.
@@ -41,14 +42,16 @@ village_case_261123/
 │   ├── 2026-11-23-village-case-plan.md     구현 계획 (작업 10개)
 │   ├── 2026-11-23-remaining-work.md        남은 과제 (검토에서 나왔지만 미룬 것)
 │   ├── 2026-11-24-casefile-ui-design.md    그래픽·UI 설계 (수사 서류철)
+│   ├── 2026-11-24-boss-hunt-design.md      규칙 개편 설계 (주범 사냥, 3단계 중 1단계)
+│   ├── 2026-11-24-boss-hunt-plan.md        주범 사냥 구현 계획 (작업 10개)
 │   └── mockups/    그래픽 시안 (png, html)
 ├── src/            (Vite root)
 │   ├── index.html  진입 페이지
 │   ├── public/     아이콘 icon-192.png, icon-512.png (make-icons.mjs 가 만듦), fonts/ 글꼴 부분 집합 woff2 4개 + glyphs.txt + OFL.txt (make-fonts.ts 가 만듦)
 │   ├── core/       규칙·솔버·생성기·게임 상태·저장 (+ 시험)
 │   ├── content/    장 구성, 튜토리얼 카드, stages.json (+ 시험)
-│   ├── ui/         화면(main, screens/, 무한 모드, 워커, 스타일 style.css, 글꼴 fonts.css, 인물 사진 portraits.ts)
-│   └── tools/      build-stages.ts(스테이지 생성), test-cross.mjs(교차 검증 3000건), check-ui.mjs(화면 확인), check-offline.mjs(오프라인 확인), make-icons.mjs(아이콘 생성), make-fonts.ts·glyphs.ts(글꼴 부분 집합), contact-sheet.mjs(인물 사진 대조표)
+│   ├── ui/         화면(main, screens/, 무한 모드, 워커, 스타일 style.css, 글꼴 fonts.css, 인물 사진 portraits.ts, 진술 문장 clueText.ts, 인원표 roster.ts)
+│   └── tools/      build-stages.ts(스테이지 생성), test-cross.mjs(교차 검증 3000건), check-ui.mjs(화면 확인), check-offline.mjs(오프라인 확인), make-icons.mjs(아이콘 생성), make-fonts.ts·glyphs.ts(글꼴 부분 집합), contact-sheet.mjs(인물 사진 대조표), peek-case.mjs(사건 화면 미리 보기)
 ├── data/fonts-src/ 글꼴 원본 TTF·라이선스 (git 제외, npm run fonts 가 내려받음)
 ├── dist/           빌드 결과 (git 제외)
 ├── logs/           화면 확인 스크린샷 (git 제외)
@@ -62,7 +65,7 @@ Node 24. 프로젝트 루트에서:
 ```
 npm run dev                 개발 서버
 npm run typecheck           타입 검사 (tsc --noEmit)
-npm test                    시험 (vitest, 124개)
+npm test                    시험 (vitest, 162개)
 npm run test:cross          솔버 교차 검증 3000건
 npm run stages              stages.json 다시 만들기
 npm run build               dist 빌드 (sw.js, manifest.webmanifest 포함)
@@ -70,6 +73,7 @@ node src/tools/check-ui.mjs 화면 확인 (dev 서버 + Chrome 390x844)
 node src/tools/make-icons.mjs 아이콘 다시 만들기
 npm run fonts               글꼴 부분 집합 다시 만들기 (문구가 바뀌어 glyphs 시험이 실패하면)
 node src/tools/contact-sheet.mjs 인물 사진 대조표 → logs/portraits.png
+node src/tools/peek-case.mjs [n] 무한 모드 n번째 사건 화면 미리 보기 → logs/peek/
 node src/tools/check-offline.mjs 오프라인 확인 (npm run build 다음)
 ```
 
