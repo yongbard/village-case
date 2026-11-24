@@ -19,7 +19,7 @@ export function crossCheck(from: number, to: number): void {
     const truth = randomTruth(r, w, h, inPlay);
     const k = randomKnowledge(r, truth, w, h);
     if (t < from) continue;
-    const a = solve(k).worlds.map(worldKey).sort();
+    const a = solve(k, Infinity).worlds.map(worldKey).sort(); // 상한 없이: 세계가 WORLD_CAP 을 넘는 판도 있다
     const b = solveBrute(k).map(worldKey).sort();
     expect(a, `seed-iter ${t}`).toEqual(b);
     expect(a).toContain(worldKey(normalize(truth, k))); // 실제 세계는 항상 들어 있다
