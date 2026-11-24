@@ -1,5 +1,7 @@
 export type Camp = 'witness' | 'trouble' | 'accomplice' | 'boss';
 export type Side = 'good' | 'evil'; // 선 = 증인·말썽꾼, 악 = 공범·주범
+/** 칸에 대해 아는 것: 선, 악, 주범, 주범 아님(선 또는 공범), 공범 */
+export type Claim = 'good' | 'evil' | 'boss' | 'notBoss' | 'accomplice';
 export type RoleId = string;
 export const ANY_WITNESS = '*w'; // 직업을 모르는 진짜 증인
 export type Mode = 'true' | 'false' | 'any' | 'over' | 'shield'; // over: 실제보다 큰 수(허풍쟁이), shield: 주범을 선으로 치고 참말(협박당한 증인)
@@ -73,6 +75,7 @@ export interface Knowledge {
   abilities: AbilityObs[];
   arrested: (RoleId | undefined)[]; // 체포로 드러난 진짜 직업
   knownSides?: (Side | undefined)[]; // 해설용: 이미 추리한 선·악
+  knownClaims?: (Claim | undefined)[]; // 해설·검사용: 이미 아는(또는 가정한) 칸의 사실
 }
 export interface CaseDef {
   seed: number;

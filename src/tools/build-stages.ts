@@ -50,6 +50,7 @@ function stageParams(id: number): GenParams {
   const [t, a] = counts(j, k);
   return {
     w, h, pool, must, weights,
+    boss: 1, // 작업 8 에서 장별 주범 수로
     trouble: Math.min(Math.max(t, mustOf('trouble')), avail('trouble')),
     accomplice: Math.min(Math.max(a, mustOf('accomplice')), avail('accomplice')),
   };

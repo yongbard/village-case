@@ -1,6 +1,6 @@
 import { colOf, diagOf, halvesOf, nbr4, nbr8, rowOf, sideCells, steps } from './board';
 import { ROLES, isEvil, role } from './roles';
-import { ANY_WITNESS, type Camp, type CaseDef, type Clue, type Knowledge, type Mode, type RoleId, type World } from './types';
+import { ANY_WITNESS, type Camp, type CaseDef, type Claim, type Clue, type Knowledge, type Mode, type RoleId, type World } from './types';
 
 /**
  * 진술을 판정하는 시점: 'real' = 실제 세계, 'shield' = 협박당한 증인이 보는 세계(주범을 선으로 치고,
@@ -173,6 +173,17 @@ export function abilityAnswer(def: CaseDef, cell: number, a: number, b: number):
   return t === 'any' ? hash4(def.seed, cell, a, b) % 2 === 0 : t;
 }
 
+/** 진영이 camp 인 칸에 claim 이 맞는가 */
+export function claimHolds(claim: Claim, camp: Camp): boolean {
+  switch (claim) {
+    case 'good': return !isEvil(camp);
+    case 'evil': return isEvil(camp);
+    case 'boss': return camp === 'boss';
+    case 'notBoss': return camp !== 'boss';
+    case 'accomplice': return camp === 'accomplice';
+  }
+}
+
 /** 원천 i 의 대상이 될 수 있는 칸: 범위 안, 자기 아님, lie·shield 는 진짜 증인, frame 은 선 */
 export function taintEligible(w: number, h: number, roles: RoleId[], i: number): number[] {
   const d = role(roles[i]);
@@ -211,9 +222,11 @@ export function cellAdmits(k: Knowledge, i: number, r: RoleId): boolean {
     }
   }
 
-  // 알려진 선·악
+  // 알려진 선·악, 알려진 사실
   const ks = k.knownSides?.[i];
-  return ks === undefined || ks === (isEvil(rd.camp) ? 'evil' : 'good');
+  if (ks !== undefined && ks !== (isEvil(rd.camp) ? 'evil' : 'good')) return false;
+  const kc = k.knownClaims?.[i];
+  return kc === undefined || claimHolds(kc, rd.camp);
 }
 
 export function consistent(k: Knowledge, world: World): boolean {

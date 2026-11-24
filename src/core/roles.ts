@@ -30,7 +30,7 @@ const defs: RoleDef[] = [
     desc: '판 전체에 악 두 명이 상하좌우로 붙어 사는 곳이 있는지 말합니다.' },
   { id: 'laundry', name: '세탁소 주인', camp: 'witness', tier: 5, clue: 'halves', weight: 1,
     desc: '판의 왼쪽 절반과 오른쪽 절반 중 어디에 악이 더 많은지 말합니다. 가로 폭이 홀수면 가운데 세로줄은 빼고 셉니다.' },
-  { id: 'dog', name: '개 주인', camp: 'witness', tier: 5, clue: 'bossDir', weight: 1,
+  { id: 'dog', name: '개 주인', camp: 'witness', tier: 1, clue: 'bossDir', weight: 1,
     desc: '개가 짖은 방향(위·아래·왼쪽·오른쪽)에 주범이 있다고 말합니다.' },
   { id: 'bellringer', name: '종지기', camp: 'witness', tier: 5, clue: 'bossRow', trigger: 12, weight: 1,
     desc: '12시간이 되면 종탑에서 본 한 가로줄에 주범이 몇 명 있는지 알립니다.' },

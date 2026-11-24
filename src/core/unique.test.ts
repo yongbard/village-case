@@ -5,82 +5,60 @@ import { type CaseDef } from './types';
 import { abilityCells, checkCase, fullKnowledge, signature } from './unique';
 
 // 고정 사건 (시드 탐색으로 찾은 뒤 값을 그대로 적었다). 생성기에 의존하지 않는다.
-const P = 'pharmacist';
-const e8 = (base: number, n: number) => ({ kind: 'evil8' as const, base, n });
-const row = (base: number, n: number) => ({ kind: 'evilRow' as const, base, n });
+const ev8 = (base: number, n: number) => ({ kind: 'evil8' as const, base, n });
+const ev4 = (base: number, n: number) => ({ kind: 'evil4' as const, base, n });
+const acc = (base: number, a: number) => ({ kind: 'accuse' as const, base, a });
+const dir = (base: number, d: 'up' | 'down' | 'left' | 'right') => ({ kind: 'bossDir' as const, base, dir: d });
 
 /**
- * 3×3, 좀도둑 + 두목, 모두 약사로 보인다. 실제(악 = 2·7번)와 다른 배치(악 = 3·4번)도
- * 모든 진술과 맞는다 (두 배치 모두 거짓말쟁이가 둘이고 나머지 진술이 다 참).
+ * 3×3, 두목(3번) + 망보기(6번). 망보기와 두목은 서로 붙어 있어 자리를 맞바꿔도 진술이 다 맞는다:
+ * 주범이 3번인지 6번인지 갈리지 않는다.
  */
-const AMBIGUOUS: CaseDef = {
-  seed: 50, w: 3, h: 3,
-  truth: { roles: [P, 'thief', P, P, P, P, 'chief', P, P], taint: Array(9).fill(-1) },
-  faces: Array(9).fill(P),
-  clues: [e8(0, 1), e8(1, 2), e8(2, 1), e8(3, 2), e8(4, 2), e8(5, 1), e8(6, 1), e8(7, 1), e8(8, 0)],
-  inPlay: ['thief', 'chief'], roster: {},
+const BOSS_AMBIGUOUS: CaseDef = {
+  seed: 3, w: 3, h: 3,
+  truth: { roles: ['pharmacist', 'grandma', 'chief', 'postman', 'grandma', 'lookout', 'dog', 'dog', 'pharmacist'], taint: Array(9).fill(-1) },
+  faces: ['pharmacist', 'grandma', 'grandma', 'postman', 'grandma', 'pharmacist', 'dog', 'dog', 'pharmacist'],
+  clues: [ev8(0, 0), acc(1, 5), acc(2, 7), ev4(3, 0), acc(4, 2), ev8(5, 5), dir(6, 'up'), dir(7, 'right'), ev8(8, 1)],
+  inPlay: ['chief', 'lookout'],
+  roster: { pharmacist: 2, grandma: 2, chief: 1, postman: 1, lookout: 1, dog: 2 },
 };
 
 /**
- * 3×3, 좀도둑 + 두목, 5번이 진짜 기자. 3번이 악인 것은 진술로 정해지지만, 남은 악이
- * 8번(두목, 이장으로 보임)인지 9번(약사로 보임)인지는 진술만으로 갈리지 않는다(둘 다 모든 진술과 맞는다).
- * 기자 능력으로 3번과 8번이 같은 편인지 물으면 두 경우의 답이 달라 정해진다.
+ * 3×3, 망보기(2번) + 두목(6번). 개 주인 진술로 주범은 6번으로 정해지지만, 망보기 자리(2번)는
+ * 5번일 수도 있어 선·악 배치는 하나가 아니다. 주범 자리만 하나면 된다.
  */
-const NEEDS_REPORTER: CaseDef = {
-  seed: 9, w: 3, h: 3,
-  truth: {
-    roles: ['mayor', 'mayor', 'thief', 'mayor', 'reporter', P, 'mayor', 'chief', P],
-    taint: Array(9).fill(-1),
-  },
-  faces: ['mayor', 'mayor', P, 'mayor', 'reporter', P, 'mayor', 'mayor', P],
-  clues: [row(0, 1), row(1, 1), e8(2, 2), row(3, 0), null, e8(5, 2), row(6, 1), row(7, 1), e8(8, 1)],
-  inPlay: ['thief', 'chief'], roster: {},
+const BOSS_ONLY_UNIQUE: CaseDef = {
+  seed: 821, w: 3, h: 3,
+  truth: { roles: ['grandma', 'lookout', 'dog', 'grandma', 'postman', 'chief', 'grandma', 'grandma', 'dog'], taint: Array(9).fill(-1) },
+  faces: ['grandma', 'postman', 'dog', 'grandma', 'postman', 'dog', 'grandma', 'grandma', 'dog'],
+  clues: [acc(0, 5), ev4(1, 1), dir(2, 'down'), acc(3, 5), ev4(4, 2), dir(5, 'left'), acc(6, 5), acc(7, 5), dir(8, 'up')],
+  inPlay: ['chief', 'lookout'],
+  roster: { grandma: 4, lookout: 1, dog: 2, postman: 1, chief: 1 },
 };
 
-/**
- * 같은 사건에서 능력만 뺀 것: 기자 겉 직업 칸을 진술이 보이지 않는 약사로 바꾼다(진짜 기자였으면
- * 진짜 직업도 약사로). 기자는 원래 진술이 없으므로 관찰 정보는 그대로이고 능력만 사라진다.
- * 진술을 새로 주면 정보가 늘어 시험의 뜻이 흐려지므로 null 로 둔다.
- */
-function withoutReporter(def: CaseDef): CaseDef {
-  const swap = (id: string) => (role(id).ability ? P : id);
-  return {
-    ...def,
-    truth: { ...def.truth, roles: def.truth.roles.map(swap) },
-    faces: def.faces.map(swap),
-    clues: def.clues.map((c, i) => (role(def.faces[i]).ability ? null : c)),
-  };
-}
-
-test('hand-made ambiguous case is rejected', () => {
-  expect(consistent(fullKnowledge(AMBIGUOUS), AMBIGUOUS.truth)).toBe(true);
-  expect(checkCase(AMBIGUOUS)).toEqual({ ok: false, reason: 'ambiguous' });
+test('checkCase rejects when boss cell is ambiguous', () => {
+  expect(consistent(fullKnowledge(BOSS_AMBIGUOUS), BOSS_AMBIGUOUS.truth)).toBe(true);
+  expect(checkCase(BOSS_AMBIGUOUS)).toEqual({ ok: false, reason: 'ambiguous' });
 });
 
-test('truth that breaks its own rules is rejected even if its signature fits (G3)', () => {
-  // 좀도둑(3번)이 기자(5번)를 오염시킨 것처럼 적은 불법 실제 세계. 진영 배치는 맞는 세계가 있지만,
-  // 게임은 기자 답을 def.truth 로 계산하므로 이런 사건은 틀린 답으로 이끈다.
-  const bad: CaseDef = { ...NEEDS_REPORTER, truth: { ...NEEDS_REPORTER.truth, taint: NEEDS_REPORTER.truth.taint.map((t, i) => (i === 2 ? 4 : t)) } };
+test('checkCase accepts when only boss cells are unique', () => {
+  expect(checkCase(BOSS_ONLY_UNIQUE)).toEqual({ ok: true, signature: '.....b...' });
+});
+
+test('truth that breaks its own rules is rejected (G3)', () => {
+  // 오염원이 아닌 칸이 대상을 가진 불법 실제 세계
+  const bad: CaseDef = { ...BOSS_ONLY_UNIQUE, truth: { ...BOSS_ONLY_UNIQUE.truth, taint: BOSS_ONLY_UNIQUE.truth.taint.map((t, i) => (i === 1 ? 4 : t)) } };
   expect(consistent(fullKnowledge(bad), bad.truth)).toBe(false);
   expect(checkCase(bad)).toEqual({ ok: false, reason: 'truthMismatch' });
 });
 
-test('case that needs the reporter is accepted only with the ability', () => {
-  expect(abilityCells(NEEDS_REPORTER)).toEqual([4]);
-  expect(consistent(fullKnowledge(NEEDS_REPORTER), NEEDS_REPORTER.truth)).toBe(true);
-  expect(checkCase(NEEDS_REPORTER)).toEqual({ ok: true, signature: 'ggeggggeg' });
-  expect(abilityCells(withoutReporter(NEEDS_REPORTER))).toEqual([]);
-  expect(checkCase(withoutReporter(NEEDS_REPORTER))).toEqual({ ok: false, reason: 'ambiguous' });
-});
-
-test('signature, fullKnowledge, abilityCells basics', () => {
-  expect(signature({ roles: ['postman', 'braggart', 'thief', 'chief'], taint: [-1, -1, -1, -1] })).toBe('ggee');
-  const k = fullKnowledge(NEEDS_REPORTER);
-  expect(k.faces).toEqual(NEEDS_REPORTER.faces);
-  expect(k.clues).toEqual(NEEDS_REPORTER.clues);
+test('signature marks boss cells only; fullKnowledge, abilityCells basics', () => {
+  expect(signature({ roles: ['postman', 'braggart', 'thief', 'chief', 'decoy'], taint: [-1, -1, -1, -1, -1] })).toBe('...b.');
+  const k = fullKnowledge(BOSS_ONLY_UNIQUE);
+  expect(k.faces).toEqual(BOSS_ONLY_UNIQUE.faces);
+  expect(k.clues).toEqual(BOSS_ONLY_UNIQUE.clues);
+  expect(k.roster).toEqual(BOSS_ONLY_UNIQUE.roster);
   expect(k.abilities).toEqual([]);
   expect(k.arrested.every((a) => a === undefined)).toBe(true);
-  expect(abilityCells(NEEDS_REPORTER)).toEqual(
-    NEEDS_REPORTER.faces.flatMap((f, i) => (role(f).ability ? [i] : [])),
-  );
+  expect(abilityCells(BOSS_ONLY_UNIQUE)).toEqual(BOSS_ONLY_UNIQUE.faces.flatMap((f, i) => (role(f).ability ? [i] : [])));
 });
