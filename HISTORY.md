@@ -75,3 +75,8 @@
 - 결과: 글꼴 4개 343KB. 미리 받기 138KiB → 502KiB(글꼴 343KB, JS +16KB, CSS +5KB). 시험 124개, 타입 검사, 빌드, check-ui 80개(새 확인 18개: 사진·뒷면·도장·연출·동작 줄이기·4×5 판 글씨와 누르는 자리·결과 도장 등), check-offline(서버 끄고 오프라인으로 글꼴·화면 확인) 통과. 글꼴을 미리 받기에서 빼면 check-offline 이 실패하는 것도 확인.
 - 결과 파일: 인물 사진 대조표 logs/portraits.png, 화면 스크린샷 logs/ui-check/ (git 제외).
 - 최종 검토 수정: 나눔손글씨 펜 라이선스(OFL)는 "Nanum" 을 예약 글꼴 이름으로 두어, 부분 집합(수정본)은 다른 이름이어야 한다. 부분 집합을 만들 때 글꼴 안의 이름을 Village Hand 로 바꾸고(src/tools/fontName.ts) 파일 이름도 hand-pen.woff2 로 바꿈. 저작권·라이선스 기록은 그대로. 시험 fontName.test.ts 가 내보내는 글꼴과 CSS 에 예약 이름이 없는지 확인.
+
+## 2026-11-24 10:00 그래픽·UI 배포
+
+- 한 일: feat/casefile-ui 를 main 에 합침(fast-forward, 시험 126개 통과). 사용자 승인 후 main push(커밋 12개, 앞서 로컬에만 있던 기록·설계 커밋 포함).
+- 결과: Actions 실행 45301086664 통과(3분 11초), https://yongbard.github.io/village-case/ 와 글꼴 파일 응답 200.
