@@ -14,7 +14,7 @@ export default defineConfig({
       includeAssets: ['icon-192.png', 'icon-512.png'],
       workbox: {
         // 빌드가 낸 모든 파일(html, js, 워커 청크, 스테이지 데이터, css, 아이콘)을 미리 저장
-        globPatterns: ['**/*.{html,js,css,json,png,svg,webmanifest}'],
+        globPatterns: ['**/*.{html,js,css,json,png,svg,webmanifest,woff2}'],
         navigateFallback: '/village-case/index.html',
       },
       manifest: {
