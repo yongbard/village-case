@@ -18,7 +18,7 @@ const AMBIGUOUS: CaseDef = {
   truth: { roles: [P, 'thief', P, P, P, P, 'chief', P, P], taint: Array(9).fill(-1) },
   faces: Array(9).fill(P),
   clues: [e8(0, 1), e8(1, 2), e8(2, 1), e8(3, 2), e8(4, 2), e8(5, 1), e8(6, 1), e8(7, 1), e8(8, 0)],
-  inPlay: ['thief', 'chief'],
+  inPlay: ['thief', 'chief'], roster: {},
 };
 
 /**
@@ -34,7 +34,7 @@ const NEEDS_REPORTER: CaseDef = {
   },
   faces: ['mayor', 'mayor', P, 'mayor', 'reporter', P, 'mayor', 'mayor', P],
   clues: [row(0, 1), row(1, 1), e8(2, 2), row(3, 0), null, e8(5, 2), row(6, 1), row(7, 1), e8(8, 1)],
-  inPlay: ['thief', 'chief'],
+  inPlay: ['thief', 'chief'], roster: {},
 };
 
 /**

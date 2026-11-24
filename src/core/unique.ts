@@ -21,6 +21,7 @@ export function fullKnowledge(def: CaseDef): Knowledge {
     w: def.w,
     h: def.h,
     inPlay: [...def.inPlay],
+    roster: { ...def.roster },
     faces: [...def.faces],
     clues: [...def.clues],
     abilities: [],

@@ -83,6 +83,8 @@ function formLines(kind: ClueKind, shift: boolean, spot?: Spot): { truth: string
         truth: '자기를 뺀 두 사람을 짚는데, 그중 정확히 한 명이 악입니다.',
         lie: '짚은 두 사람이 둘 다 악이거나 둘 다 선입니다.',
       };
+    default:
+      return { truth: '', lie: '' }; // 작업 6 에서 새 문장으로
     case 'bossRow':
       return {
         truth: '주범이 있는 가로줄 번호를 그대로 말합니다.',

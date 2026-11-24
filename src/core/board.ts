@@ -1,3 +1,5 @@
+import { type Dir } from './types';
+
 /**
  * Convert grid coordinates to linear index (left-to-right, top-to-bottom)
  * @param w grid width
@@ -103,6 +105,35 @@ export function colOf(w: number, h: number, i: number): number[] {
     }
   }
   return col;
+}
+
+/** 칸 i 를 지나는 두 대각선 위의 칸 (i 제외, 칸 번호 순) */
+export function diagOf(w: number, h: number, i: number): number[] {
+  const [x, y] = xy(w, i);
+  const out: number[] = [];
+  for (let j = 0; j < w * h; j++) {
+    const [a, b] = xy(w, j);
+    if (j !== i && Math.abs(a - x) === Math.abs(b - y)) out.push(j);
+  }
+  return out;
+}
+
+/** 칸 i 에서 본 한 방향의 칸 전부: up/down 은 위/아래 가로줄 전부, left/right 는 왼쪽/오른쪽 세로줄 전부 (칸 번호 순) */
+export function sideCells(w: number, h: number, i: number, dir: Dir): number[] {
+  const [x, y] = xy(w, i);
+  const out: number[] = [];
+  for (let j = 0; j < w * h; j++) {
+    const [a, b] = xy(w, j);
+    if ((dir === 'up' && b < y) || (dir === 'down' && b > y) || (dir === 'left' && a < x) || (dir === 'right' && a > x)) out.push(j);
+  }
+  return out;
+}
+
+/** 왼쪽 절반과 오른쪽 절반의 칸 (가로 폭이 홀수면 가운데 세로줄 제외) */
+export function halvesOf(w: number, h: number): [number[], number[]] {
+  const half = Math.floor(w / 2);
+  const all = Array.from({ length: w * h }, (_, j) => j);
+  return [all.filter((j) => j % w < half), all.filter((j) => j % w >= w - half)];
 }
 
 /**

@@ -1,4 +1,4 @@
-import { nbr4, nbr8 } from './board';
+import { diagOf, nbr4, nbr8 } from './board';
 import { pick, type Rng } from './rng';
 import { role } from './roles';
 import { clueFact, modeAt } from './rules';
@@ -35,7 +35,8 @@ function range(w: number, h: number, kind: Clue['kind'], base: number): [number,
     case 'evilCol': return [0, h - 1];
     case 'nearest': return [0, w + h - 2];
     case 'bossRow': return [1, h];
-    case 'pairOne': throw new Error('pairOne has no range');
+    case 'diag': return [0, diagOf(w, h, base).length];
+    default: throw new Error(`${kind} has no range`);
   }
 }
 

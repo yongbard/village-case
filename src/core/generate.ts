@@ -3,7 +3,7 @@
 import { nbr8 } from './board';
 import { assignTaint, makeClue, makeFaces } from './makeCase';
 import { makeRng, shuffle, type Rng } from './rng';
-import { ROLES, role } from './roles';
+import { ROLES, role, rosterOf } from './roles';
 import { type CaseDef, type Camp, type RoleId, type World } from './types';
 import { checkCase } from './unique';
 
@@ -84,7 +84,7 @@ export function generateCase(p: GenParams, seed: number): CaseDef | null {
   const clues = faces.map((f, i) => makeClue(r, w, h, truth, i, f));
   if (clues.some((c, i) => c === null && role(faces[i]).clue)) return null;
 
-  const def: CaseDef = { seed, w, h, truth, faces, clues, inPlay };
+  const def: CaseDef = { seed, w, h, truth, faces, clues, inPlay, roster: rosterOf(roles) };
   return checkCase(def).ok ? def : null;
 }
 

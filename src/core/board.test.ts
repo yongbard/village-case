@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { idx, xy, nbr4, nbr8, rowOf, colOf, steps } from './board';
+import { idx, xy, nbr4, nbr8, rowOf, colOf, steps, diagOf, sideCells, halvesOf } from './board';
 
 describe('board geometry', () => {
   it('nbr8 center of 3x3 has 8, corner has 3', () => {
@@ -16,4 +16,21 @@ describe('board geometry', () => {
   });
 
   it('steps is manhattan', () => expect(steps(4, 0, 11)).toBe(5)); // (0,0)→(3,2)
+});
+
+describe('boss-hunt geometry', () => {
+  it('diagOf lists both diagonals without the cell', () => {
+    expect(diagOf(3, 3, 4)).toEqual([0, 2, 6, 8]);
+    expect(diagOf(4, 4, 1)).toEqual([4, 6, 11]);
+  });
+  it('sideCells takes whole rows/columns on that side', () => {
+    expect(sideCells(3, 3, 4, 'up')).toEqual([0, 1, 2]);
+    expect(sideCells(3, 3, 4, 'right')).toEqual([2, 5, 8]);
+    expect(sideCells(3, 3, 0, 'up')).toEqual([]);
+    expect(sideCells(4, 3, 5, 'left')).toEqual([0, 4, 8]);
+  });
+  it('halvesOf skips the middle column on odd width', () => {
+    expect(halvesOf(3, 3)).toEqual([[0, 3, 6], [2, 5, 8]]);
+    expect(halvesOf(4, 2)).toEqual([[0, 1, 4, 5], [2, 3, 6, 7]]);
+  });
 });

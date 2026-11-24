@@ -23,7 +23,7 @@ test('forEachWorld stops when visit returns true', () => {
 });
 
 test('not capped when all worlds fit; emptyKnowledgeOf matches emptyKnowledge', () => {
-  const k = emptyKnowledgeOf({ seed: 1, w: 3, h: 3, truth: { roles: [], taint: [] }, faces: [], clues: [], inPlay: ['thief', 'chief'] });
+  const k = emptyKnowledgeOf({ seed: 1, w: 3, h: 3, truth: { roles: [], taint: [] }, faces: [], clues: [], inPlay: ['thief', 'chief'], roster: {} });
   expect(k).toEqual(emptyKnowledge(3, 3, ['thief', 'chief']));
   const res = solve(k);
   expect(res.capped).toBe(false);

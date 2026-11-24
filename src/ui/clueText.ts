@@ -19,6 +19,8 @@ export function clueText(c: Clue, cell: number, w: number, h: number): string {
       return c.n === 0 ? '나 말고는 악이 없다' : `가장 가까운 악까지 ${c.n}걸음`;
     case 'pairOne':
       return `${c.a! + 1}번과 ${c.b! + 1}번 중 정확히 한 명이 악`;
+    default:
+      return c.kind; // 작업 6 에서 새 문장으로
     case 'bossRow':
       return `주범은 ${c.n}번째 가로줄에 있다`;
   }

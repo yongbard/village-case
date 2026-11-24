@@ -76,10 +76,10 @@ export function normalize(truth: World, k: Knowledge): World {
   };
 }
 
-export function emptyKnowledge(w: number, h: number, inPlay: RoleId[]): Knowledge {
+export function emptyKnowledge(w: number, h: number, inPlay: RoleId[], roster: Record<RoleId, number> = {}): Knowledge {
   const n = w * h;
   return {
-    w, h, inPlay: [...inPlay],
+    w, h, inPlay: [...inPlay], roster: { ...roster },
     faces: Array(n).fill(undefined),
     clues: Array(n).fill(null),
     abilities: [],
@@ -89,7 +89,7 @@ export function emptyKnowledge(w: number, h: number, inPlay: RoleId[]): Knowledg
 
 /** 아무것도 조사 안 한 상태 */
 export function emptyKnowledgeOf(def: CaseDef): Knowledge {
-  return emptyKnowledge(def.w, def.h, def.inPlay);
+  return emptyKnowledge(def.w, def.h, def.inPlay, def.roster);
 }
 
 /** 시간 한도 시험의 배수: CI(GitHub 러너)는 느릴 수 있어 3배로 둔다. 로컬은 1. */

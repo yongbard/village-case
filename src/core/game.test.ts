@@ -25,7 +25,7 @@ const DEF: CaseDef = {
     { kind: 'nearest', base: 7, n: 1 },
     { kind: 'pairOne', base: 8, a: 0, b: 1 },
   ],
-  inPlay: ['thief', 'chief'],
+  inPlay: ['thief', 'chief'], roster: {},
 };
 
 describe('game', () => {
@@ -152,7 +152,7 @@ test('hintKnowledge adds proven sides and visible troublemaker faces as known si
     truth: { roles: ['braggart', 'thief', 'chief'], taint: [-1, -1, -1] },
     faces: ['braggart', 'postman', 'pharmacist'],
     clues: [{ kind: 'evil8', base: 0, n: 0 }, { kind: 'evil4', base: 1, n: 0 }, { kind: 'evil8', base: 2, n: 0 }],
-    inPlay: ['braggart', 'thief', 'chief'],
+    inPlay: ['braggart', 'thief', 'chief'], roster: {},
   };
   let g = newGame(def);
   expect(hintKnowledge(g, [undefined, 'evil', undefined]).knownSides).toEqual([undefined, 'evil', undefined]);

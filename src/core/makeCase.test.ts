@@ -23,7 +23,7 @@ function world(seed: number, w: number, h: number): { world: World; inPlay: Role
 function knowledgeOf(w: number, h: number, inPlay: RoleId[], cell: number, face: RoleId, clue: Knowledge['clues'][number]): Knowledge {
   const n = w * h;
   return {
-    w, h, inPlay,
+    w, h, inPlay, roster: {},
     faces: Array.from({ length: n }, (_, i) => (i === cell ? face : undefined)),
     clues: Array.from({ length: n }, (_, i) => (i === cell ? clue : null)),
     abilities: [],

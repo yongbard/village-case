@@ -78,6 +78,7 @@ export function knowledgeOf(g: Game): Knowledge {
     w: def.w,
     h: def.h,
     inPlay: def.inPlay,
+    roster: def.roster,
     faces: idx.map((i) => (g.investigated[i] ? def.faces[i] : undefined)),
     clues: idx.map((i) => visibleClue(g, i)),
     abilities: g.abilities,

@@ -2,7 +2,7 @@
 // 진술은 참조 칸이 다 정해지는 순간 판정한다. 진짜 증인의 진술은 오염 여부를 모르므로
 // "참으로 말할 수 있나 / 거짓으로 말할 수 있나"만 기록하고, 오염 대상은 끝에서 정확히 맞춘다.
 // 내보내는 세계는 모두 consistent() 로 다시 확인한다.
-import { colOf, nbr4, nbr8, rowOf, steps } from './board';
+import { colOf, diagOf, nbr4, nbr8, rowOf, sideCells, steps } from './board';
 import { ROLES, role } from './roles';
 import { cellAdmits, clueFact, consistent, modeAt, pairSameFact } from './rules';
 import { ANY_WITNESS, type Clue, type Knowledge, type RoleId, type World } from './types';
@@ -33,9 +33,19 @@ export function clueRefs(w: number, h: number, c: Clue): number[] {
     case 'evil8': return nbr8(w, h, c.base);
     case 'evilRow': return rowOf(w, h, c.base);
     case 'evilCol': return colOf(w, h, c.base);
-    case 'pairOne': return [c.a!, c.b!];
+    case 'diag': return diagOf(w, h, c.base);
+    case 'pairOne':
+    case 'sameSide':
+      return [c.a!, c.b!];
+    case 'alibi':
+    case 'accuse':
+      return [c.a!];
+    case 'atLeastOne': return [...c.cells!];
+    case 'bossDir': return sideCells(w, h, c.base, c.dir!);
+    case 'bossRow': return Array.from({ length: w }, (_, x) => (c.r! - 1) * w + x);
     case 'nearest':
-    case 'bossRow':
+    case 'adjPair':
+    case 'halves':
       return Array.from({ length: w * h }, (_, i) => i);
   }
 }
