@@ -18,6 +18,7 @@ import { abilityText, clueText, pendingText } from '../clueText';
 import { h, mount, overlay, toast } from '../dom';
 import { CAMP_NAME, SIDE_MARK, SIDE_NAME } from '../labels';
 import { guideBubble } from '../tutorialOverlay';
+import { photo } from '../portraits';
 import { speechList } from '../speech';
 import { requestHint } from '../workerClient';
 import { showStageList } from './stageList';
@@ -37,6 +38,9 @@ export interface CaseOpts {
   onStatus?: (g: Game) => void;
   onEnd: (g: Game) => void;
 }
+
+/** 핀으로 꽂은 카드의 기울기(도). 칸 번호로 정해 다시 그려도 같다. */
+const TILT = [-2, 1.2, -0.8, 1.6, -1.4];
 
 /** 칸 구석의 메모 표시 */
 const NOTE_MARK: Record<Note, string> = { good: '선', evil: '악', unsure: '?' };
@@ -82,6 +86,8 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
   const endless = opts.mode === 'endless';
   const guide = opts.mode === 'stage' && (opts.stageId === 1 || opts.stageId === 2) ? GUIDE[opts.stageId] : null;
   let guideAt = guide ? 0 : -1;
+  /** 다음 그리기에서 한 번 보여 줄 연출: 조사하면 카드 뒤집기, 체포하면 도장 */
+  let fx: { cell: number; kind: 'reveal' | 'stamp' } | null = null;
 
   const root = h('main', { class: 'screen case-screen' });
   mount(root);
@@ -135,7 +141,11 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
 
   function doArrest(i: number) {
     const before = g.rep;
-    if (!apply(arrest(g, i))) return;
+    fx = { cell: i, kind: 'stamp' };
+    if (!apply(arrest(g, i))) {
+      fx = null;
+      return;
+    }
     const r = role(trueRole(def, i));
     if (g.rep < before) toast(`선(${CAMP_NAME[r.camp]})을 체포했습니다. 평판 -${before - g.rep}`);
     else toast(`악을 체포했습니다: ${r.name}(${CAMP_NAME[r.camp]})`);
@@ -223,7 +233,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
       body = h(
         'div',
         { class: 'sheet', role: 'dialog', 'aria-modal': 'true' },
-        h('div', { class: 'sheet-head' }, h('b', {}, `${i + 1}번 칸`), h('span', {}, '체포함')),
+        h('div', { class: 'sheet-head' }, photo(r.id, 'sheet-photo'), h('b', {}, `${i + 1}번 칸`), h('span', {}, '체포함')),
         h(
           'p',
           { class: `sheet-truth side-${side}` },
@@ -242,6 +252,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
         h(
           'div',
           { class: 'sheet-head' },
+          g.investigated[i] && photo(face.id, 'sheet-photo'),
           h('b', {}, `${i + 1}번 칸`),
           h('span', {}, g.investigated[i] ? face.name : '조사하지 않음'),
         ),
@@ -261,7 +272,10 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
               class: 'btn action',
               'data-action': 'investigate',
               disabled: g.investigated[i],
-              onclick: run(() => apply(investigate(g, i))),
+              onclick: run(() => {
+                fx = { cell: i, kind: 'reveal' };
+                if (!apply(investigate(g, i))) fx = null;
+              }),
             },
             '조사',
             h('small', {}, g.investigated[i] ? '조사함' : '2시간'),
@@ -330,7 +344,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
       h(
         'div',
         { class: 'sheet', role: 'dialog', 'aria-modal': 'true' },
-        h('div', { class: 'sheet-head' }, h('b', {}, r.name), h('span', {}, `${CAMP_NAME[r.camp]} · ${SIDE_NAME[sideOf(id)]}`)),
+        h('div', { class: 'sheet-head' }, photo(id, 'sheet-photo'), h('b', {}, r.name), h('span', {}, `${CAMP_NAME[r.camp]} · ${SIDE_NAME[sideOf(id)]}`)),
         h('p', { class: 'sheet-desc' }, r.desc),
         speechList(id, cell === undefined ? undefined : { w: def.w, h: def.h, cell }),
         h('button', { class: 'btn wide', onclick: () => close() }, '닫기'),
@@ -405,26 +419,29 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
       const side = sideOf(r.id);
       cls.push('arrested', `side-${side}`);
       inner = [
-        h('span', { class: 'stamp' }, `${SIDE_MARK[side]} ${SIDE_NAME[side]}`),
+        photo(r.id),
         h('span', { class: 'face' }, r.name),
-        h('span', { class: 'sub' }, CAMP_NAME[r.camp]),
+        h('span', { class: 'sub' }, `${CAMP_NAME[r.camp]} · ${SIDE_NAME[side]}`),
+        h('span', { class: 'stamp stamp-ink' }, side === 'evil' ? '체포' : '오인 체포'),
       ];
     } else if (g.investigated[i]) {
       cls.push('seen');
-      inner = [h('span', { class: 'face' }, role(def.faces[i]).name)];
+      inner = [photo(def.faces[i]), h('span', { class: 'face' }, role(def.faces[i]).name)];
     } else {
       cls.push('hidden');
-      inner = [h('span', { class: 'face unknown' }, '?')];
+      inner = [h('span', { class: 'back manila' }, '?'), h('span', { class: 'face unknown' }, '조사 전')];
     }
+    if (fx?.cell === i) cls.push(fx.kind === 'reveal' ? 'fx-reveal' : 'fx-stamp');
     if (hint?.cell === i) cls.push('flash');
     if (guideCell === i) cls.push('guide');
     if (picking && (picking.cell === i || picking.picks.includes(i))) cls.push(picking.cell === i ? 'picker' : 'picked');
     const label = `${i + 1}번 칸${g.investigated[i] ? ` ${role(def.faces[i]).name}` : ''}${note ? `, 메모 ${NOTE_NAME[note]}` : ''}`;
     return h(
       'button',
-      { class: cls.join(' '), 'data-cell': i, 'aria-label': label, onclick: () => onCell(i) },
+      { class: cls.join(' '), style: `--tilt:${TILT[i % TILT.length]}deg`, 'data-cell': i, 'aria-label': label, onclick: () => onCell(i) },
+      h('span', { class: 'pin' }),
       h('span', { class: 'num' }, String(i + 1)),
-      note && !g.arrested[i] && h('span', { class: `note note-${note}` }, NOTE_MARK[note]),
+      note && !g.arrested[i] && h('span', { class: `note postit note-${note}` }, NOTE_MARK[note]),
       ...inner,
     );
   }
@@ -478,7 +495,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
     return h(
       'section',
       { class: 'clues' },
-      h('h2', {}, '진술', h('small', {}, `${seen.length} / ${def.w * def.h}명 조사`)),
+      h('h2', {}, '진술 기록', h('small', {}, `${seen.length} / ${def.w * def.h}명 조사`)),
       seen.length === 0
         ? h('p', { class: 'empty' }, '아직 조사한 사람이 없습니다. 칸을 눌러 조사하세요.')
         : h(
@@ -510,5 +527,6 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
       Array.from({ length: def.w * def.h }, (_, i) => cellEl(i)),
     );
     root.replaceChildren(header(), grid, panel() ?? '', clueList());
+    fx = null;
   }
 }

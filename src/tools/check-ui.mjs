@@ -66,6 +66,8 @@ try {
     await page.waitForSelector(`.sheet [data-action="${action}"]`, { timeout: 3000 });
     await page.click(`.sheet [data-action="${action}"]`);
     await page.waitForSelector('.overlay', { hidden: true, timeout: 3000 });
+    // 카드 뒤집기·도장 연출이 끝날 때까지 (뒤집히는 중에는 카드가 옆으로 서 있어 누를 수 없다)
+    await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => {}))));
   };
 
   // 1. 타이틀
@@ -110,6 +112,8 @@ try {
   await page.click('.sheet [data-note="good"]');
   await page.waitForSelector('.cell[data-cell="4"] .note-good');
   check('memo mark shows in cell corner', true);
+  check('uninvestigated card shows its back, no photo', !!(await page.$('.cell[data-cell="8"] .back')) && !(await page.$('.cell[data-cell="8"] .photo')));
+  check('investigated card shows a photo', !!(await page.$('.cell[data-cell="4"] .photo')));
   check('investigate costs 2 hours', (await text('[data-stat="hour"]')) === '2시간');
   check('clue line in list', /^5번\s*약사: 주변 8칸에 악이 2명$/.test((await text('.clues li[data-line="4"]')) ?? ''), await text('.clues li[data-line="4"]'));
 
@@ -135,12 +139,22 @@ try {
   await page.click('.sheet .btn.wide');
   await page.waitForSelector('.overlay', { hidden: true });
 
+  // 5d. 동작 줄이기 설정이면 조사해도 카드 뒤집기 연출이 없다
+  const calm = [1, 2, 3, 5, 6, 7].find((i) => !evilCells.includes(i));
+  await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+  await tapCell(calm, 'investigate');
+  const calmAnims = await page.$eval(`.cell[data-cell="${calm}"]`, (e) => e.getAnimations({ subtree: true }).length);
+  check('reduced motion: no flip animation on investigate', calmAnims === 0, `${calmAnims} animations`);
+  await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
+
   // 6. 악 칸들을 조사 후 체포
   for (const [k, i] of evilCells.entries()) {
     await tapCell(i, 'investigate');
+    if (k === 0) check('investigate plays the flip', await page.$eval(`.cell[data-cell="${i}"]`, (e) => e.classList.contains('fx-reveal')));
     await tapCell(i, 'arrest');
     if (k === 0) {
-      check(`arrested cell ${i + 1} shows camp label`, (await text(`.cell[data-cell="${i}"] .stamp`)) === '● 악');
+      check(`arrested cell ${i + 1} stamped 체포`, (await text(`.cell[data-cell="${i}"] .stamp`)) === '체포', await text(`.cell[data-cell="${i}"] .stamp`));
+      check(`arrested cell ${i + 1} names its side`, ((await text(`.cell[data-cell="${i}"] .sub`)) ?? '').includes('악'), await text(`.cell[data-cell="${i}"] .sub`));
       await shot('06-arrested');
     }
   }
@@ -206,6 +220,26 @@ try {
   check('stage 30: bellringer before 12h', (await line(bell))?.endsWith('12시간에 말함'), await line(bell));
   for (let i = 0; i < 20; i++) if (i !== bell) await tapCell(i, 'investigate');
   check('stage 30: bellringer after 12h', /주범은 \d번째 가로줄에 있다$/.test((await line(bell)) ?? ''), await line(bell));
+  // 4×5 판: 가로 스크롤 없음, 이름은 14px 이상이고 잘리지 않음, 칸 가운데를 누르면 그 칸
+  await noSideScroll('stage 30 investigated');
+  const faces30 = await page.$$eval('.cell .face', (ls) => ls.map((l) => ({ px: parseFloat(getComputedStyle(l).fontSize), cut: l.scrollWidth > l.clientWidth + 1 || l.scrollHeight > l.clientHeight + 1, t: l.textContent })));
+  check('stage 30: names 14px or more', faces30.every((f) => f.px >= 14), faces30.map((f) => f.px).join(','));
+  check('stage 30: names not clipped', faces30.every((f) => !f.cut), faces30.filter((f) => f.cut).map((f) => f.t).join(','));
+  const hitOk = await page.$$eval('.cell', (cs) =>
+    cs.every((c) => {
+      const r = c.getBoundingClientRect();
+      const x = r.left + r.width / 2;
+      const y = r.top + r.height / 2;
+      if (y < 0 || y > innerHeight) {
+        window.scrollTo(0, scrollY + y - innerHeight / 2);
+        const r2 = c.getBoundingClientRect();
+        return document.elementFromPoint(r2.left + r2.width / 2, r2.top + r2.height / 2)?.closest('.cell') === c;
+      }
+      return document.elementFromPoint(x, y)?.closest('.cell') === c;
+    }),
+  );
+  check('stage 30: tapping each card centre opens that card', hitOk);
+  await page.evaluate(() => window.scrollTo(0, 0));
   // 힌트를 두 번: 겉 직업이 말썽꾼인 칸(보이는 대로 선)은 가리키지 않고, 두 번째 힌트는 다른 칸을 가리킨다
   const troubleFaces = s30.def.faces.flatMap((f, i) => (role(f).camp === 'trouble' ? [i] : []));
   const isEvil30 = (i) => s30.def.truth.roles[i] !== '*w' && isEvil(role(s30.def.truth.roles[i]).camp);
@@ -278,6 +312,11 @@ try {
   await page.waitForSelector('.case-screen .grid', { timeout: 5000 });
   check('endless: resume gives the same case', (await text('.seed-line')) === seed2 && /2번째 사건/.test((await text('.case-title')) ?? ''), await text('.seed-line'));
   check('endless: resume keeps the reduced rep', (await text('[data-stat="rep"]')) === '9', await text('[data-stat="rep"]'));
+  // 선을 체포하면 '오인 체포' 도장
+  const defR = await page.evaluate(() => window.__game?.def);
+  const good = defR.truth.roles.findIndex((r) => r === '*w' || !isEvil(role(r).camp));
+  await tapCell(good, 'arrest');
+  check('endless: wrongly arrested good cell stamped 오인 체포', (await text(`.cell[data-cell="${good}"] .stamp`)) === '오인 체포', await text(`.cell[data-cell="${good}"] .stamp`));
 
   // 14. 도감 / 규칙
   await page.click('.back');
