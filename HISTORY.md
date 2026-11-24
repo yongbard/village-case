@@ -99,3 +99,8 @@
 - 데이터: src/content/stages.json 30개 다시 만듦(npm run stages, 510초, logs/stages-build.txt). 무한 모드 생성 시간 logs/gen-time.txt (n=30 중앙값 96 ms).
 - 결과: 시험 162개(18 파일), 타입 검사, 교차 검증 3000(logs/test-cross.txt), 빌드(미리 받기 545KiB), check-ui 90개, check-offline 7개 통과. 글꼴 부분 집합 361KB(글자 637개).
 - 최종 검토(별도 검토자): 심각 0, 중요 1, 작은 것 6. 고친 것: (1) 악이 꾸미는 일은 한 사람에게 하나만, 대상이 있으면 반드시 꾸민다는 규칙을 오염 카드와 규칙 화면에 적음(솔버가 쓰는 규칙인데 플레이어에게 안 알려져 있었음). (2) 거짓말이라도 인원표로 보아 나올 수 없는 수(셀 수 있는 사람보다 큰 수)나 판에서 나올 수 없는 거리는 말하지 않게 함(바로 들통남). stages.json 다시 만듦(525초). 시험 165개, check-ui 90개, check-offline 통과. 미룬 작은 것은 docs/2026-11-23-remaining-work.md.
+
+## 2026-11-24 17:00 주범 사냥 1단계 배포
+
+- 한 일: feat/boss-hunt 를 main 에 합침(fast-forward, 시험 165개 통과). 사용자 승인 후 main push(커밋 17개, 앞서 로컬에만 있던 기록 커밋 포함). 브랜치 삭제.
+- 결과: Actions 실행 45352954799 통과(7분 36초), https://yongbard.github.io/village-case/ 응답 200, 배포된 번들에 인원표 화면 문구가 있는 것 확인.
