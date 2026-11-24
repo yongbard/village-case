@@ -24,8 +24,8 @@ export default defineConfig({
         lang: 'ko',
         display: 'standalone',
         orientation: 'portrait',
-        theme_color: '#f3ede1',
-        background_color: '#f3ede1',
+        theme_color: '#3b2c1f',
+        background_color: '#3b2c1f',
         start_url: '/village-case/',
         scope: '/village-case/',
         icons: [

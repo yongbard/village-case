@@ -1,31 +1,71 @@
-/* 마을 수사록 — 종이와 잉크, 강조색 하나(남색). 390×844 세로 기준, PC 는 가운데 같은 폭. */
+/* 마을 수사록 — 수사 서류철: 코르크판 위에 종이·마닐라지·사진을 핀으로 꽂고 빨간 잉크로 도장. 390×844 세로 기준, PC 는 가운데 같은 폭. */
 :root {
-  --paper: #f3ede1;
-  --paper-deep: #e9e0cf;
-  --card: #fcfaf5;
-  --ink: #2a2723;
-  --muted: #6f675a;
-  --line: #d6cab5;
-  --accent: #2c4c7c;
-  --accent-soft: #e2e8f2;
+  /* 재질 */
+  --cork: #6f5136;
+  --cork-dot: #7d5e40;
+  --wood: #3b2c1f;
+  --paper: #f4efe4;
+  --paper-deep: #e9dfca;
+  --paper-line: #e3d7bf;
+  --card: #fbf6ea;
+  --manila: #d8be8a;
+  --manila-deep: #cdb07a;
+  --postit: #fff3a0;
+  --pin: #c0392b;
+  /* 잉크 */
+  --ink: #2a241d;
+  --ink-soft: #6b5a45;
+  --muted: #6b5a45;
+  --line: #d6c7aa;
+  --red: #b3261e;
+  --red-soft: #f3dcd6;
+  --on-cork: #f4ecdc;
+  /* 진영 */
   --good: #2b6a55;
   --good-soft: #e1eee7;
-  --evil: #a2332a;
+  --evil: #a3271d;
   --evil-soft: #f5dfdb;
   --trouble: #94660f;
   --trouble-soft: #f3e8cf;
   --mark: #f3d566;
-  --radius: 10px;
-  --sans: system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', sans-serif;
-  --serif: 'Noto Serif KR', 'Nanum Myeongjo', AppleMyungjo, Batang, serif;
+  --radius: 3px;
+  /* 글꼴 (fonts.css): 제목·도장 송명, 본문 고운바탕, 메모 손글씨 */
+  --title: 'Song Myung', 'Gowun Batang', 'Noto Serif KR', Batang, serif;
+  --body: 'Gowun Batang', 'Noto Serif KR', AppleMyungjo, Batang, serif;
+  --hand: 'Nanum Pen Script', 'Gowun Batang', cursive;
+  --serif: var(--title);
+  --sans: var(--body);
   color-scheme: light;
+}
+
+/* 재질 부품 */
+.paper { background: var(--card); color: var(--ink); box-shadow: 0 3px 8px rgba(20, 12, 4, 0.45); }
+.manila {
+  background: repeating-linear-gradient(45deg, var(--manila-deep) 0 6px, var(--manila) 6px 12px);
+  color: #6a5228;
+}
+.postit {
+  background: var(--postit);
+  color: var(--ink);
+  font-family: var(--hand);
+  box-shadow: 0 2px 4px rgba(20, 12, 4, 0.4);
+}
+.stamp-ink {
+  font-family: var(--title);
+  color: var(--red);
+  border: 3px double var(--red);
+  border-radius: 3px;
+  padding: 0 8px;
+  letter-spacing: 0.15em;
 }
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0;
-  background: var(--paper);
+  background-color: var(--cork);
+  background-image: radial-gradient(var(--cork-dot) 1.2px, transparent 1.2px);
+  background-size: 7px 7px;
   color: var(--ink);
   font: 15px/1.5 var(--sans);
   word-break: keep-all;
@@ -47,10 +87,12 @@ button { font: inherit; color: inherit; }
 .btn {
   min-height: 44px;
   padding: 0 14px;
-  border: 1.5px solid var(--line);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--card);
-  font-weight: 600;
+  color: var(--ink);
+  box-shadow: 0 2px 0 rgba(20, 12, 4, 0.35);
+  font-weight: 700;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
@@ -61,17 +103,17 @@ button { font: inherit; color: inherit; }
 .btn:active:not(:disabled) { transform: translateY(1px); }
 .btn:disabled { opacity: 0.45; cursor: default; }
 .btn:focus-visible, .cell:focus-visible, .chip:focus-visible, .stage:focus-visible {
-  outline: 3px solid var(--accent);
+  outline: 3px solid var(--mark);
   outline-offset: 2px;
 }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary { border-left: 6px solid var(--red); }
 .btn.danger { color: var(--evil); border-color: var(--evil); }
-.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+.btn.ghost { background: transparent; border-color: transparent; box-shadow: none; color: var(--muted); }
 .btn.wide { width: 100%; }
 .btn.big { min-height: 60px; font-size: 18px; flex-direction: column; gap: 0; }
 .btn.big small { font-weight: 500; opacity: 0.85; }
 .spacer { flex: 1; }
-.kicker { color: var(--accent); font-size: 13px; font-weight: 700; letter-spacing: 0.08em; }
+.kicker { color: var(--red); font-size: 13px; font-weight: 700; letter-spacing: 0.08em; }
 
 /* ---------- 타이틀 ---------- */
 .title-screen {
@@ -122,7 +164,7 @@ button { font: inherit; color: inherit; }
 .stage-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
 .stage {
   min-height: 62px;
-  border: 1.5px solid var(--accent);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--card);
   display: flex;
@@ -139,7 +181,7 @@ button { font: inherit; color: inherit; }
 .stage.locked { border: 1.5px dashed var(--line); background: transparent; color: var(--muted); cursor: default; }
 
 /* ---------- 사건 화면 ---------- */
-.hint-btn { color: var(--accent); border-color: var(--accent); min-width: 72px; }
+.hint-btn { min-width: 72px; }
 .stats {
   display: flex;
   gap: 6px;
@@ -256,9 +298,9 @@ button { font: inherit; color: inherit; }
 .note-evil { color: var(--evil); }
 .note-unsure { color: var(--muted); }
 .cell.flash { animation: flash 1s ease-in-out 3; box-shadow: 0 0 0 3px var(--mark); border-color: #c9a92a; }
-.cell.guide { box-shadow: 0 0 0 3px var(--accent); border-color: var(--accent); }
-.cell.picker { box-shadow: 0 0 0 3px var(--accent); }
-.cell.picked { box-shadow: 0 0 0 3px var(--accent); background: var(--accent-soft); }
+.cell.guide { box-shadow: 0 0 0 3px var(--red); border-color: var(--red); }
+.cell.picker { box-shadow: 0 0 0 3px var(--red); }
+.cell.picked { box-shadow: 0 0 0 3px var(--red); background: var(--red-soft); }
 @keyframes flash {
   50% { box-shadow: 0 0 0 6px var(--mark); background: #fbf1c7; }
 }
@@ -269,7 +311,7 @@ button { font: inherit; color: inherit; }
   position: relative;
   background: var(--card);
   border: 1.5px solid var(--line);
-  border-left: 5px solid var(--accent);
+  border-left: 5px solid var(--red);
   border-radius: var(--radius);
   padding: 10px 12px;
 }
@@ -288,7 +330,7 @@ button { font: inherit; color: inherit; }
 .panel .bubble + .bubble::before { display: none; }
 .hint-bubble { border-left-color: #c9a92a; }
 .bubble-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-.bubble-tag { font-size: 12px; font-weight: 800; color: var(--accent); letter-spacing: 0.04em; }
+.bubble-tag { font-family: var(--hand); font-size: 19px; color: var(--red); line-height: 1; }
 .hint-bubble .bubble-tag { color: #8a6d00; }
 .bubble-count { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .bubble-text { font-size: 15px; }
@@ -480,3 +522,59 @@ button { font: inherit; color: inherit; }
 .rule-block li { margin-bottom: 4px; }
 .concept { border: 1.5px solid var(--line); border-radius: var(--radius); background: var(--card); padding: 10px 12px; margin-bottom: 8px; }
 .concept p { margin-top: 2px; font-size: 14px; color: var(--muted); }
+
+/* ---------- 서류철 바탕: 코르크판 위 글자와 종이 ---------- */
+/* 사건·타이틀 밖의 화면은 코르크판 위 종이 한 장 */
+.list-screen, .codex-screen, .rules-screen, .result-screen, .loading-screen {
+  background: var(--card);
+  color: var(--ink);
+  padding: 12px 14px 20px;
+  box-shadow: 0 4px 12px rgba(20, 12, 4, 0.5);
+  border-radius: var(--radius);
+}
+/* 사건 화면은 코르크판 그대로: 위 줄 글자는 밝게, 진술은 종이 */
+.case-screen .head-row, .case-screen .head-row .btn.ghost, .case-screen .seed-line { color: var(--on-cork); }
+.case-title { font-family: var(--title); font-weight: 400; letter-spacing: 0.04em; }
+.clues {
+  background: var(--card);
+  padding: 12px 12px 6px;
+  box-shadow: 0 3px 8px rgba(20, 12, 4, 0.45);
+  border-radius: var(--radius);
+}
+.title-screen .seed-msg { color: #ffd9cf; }
+h1, h2 { font-family: var(--title); font-weight: 400; }
+.sheet {
+  background: var(--card);
+  border-radius: 6px 6px 0 0;
+  box-shadow: 0 -4px 16px rgba(20, 12, 4, 0.4);
+}
+.sheet-head b, .card-box h2 { font-family: var(--title); font-weight: 400; }
+/* 새 직업·규칙 카드: 핀으로 꽂은 종이 */
+.card-box { position: relative; border-radius: var(--radius); background: var(--card); }
+.card-box::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  margin-left: -7px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #e2574a, #9c2318);
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.5);
+}
+/* 안내 말풍선은 포스트잇, 힌트는 쪽지 */
+.bubble { border-radius: 2px; box-shadow: 0 2px 5px rgba(20, 12, 4, 0.4); border: none; border-left: 5px solid var(--red); }
+.bubble::before { border: none; }
+.guide-bubble, .guide-bubble::before { background: var(--postit); }
+.hint-bubble { background: var(--card); border-left-color: var(--mark); }
+.hint-bubble .bubble-tag { color: #8a6d00; }
+/* 알림: 타자 쪽지 */
+#toast {
+  background: var(--card);
+  color: var(--ink);
+  border-left: 5px solid var(--red);
+  border-radius: 2px;
+  box-shadow: 0 3px 10px rgba(20, 12, 4, 0.5);
+}
+.overlay { background: rgba(20, 12, 4, 0.55); }
