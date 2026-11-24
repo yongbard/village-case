@@ -1,7 +1,9 @@
 import { expect, test } from 'vitest';
 import { CROSS_CASES, crossCheck } from './crossCheck';
 import { makeRng, shuffle } from './rng';
+import { solveBrute } from './brute';
 import { forEachWorld, solve, worldKey } from './solve';
+import { type RoleId } from './types';
 import { emptyKnowledge, emptyKnowledgeOf, randomInPlay, randomKnowledge, randomTruth } from './testcases';
 
 // 기본 600판(npm test). 3000판 전체는 npm run test:cross (CROSS_CASES=3000).
@@ -23,8 +25,8 @@ test('forEachWorld stops when visit returns true', () => {
 });
 
 test('not capped when all worlds fit; emptyKnowledgeOf matches emptyKnowledge', () => {
-  const k = emptyKnowledgeOf({ seed: 1, w: 3, h: 3, truth: { roles: [], taint: [] }, faces: [], clues: [], inPlay: ['thief', 'chief'], roster: {} });
-  expect(k).toEqual(emptyKnowledge(3, 3, ['thief', 'chief']));
+  const k = emptyKnowledgeOf({ seed: 1, w: 3, h: 3, truth: { roles: [], taint: [] }, faces: [], clues: [], inPlay: ['chief', 'decoy'], roster: {} });
+  expect(k).toEqual(emptyKnowledge(3, 3, ['chief', 'decoy']));
   const res = solve(k);
   expect(res.capped).toBe(false);
   expect(res.worlds.length).toBe(9 * 8);
@@ -50,4 +52,30 @@ test('fill order changes speed only, not the set of worlds', () => {
 
 test('order must be a permutation', () => {
   expect(() => forEachWorld(emptyKnowledge(3, 3, ['thief', 'chief']), () => true, [0, 1, 2])).toThrow();
+});
+
+const keysOf = (ws: { roles: RoleId[]; taint: number[] }[]) => ws.map(worldKey).sort();
+
+test('duplicate roles: each world once', () => {
+  const k = emptyKnowledge(3, 3, ['chief', 'decoy', 'decoy']);
+  const ks = keysOf(solve(k).worlds);
+  expect(new Set(ks).size).toBe(ks.length);
+  expect(ks.length).toBe(9 * 28);
+  expect(ks).toEqual(keysOf(solveBrute(k)));
+});
+
+test('roster count prunes worlds', () => {
+  const faces = Array.from({ length: 9 }, (_, i) => (i < 3 ? 'postman' : 'pharmacist'));
+  const k = { ...emptyKnowledge(3, 3, ['chief', 'decoy'], { postman: 2, pharmacist: 5 }), faces };
+  const ws = solve(k).worlds;
+  expect(ws.length).toBeGreaterThan(0);
+  for (const w of ws) expect(w.roles.slice(0, 3).filter((r) => r === 'postman').length).toBeLessThanOrEqual(2);
+  expect(keysOf(ws)).toEqual(keysOf(solveBrute(k)));
+});
+
+test('frame target chosen inside the search', () => {
+  const k = emptyKnowledge(3, 3, ['decoy', 'framer']);
+  const ks = keysOf(solve(k).worlds);
+  expect(ks.length).toBe(9 * 8 * 7); // 모사꾼 자리 9 × 대역 8 × 누명 대상(나머지 선 7)
+  expect(ks).toEqual(keysOf(solveBrute(k)));
 });

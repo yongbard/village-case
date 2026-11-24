@@ -17,7 +17,7 @@ function world(seed: number, w: number, h: number): { world: World; inPlay: Role
   const inPlay = shuffle(r, OTHERS).slice(0, 2 + (seed % 3)).filter((x) => x !== 'lookout');
   const cells = shuffle(r, Array.from({ length: n }, (_, i) => i));
   inPlay.forEach((x, j) => (roles[cells[j]] = x));
-  return { world: { roles, taint: assignTaint(r, w, h, roles) }, inPlay };
+  return { world: { roles, taint: assignTaint(r, w, h, roles)! }, inPlay };
 }
 
 function knowledgeOf(w: number, h: number, inPlay: RoleId[], cell: number, face: RoleId, clue: Knowledge['clues'][number]): Knowledge {

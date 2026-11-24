@@ -78,7 +78,9 @@ export function generateCase(p: GenParams, seed: number): CaseDef | null {
   mustWitness.forEach((id, j) => (roles[cells[inPlay.length + j]] = id));
   for (const i of cells.slice(inPlay.length + mustWitness.length)) roles[i] = pickWeighted(r, witnesses, p.weights);
 
-  const truth: World = { roles, taint: assignTaint(r, w, h, roles) };
+  const taint = assignTaint(r, w, h, roles);
+  if (!taint) return null;
+  const truth: World = { roles, taint };
   const faces = makeFaces(r, truth, witnesses);
   if (faces.filter((f) => role(f).ability).length > MAX_ABILITY_FACES) return null;
   const clues = faces.map((f, i) => makeClue(r, w, h, truth, i, f));

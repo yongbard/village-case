@@ -116,7 +116,12 @@ export function clueFact(w: number, h: number, world: World, c: Clue, view: View
 
 /** 칸 cell 의 말하는 방식으로 진술 c 를 할 수 있는가 */
 export function statementHolds(w: number, h: number, world: World, cell: number, c: Clue): boolean {
-  switch (modeAt(world, cell)) {
+  return holdsAs(w, h, world, c, modeAt(world, cell));
+}
+
+/** 말하는 방식 m 으로 진술 c 를 할 수 있는가 (솔버가 증인의 오염 여부를 모를 때 방식마다 따진다) */
+export function holdsAs(w: number, h: number, world: World, c: Clue, m: Mode): boolean {
+  switch (m) {
     case 'true': return clueFact(w, h, world, c);
     case 'false': return !clueFact(w, h, world, c);
     case 'any': return true;
@@ -132,7 +137,12 @@ export function pairSameFact(world: World, a: number, b: number): boolean {
 
 /** 칸 cell 이 기자 능력으로 "a·b 가 같은 편인가"에 할 답. 'any' = 어느 답이든 */
 export function abilityTruth(world: World, cell: number, a: number, b: number): boolean | 'any' {
-  switch (modeAt(world, cell)) {
+  return abilityAs(world, modeAt(world, cell), a, b);
+}
+
+/** 말하는 방식 m 으로 할 "a·b 가 같은 편인가"의 답 */
+export function abilityAs(world: World, m: Mode, a: number, b: number): boolean | 'any' {
+  switch (m) {
     case 'true':
     case 'over':
       return pairSameFact(world, a, b);
