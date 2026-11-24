@@ -34,7 +34,7 @@ function explainBody(def: CaseDef, e: Explain | null, failed = false): (HTMLElem
     h(
       'ol',
       { class: 'steps' },
-      e.steps.map((s) => h('li', { class: `side-${s.side}`, 'data-step': s.cell }, describeStep(s, def))),
+      e.steps.map((s) => h('li', { class: `side-${s.claim === 'good' ? 'good' : s.claim === 'notBoss' ? 'unsure' : 'evil'}`, 'data-step': s.cell }, describeStep(s, def))),
     ),
   ];
 }

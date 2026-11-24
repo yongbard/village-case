@@ -74,7 +74,6 @@ export interface Knowledge {
   clues: (Clue | null)[]; // 보이는 진술 (없으면 null)
   abilities: AbilityObs[];
   arrested: (RoleId | undefined)[]; // 체포로 드러난 진짜 직업
-  knownSides?: (Side | undefined)[]; // 해설용: 이미 추리한 선·악
   knownClaims?: (Claim | undefined)[]; // 해설·검사용: 이미 아는(또는 가정한) 칸의 사실
 }
 export interface CaseDef {

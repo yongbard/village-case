@@ -12,7 +12,7 @@ import {
   type Note,
 } from '../../core/game';
 import { isEvil, role } from '../../core/roles';
-import { ANY_WITNESS, type CaseDef, type RoleId, type Side } from '../../core/types';
+import { ANY_WITNESS, type CaseDef, type Claim, type RoleId, type Side } from '../../core/types';
 import { GUIDE } from '../../content/tutorial';
 import { abilityText, clueText, pendingText } from '../clueText';
 import { h, mount, overlay, toast } from '../dom';
@@ -76,8 +76,8 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
   /** 돌고 있는 힌트 요청을 취소한다 (관찰이 바뀌면 그 힌트는 쓸모없다) */
   let hintAbort: AbortController | null = null;
   let hint: { text: string; cell?: number } | null = null;
-  /** 앞 힌트가 증명한 선·악. 다음 힌트 요청에 알던 선악으로 넘겨 같은 칸을 다시 가리키지 않게 한다. */
-  const proven: (Side | undefined)[] = Array(def.w * def.h).fill(undefined);
+  /** 앞 힌트가 증명한 사실. 다음 힌트 요청에 알던 사실로 넘겨 같은 칸을 다시 가리키지 않게 한다. */
+  const proven: (Claim | undefined)[] = Array(def.w * def.h).fill(undefined);
   /** 이미 보여 준 힌트 (종류:칸). 같은 힌트를 다시 보여 줄 때는 무한 모드 평판을 쓰지 않는다. */
   const hinted = new Set<string>();
   let picking: { cell: number; picks: number[] } | null = null;
@@ -175,7 +175,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
       const key = res.kind === 'step' ? `step:${res.step.cell}` : `${res.kind}:${res.cell}`;
       fresh = !hinted.has(key);
       hinted.add(key);
-      if (res.kind === 'step') proven[res.step.cell] = res.step.side;
+      if (res.kind === 'step') proven[res.step.cell] = res.step.claim;
     }
     // 무한 모드: 새 힌트가 나왔을 때(새로 칸을 가리킬 때)만 평판 1 을 쓴다
     if (endless && fresh) {

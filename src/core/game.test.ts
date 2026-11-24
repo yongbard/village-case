@@ -141,11 +141,11 @@ describe('game', () => {
     expect(k.clues[0]).toBeNull();
     expect(k.arrested).toEqual(['thief', undefined, undefined, undefined, undefined, undefined, 'guard', undefined, undefined]);
     expect(k.abilities).toEqual(g.abilities);
-    expect('knownSides' in k).toBe(false);
+    expect('knownClaims' in k).toBe(false);
   });
 });
 
-test('hintKnowledge adds proven sides and visible troublemaker faces as known sides', () => {
+test('hintKnowledge adds proven claims and visible troublemaker faces as known claims', () => {
   // 3×1: 0 허풍쟁이(말썽꾼, 겉 직업 그대로), 1 좀도둑(우체부로 위장), 2 두목(약사로 위장)
   const def: CaseDef = {
     seed: 1, w: 3, h: 1,
@@ -155,9 +155,9 @@ test('hintKnowledge adds proven sides and visible troublemaker faces as known si
     inPlay: ['braggart', 'thief', 'chief'], roster: {},
   };
   let g = newGame(def);
-  expect(hintKnowledge(g, [undefined, 'evil', undefined]).knownSides).toEqual([undefined, 'evil', undefined]);
+  expect(hintKnowledge(g, [undefined, 'evil', undefined]).knownClaims).toEqual([undefined, 'evil', undefined]);
   g = investigate(investigate(g, 0), 1);
-  const k = hintKnowledge(g, [undefined, undefined, 'evil']);
-  expect(k.knownSides).toEqual(['good', undefined, 'evil']);
-  expect({ ...k, knownSides: undefined }).toEqual({ ...knowledgeOf(g), knownSides: undefined });
+  const k = hintKnowledge(g, [undefined, undefined, 'boss']);
+  expect(k.knownClaims).toEqual(['good', undefined, 'boss']);
+  expect({ ...k, knownClaims: undefined }).toEqual({ ...knowledgeOf(g), knownClaims: undefined });
 });

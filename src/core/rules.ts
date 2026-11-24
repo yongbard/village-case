@@ -222,9 +222,7 @@ export function cellAdmits(k: Knowledge, i: number, r: RoleId): boolean {
     }
   }
 
-  // 알려진 선·악, 알려진 사실
-  const ks = k.knownSides?.[i];
-  if (ks !== undefined && ks !== (isEvil(rd.camp) ? 'evil' : 'good')) return false;
+  // 알려진 사실
   const kc = k.knownClaims?.[i];
   return kc === undefined || claimHolds(kc, rd.camp);
 }

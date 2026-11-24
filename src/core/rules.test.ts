@@ -3,7 +3,7 @@ import { ROLES, isEvil, role } from './roles';
 import {
   abilityAnswer, abilityTruth, campAt, clueFact, consistent, countValue, modeAt, pairSameFact, statementHolds,
 } from './rules';
-import { ANY_WITNESS, type CaseDef, type Side, type Clue, type Knowledge, type RoleId, type World } from './types';
+import { ANY_WITNESS, type CaseDef, type Claim, type Clue, type Knowledge, type RoleId, type World } from './types';
 
 // 3x3, 0 = 대역(decoy, 위장 거짓말 공범), 8 = 두목(chief), 나머지 증인
 const W: World = { roles: ['decoy','*w','*w','*w','*w','*w','*w','*w','chief'], taint: Array(9).fill(-1) };
@@ -240,13 +240,16 @@ describe('consistent', () => {
     expect(consistent(k('braggart'), w)).toBe(true);
     expect(consistent(k('lost'), w)).toBe(false);
   });
-  test('arrested and knownSides must match', () => {
+  test('arrested and knownClaims must match', () => {
     expect(consistent(K(['chief','decoy'], { arrested: faceAt({ 0: 'decoy' }) }), W)).toBe(true);
     expect(consistent(K(['chief','decoy'], { arrested: faceAt({ 0: 'chief' }) }), W)).toBe(false);
     expect(consistent(K(['chief','decoy'], { arrested: faceAt({ 2: ANY_WITNESS }) }), W)).toBe(true);
-    const sides = (set: Record<number, Side>) => sparse<Side | undefined>(set, undefined);
-    expect(consistent(K(['chief','decoy'], { knownSides: sides({ 0: 'good' }) }), W)).toBe(false);
-    expect(consistent(K(['chief','decoy'], { knownSides: sides({ 0: 'evil', 4: 'good' }) }), W)).toBe(true);
+    const claims = (set: Record<number, Claim>) => sparse<Claim | undefined>(set, undefined);
+    expect(consistent(K(['chief','decoy'], { knownClaims: claims({ 0: 'good' }) }), W)).toBe(false);
+    expect(consistent(K(['chief','decoy'], { knownClaims: claims({ 0: 'evil', 4: 'good' }) }), W)).toBe(true);
+    expect(consistent(K(['chief','decoy'], { knownClaims: claims({ 0: 'accomplice', 8: 'boss' }) }), W)).toBe(true);
+    expect(consistent(K(['chief','decoy'], { knownClaims: claims({ 0: 'boss' }) }), W)).toBe(false);
+    expect(consistent(K(['chief','decoy'], { knownClaims: claims({ 8: 'notBoss' }) }), W)).toBe(false);
   });
   test('ability observations', () => {
     const ob = (cell: number, a: number, b: number, same: boolean) => K(['chief','decoy'], { abilities: [{ cell, a, b, same }] });
