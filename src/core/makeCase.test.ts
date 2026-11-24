@@ -122,10 +122,30 @@ describe('makeClue', () => {
     for (let s = 0; s < 40; s++) expect(makeClue(r, 3, 3, liar, 0, 'dog')).toBeNull(); // 아래·오른쪽 다 주범이 있어 거짓 방향이 없다
   });
 
+  test('a lie never names a count above the people who can be counted (it would expose the liar)', () => {
+    // 3×3: 두목 0, 대역 4(약사로 위장해 거짓말). 대역 둘레에서 셀 수 있는 사람은 두목 1명(대역 자신은 빼고) → 세는 사람 최대 2
+    const truth: World = { roles: ['chief', ANY_WITNESS, ANY_WITNESS, ANY_WITNESS, 'decoy', ANY_WITNESS, ANY_WITNESS, ANY_WITNESS, ANY_WITNESS], taint: Array(9).fill(-1) };
+    const r = makeRng(6);
+    for (let s = 0; s < 40; s++) expect(makeClue(r, 3, 3, truth, 4, 'pharmacist')!.n).toBeLessThanOrEqual(2);
+  });
+
+  test('a lie never names a distance farther than the board allows from that cell', () => {
+    // 4×4 칸 6(0부터 5)에서 가장 먼 칸(16번)은 4걸음. 거짓 거리가 5 ~ 6 이면 바로 들통난다
+    const roles = Array.from({ length: 16 }, (_, i) => (i === 5 ? 'decoy' : i === 6 ? 'chief' : ANY_WITNESS));
+    const truth: World = { roles, taint: Array(16).fill(-1) };
+    const r = makeRng(7);
+    for (let s = 0; s < 40; s++) expect(makeClue(r, 4, 4, truth, 5, 'baker')!.n).toBeLessThanOrEqual(4);
+  });
+
   test('makeClue braggart value is above the real count', () => {
-    const truth: World = { roles: ['chief', ANY_WITNESS, ANY_WITNESS, ANY_WITNESS, 'braggart', ANY_WITNESS, ANY_WITNESS, ANY_WITNESS, ANY_WITNESS], taint: Array(9).fill(-1) };
+    // 4×4: 허풍쟁이 5(0부터), 둘레에 두목 0 (실제 1명), 둘레 밖에 대역 15 → 셀 수 있는 사람 2명이라 2명이라고만 할 수 있다
+    const roles = Array.from({ length: 16 }, (_, i) => (i === 5 ? 'braggart' : i === 0 ? 'chief' : i === 15 ? 'decoy' : ANY_WITNESS));
+    const truth: World = { roles, taint: Array(16).fill(-1) };
     const r = makeRng(5);
-    for (let s = 0; s < 40; s++) expect(makeClue(r, 3, 3, truth, 4, 'braggart')!.n).toBeGreaterThan(1);
+    for (let s = 0; s < 40; s++) expect(makeClue(r, 4, 4, truth, 5, 'braggart')!.n).toBe(2);
+    // 셀 수 있는 사람이 실제 수뿐이면 부풀릴 수가 없다 (그 사건은 만들지 않는다)
+    const only: World = { roles: roles.map((x) => (x === 'decoy' ? ANY_WITNESS : x)), taint: Array(16).fill(-1) };
+    expect(makeClue(r, 4, 4, only, 5, 'braggart')).toBeNull();
   });
 
   test("lost's base is the right neighbour, else the left", () => {

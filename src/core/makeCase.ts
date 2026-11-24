@@ -1,4 +1,4 @@
-import { sideCells } from './board';
+import { sideCells, steps } from './board';
 import { pick, type Rng } from './rng';
 import { role } from './roles';
 import { countCells, statementHolds, taintEligible } from './rules';
@@ -32,20 +32,29 @@ export function makeFaces(r: Rng, truth: World, witnessPool: RoleId[]): RoleId[]
   });
 }
 
-/** 진술 형식 kind 로 기준 칸 base 에서 할 수 있는 진술 전부 (말한 칸 cell 은 대상으로 짚지 않는다) */
+/**
+ * 진술 형식 kind 로 기준 칸 base 에서 할 수 있는 진술 전부 (말한 칸 cell 은 대상으로 짚지 않는다).
+ * 값은 공개된 것(인원표·판 모양)으로 보아 나올 수 있는 것만: 셀 수 있는 사람보다 큰 수, 판에서 나올 수 없는 거리는
+ * 거짓말이라도 하지 않는다 (하면 바로 거짓말이 들통난다. 설계 4.3·4.4).
+ */
 function candidates(w: number, h: number, truth: World, kind: ClueKind, base: number, cell: number): Clue[] {
   const n = w * h;
   const others = Array.from({ length: n }, (_, i) => i).filter((i) => i !== cell);
   const nums = (lo: number, hi: number) => Array.from({ length: hi - lo + 1 }, (_, v) => ({ kind, base, n: lo + v }));
+  // 악을 세는 진술에서 세어질 수 있는 사람 수: 그림자가 아닌 공범·주범 + 모사꾼마다 누명 한 명
+  const countable = truth.roles.filter((id) => {
+    const d = role(id);
+    return (d.camp === 'accomplice' || d.camp === 'boss') && !d.hiddenFromCounts;
+  }).length + truth.roles.filter((id) => role(id).effect === 'frame').length;
   switch (kind) {
     case 'evil4':
     case 'evil8':
     case 'evilRow':
     case 'evilCol':
     case 'diag':
-      return nums(0, countCells(w, h, { kind, base }).length);
+      return nums(0, Math.min(countCells(w, h, { kind, base }).length, countable));
     case 'nearest':
-      return nums(0, w + h - 2);
+      return nums(0, Math.max(...others.filter((i) => i !== base).map((i) => steps(w, base, i))));
     case 'adjPair':
       return nums(0, 1);
     case 'halves':

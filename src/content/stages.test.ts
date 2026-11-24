@@ -177,3 +177,8 @@ test('guide: stage 1 walks investigate, read, note, arrest; cells are on the boa
   expect(s1.def.clues[0]).toMatchObject({ kind: 'evil8', base: 0, n: 0 });
   expect(s1.def.truth.roles[6]).toBe('chief');
 });
+
+test('taint card tells the two hidden rules the solver uses (one effect per person, always used when possible)', () => {
+  expect(CARDS.taint.body).toContain('한 사람에게는 하나만');
+  expect(CARDS.taint.body).toContain('반드시');
+});
