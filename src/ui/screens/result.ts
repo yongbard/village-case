@@ -28,7 +28,7 @@ function explainBody(def: CaseDef, e: Explain | null, failed = false): (HTMLElem
         'ul',
         { class: 'abilities' },
         e.abilities.map((o, j) =>
-          h('li', {}, `${j + 1}번째 능력 결과 · ${o.cell + 1}번 ${role(def.faces[o.cell]).name}: ${abilityText(o)}`),
+          h('li', {}, `${j + 1}번째 능력 결과 · ${o.cell + 1}번 ${role(def.faces[o.cell]).name}: ${abilityText(o, def.faces[o.cell])}`),
         ),
       ),
     h(

@@ -58,11 +58,11 @@ function statements(g: Game, i: number): string[] {
   const face = role(g.def.faces[i]);
   const out: string[] = [];
   const c = visibleClue(g, i);
-  if (c) out.push(clueText(c, i, g.def.w, g.def.h));
+  if (c) out.push(clueText(c, i, g.def.w, g.def.h, g.def.faces[i]));
   else if (face.trigger !== undefined && g.def.clues[i]) out.push(pendingText(face.trigger));
   if (face.ability) {
     const o = g.abilities.find((a) => a.cell === i);
-    out.push(o ? `(능력) ${abilityText(o)}` : '진술 없음 · 능력을 쓸 수 있음');
+    out.push(o ? `(능력) ${abilityText(o, g.def.faces[i])}` : '진술 없음 · 능력을 쓸 수 있음');
   }
   if (out.length === 0) out.push('진술 없음');
   return out;
@@ -212,7 +212,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
       }
       const { cell, picks } = picking;
       picking = null;
-      if (apply(useAbility(g, cell, picks[0], picks[1]))) toast(abilityText(g.abilities[g.abilities.length - 1]));
+      if (apply(useAbility(g, cell, picks[0], picks[1]))) toast(abilityText(g.abilities[g.abilities.length - 1], g.def.faces[cell]));
       else render();
       return;
     }

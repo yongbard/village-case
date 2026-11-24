@@ -1,6 +1,6 @@
 // 직업을 눌렀을 때 보여 줄 말하는 방식: 언제 참·거짓을 말하는지, 참말일 때와 거짓말일 때 나올 수 있는 답의 범위.
 // 거짓말은 그 형식에서 나올 수 있는 답 중 실제와 다른 아무 답이다 (makeClue 와 같은 규칙).
-import { nbr4, nbr8 } from '../core/board';
+import { diagOf, nbr4, nbr8 } from '../core/board';
 import { role } from '../core/roles';
 import { type ClueKind, type RoleId } from '../core/types';
 import { h } from './dom';
@@ -20,13 +20,14 @@ export interface Spot {
 /** 언제 참말·거짓말을 하는가 */
 function manner(id: RoleId): string {
   const d = role(id);
+  const taken = '단, 좀도둑에게 쪽지를 바꿔치기당하거나 매수왕에게 매수되면 거짓말을, 협박꾼에게 협박당하면 주범을 선으로 치고 말합니다. 겉으로는 티가 나지 않습니다.';
   if (d.camp === 'witness') {
-    if (d.ability) return '진술 대신 능력을 씁니다. 결과는 참입니다. 단, 오염되면 반대로 답합니다.';
-    return '항상 참말을 합니다. 단, 오염되면 거짓말을 합니다.';
+    if (d.ability) return `진술 대신 능력을 씁니다. 결과는 참입니다. ${taken}`;
+    return `항상 참말을 합니다. ${taken}`;
   }
-  if (id === 'braggart') return '약사 형식으로 말하고 항상 거짓말을 합니다.';
+  if (id === 'braggart') return '약사 형식으로 말하지만 늘 실제보다 큰 수를 말합니다.';
   if (id === 'lost') return '약사 형식으로 참말을 하지만, 오른쪽 칸(없으면 왼쪽)을 가운데로 놓고 셉니다.';
-  if (!d.clue && d.face !== 'witness' && d.camp === 'trouble') return '진술이 없습니다.';
+  if (id === 'gossip') return '옆집 할머니 형식으로 한 사람을 악이라고 짚지만 소문은 늘 틀립니다.';
   if (d.mode === 'true') return '겉 직업의 형식으로 참말을 합니다. 능력 결과도 참입니다.';
   if (d.mode === 'any') return '겉 직업의 형식으로 참말도 거짓말도 합니다. 어느 쪽인지 알 수 없습니다.';
   return '겉 직업의 형식으로 항상 거짓말을 합니다. 능력 결과도 반대입니다.';
@@ -83,30 +84,63 @@ function formLines(kind: ClueKind, shift: boolean, spot?: Spot): { truth: string
         truth: '자기를 뺀 두 사람을 짚는데, 그중 정확히 한 명이 악입니다.',
         lie: '짚은 두 사람이 둘 다 악이거나 둘 다 선입니다.',
       };
-    default:
-      return { truth: '', lie: '' }; // 작업 6 에서 새 문장으로
+    case 'diag': {
+      const k = spot ? diagOf(spot.w, spot.h, base!).length : undefined;
+      return {
+        truth: `자기 칸을 지나는 두 대각선 위 ${k !== undefined ? `${k}칸` : '칸'}의 악 수를 그대로 말합니다.`,
+        lie: `0 ~ ${k !== undefined ? `${k}명` : '대각선 칸 수'} 중 실제와 다른 수를 말합니다.`,
+      };
+    }
+    case 'atLeastOne':
+      return {
+        truth: '자기를 뺀 세 사람을 짚는데, 그중 적어도 한 명이 악입니다.',
+        lie: '짚은 세 사람이 모두 선입니다.',
+      };
+    case 'adjPair':
+      return {
+        truth: '판 전체에 악 두 명이 상하좌우로 붙어 사는 곳이 있는지 그대로 말합니다.',
+        lie: '있으면 없다고, 없으면 있다고 말합니다.',
+      };
+    case 'halves':
+      return {
+        truth: '판의 왼쪽 절반과 오른쪽 절반(가로 폭이 홀수면 가운데 세로줄 빼고) 중 악이 더 많은 쪽, 또는 같다고 그대로 말합니다.',
+        lie: '나머지 두 답(반대쪽이 많다, 같다) 중 하나를 말합니다.',
+      };
+    case 'bossDir':
+      return {
+        truth: '주범(대역 포함)이 적어도 한 명 있는 방향을 말합니다. 위·아래는 그쪽 가로줄 전부, 왼쪽·오른쪽은 그쪽 세로줄 전부입니다.',
+        lie: '말한 방향에는 주범이 한 명도 없습니다.',
+      };
+    case 'alibi':
+      return { truth: '자기를 뺀 한 사람을 짚어 선이라고 말합니다.', lie: '짚은 사람은 악입니다.' };
+    case 'accuse':
+      return { truth: '자기를 뺀 한 사람을 짚어 악이라고 말합니다.', lie: '짚은 사람은 선입니다.' };
+    case 'sameSide':
+      return { truth: '두 사람을 짚어 같은 편이라고 말합니다.', lie: '짚은 두 사람은 다른 편입니다.' };
     case 'bossRow':
       return {
-        truth: '주범이 있는 가로줄 번호를 그대로 말합니다.',
-        lie: `${spot ? `1 ~ ${spot.h}번째` : '판의'} 가로줄 중 주범이 없는 줄을 말합니다.`,
+        truth: '한 가로줄을 골라 그 줄에 있는 주범 수(대역 포함)를 그대로 말합니다.',
+        lie: `그 줄의 실제 주범 수와 다른 수(0 ~ ${spot ? `${spot.w}명` : '가로 칸 수'} 안에서)를 말합니다.`,
       };
   }
 }
 
-const COUNT_KINDS: ClueKind[] = ['evil4', 'evil8', 'evilRow', 'evilCol', 'nearest'];
+const COUNT_KINDS: ClueKind[] = ['evil4', 'evil8', 'evilRow', 'evilCol', 'diag', 'nearest', 'adjPair', 'halves'];
 
 /** 직업 id 의 말하는 방식. spot 이 있으면 그 칸 기준 숫자로 적는다. */
 export function speechLines(id: RoleId, spot?: Spot): SpeechLine[] {
   const d = role(id);
   const out: SpeechLine[] = [{ label: '말투', text: manner(id) }];
-  const canTrue = d.camp === 'witness' || d.mode === 'true' || d.mode === 'any' || id === 'lost';
-  const canLie = d.camp === 'witness' || id === 'braggart' || (d.camp !== 'trouble' && d.mode !== 'true');
+  const canTrue = d.camp === 'witness' || d.mode === 'true' || d.mode === 'any';
+  const canLie = d.camp === 'witness' || d.mode === 'false' || d.mode === 'over' || (d.camp !== 'trouble' && d.mode !== 'true');
 
   if (d.clue) {
     const f = formLines(d.clue, d.shift === 'right', spot);
     if (canTrue) out.push({ label: '참말일 때', text: f.truth });
-    if (canLie) out.push({ label: '거짓말일 때', text: f.lie });
-    if (COUNT_KINDS.includes(d.clue)) out.push({ label: '세는 법', text: '자기 칸은 세지 않습니다. 그림자(주범)는 악인데도 세지 않습니다.' });
+    if (canLie) out.push({ label: '거짓말일 때', text: d.mode === 'over' ? '실제보다 큰 수만 말합니다. 예: 실제 1명이면 2명 이상.' : f.lie });
+    if (COUNT_KINDS.includes(d.clue)) {
+      out.push({ label: '세는 법', text: '자기 칸은 세지 않습니다. 그림자(주범)는 악인데도 세지 않고, 모사꾼에게 누명 쓴 사람은 선인데도 셉니다.' });
+    }
   } else if (d.ability) {
     out.push({ label: '참일 때', text: '고른 두 칸이 같은 편인지 다른 편인지 그대로 답합니다.' });
     out.push({ label: '거짓일 때', text: '반대로 답합니다. 같은 편이면 다른 편, 다른 편이면 같은 편.' });
