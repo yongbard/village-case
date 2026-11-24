@@ -15,6 +15,7 @@
 - 2026-11-23: 구현 10개 작업 완료(브랜치 feat/v1). 스테이지 30개(5스테이지 × 6장), 무한 모드, 오프라인(PWA), GitHub Pages 배포 workflow 까지 만듦.
 - 시험 114개 통과(13 파일), 타입 검사(npm run typecheck), 사건 교차 검증(npm run test:cross) 와 화면 확인(check-ui) 통과.
 - 2026-11-23 최종 검토 수정: 힌트가 같은 칸에 머물지 않고(앞 힌트 답을 알던 선악으로 넘김), 한 번에 1.5초 안에 답하며, 쓸모없어진 힌트는 취소된다.
+- 2026-11-24 09:30: 그래픽·UI 를 수사 서류철 모습으로 바꿈(브랜치 feat/casefile-ui, main 합치기 전). 코르크판·종이·도장, 직업 20개 인물 사진(SVG), 글꼴 송명·고운바탕·나눔손글씨 펜(부분 집합 343KB, 오프라인 포함). 시험 124개, check-ui 80개, check-offline 통과.
 - 2026-11-23 16:05: 진술 문장을 실제 세는 칸 수로 고치고, 직업 창에 말하는 방식(참말·거짓말 범위)을 붙임. 시험 118개.
 - 2026-11-23 15:30: 공개 레포 yongbard/village-case 에 push, GitHub Actions(시험·교차 검증 3000·빌드) 통과 후 Pages 배포. 폰에서 열고 비행기 모드로 오프라인 확인은 사용자 확인 대기.
 
@@ -43,11 +44,12 @@ village_case_261123/
 │   └── mockups/    그래픽 시안 (png, html)
 ├── src/            (Vite root)
 │   ├── index.html  진입 페이지
-│   ├── public/     아이콘 icon-192.png, icon-512.png (make-icons.mjs 가 만듦)
+│   ├── public/     아이콘 icon-192.png, icon-512.png (make-icons.mjs 가 만듦), fonts/ 글꼴 부분 집합 woff2 4개 + glyphs.txt + OFL.txt (make-fonts.ts 가 만듦)
 │   ├── core/       규칙·솔버·생성기·게임 상태·저장 (+ 시험)
 │   ├── content/    장 구성, 튜토리얼 카드, stages.json (+ 시험)
-│   ├── ui/         화면(main, screens/, 무한 모드, 워커, 스타일)
-│   └── tools/      build-stages.ts(스테이지 생성), test-cross.mjs(교차 검증 3000건), check-ui.mjs(화면 확인), make-icons.mjs(아이콘 생성)
+│   ├── ui/         화면(main, screens/, 무한 모드, 워커, 스타일 style.css, 글꼴 fonts.css, 인물 사진 portraits.ts)
+│   └── tools/      build-stages.ts(스테이지 생성), test-cross.mjs(교차 검증 3000건), check-ui.mjs(화면 확인), check-offline.mjs(오프라인 확인), make-icons.mjs(아이콘 생성), make-fonts.ts·glyphs.ts(글꼴 부분 집합), contact-sheet.mjs(인물 사진 대조표)
+├── data/fonts-src/ 글꼴 원본 TTF·라이선스 (git 제외, npm run fonts 가 내려받음)
 ├── dist/           빌드 결과 (git 제외)
 ├── logs/           화면 확인 스크린샷 (git 제외)
 └── conversations/  대화 기록
@@ -60,12 +62,15 @@ Node 24. 프로젝트 루트에서:
 ```
 npm run dev                 개발 서버
 npm run typecheck           타입 검사 (tsc --noEmit)
-npm test                    시험 (vitest, 118개)
+npm test                    시험 (vitest, 124개)
 npm run test:cross          솔버 교차 검증 3000건
 npm run stages              stages.json 다시 만들기
 npm run build               dist 빌드 (sw.js, manifest.webmanifest 포함)
 node src/tools/check-ui.mjs 화면 확인 (dev 서버 + Chrome 390x844)
 node src/tools/make-icons.mjs 아이콘 다시 만들기
+npm run fonts               글꼴 부분 집합 다시 만들기 (문구가 바뀌어 glyphs 시험이 실패하면)
+node src/tools/contact-sheet.mjs 인물 사진 대조표 → logs/portraits.png
+node src/tools/check-offline.mjs 오프라인 확인 (npm run build 다음)
 ```
 
 ## 경로
