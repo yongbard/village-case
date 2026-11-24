@@ -3,21 +3,21 @@ import { abilityAnswer } from './rules';
 import type { CaseDef } from './types';
 import { arrest, hintKnowledge, investigate, knowledgeOf, newGame, setNote, useAbility, visibleClue } from './game';
 
-// 3x3: 0 thief (face postman), 4 chief (face mayor), others genuine witnesses.
+// 3x3: 0 decoy (face postman), 4 chief (face mayor), others genuine witnesses.
 // 1 reporter (ability), 2 bellringer (trigger 12), 5 postman.
 const DEF: CaseDef = {
   seed: 7,
   w: 3,
   h: 3,
   truth: {
-    roles: ['thief', '*w', '*w', '*w', 'chief', '*w', '*w', '*w', '*w'],
+    roles: ['decoy', '*w', '*w', '*w', 'chief', '*w', '*w', '*w', '*w'],
     taint: [-1, -1, -1, -1, -1, -1, -1, -1, -1],
   },
   faces: ['postman', 'reporter', 'bellringer', 'pharmacist', 'mayor', 'postman', 'guard', 'baker', 'photographer'],
   clues: [
-    { kind: 'evil4', base: 0, n: 1 }, // thief lies
+    { kind: 'evil4', base: 0, n: 1 }, // decoy lies
     null,
-    { kind: 'bossRow', base: 2, n: 2 },
+    { kind: 'bossRow', base: 2, r: 2, n: 1 },
     { kind: 'evil8', base: 3, n: 1 },
     { kind: 'evilRow', base: 4, n: 0 }, // chief lies
     { kind: 'evil4', base: 5, n: 1 },
@@ -25,8 +25,82 @@ const DEF: CaseDef = {
     { kind: 'nearest', base: 7, n: 1 },
     { kind: 'pairOne', base: 8, a: 0, b: 1 },
   ],
-  inPlay: ['thief', 'chief'], roster: {},
+  inPlay: ['chief', 'decoy'], roster: {},
 };
+
+/** 3×3 에 직업을 놓은 사건 (진술 없음): 자백·체포 시험용 */
+const placed = (set: Record<number, string>, seed = 7): CaseDef => {
+  const roles = Array.from({ length: 9 }, (_, i) => set[i] ?? '*w');
+  return {
+    seed, w: 3, h: 3, truth: { roles, taint: Array(9).fill(-1) },
+    faces: Array(9).fill('postman'), clues: Array(9).fill(null),
+    inPlay: roles.filter((r) => r !== '*w').sort(), roster: {},
+  };
+};
+
+describe('boss hunt', () => {
+  test('solved when all bosses are arrested, accomplices may stay', () => {
+    const g = arrest(newGame(DEF), 4);
+    expect(g.status).toBe('solved');
+    expect(g.arrested[0]).toBe(false);
+  });
+
+  test('arresting an accomplice costs 1 and adds a confession', () => {
+    const g = arrest(newGame(DEF), 0);
+    expect(g.rep).toBe(9);
+    expect(g.status).toBe('playing');
+    expect(g.confessions).toHaveLength(1);
+    expect(g.confessions[0].cell).toBe(0);
+  });
+
+  test('arresting a good person costs 2, no confession', () => {
+    const g = arrest(newGame(DEF), 3);
+    expect(g.rep).toBe(8);
+    expect(g.confessions).toEqual([]);
+  });
+
+  test('confession lies when a remaining boss is within 8 neighbours', () => {
+    // 대역 0번 옆(4번)에 두목 → 거짓 자백: 두목이 없는 세로줄(1 또는 3번째)
+    for (let s = 0; s < 20; s++) {
+      const g = arrest(newGame(placed({ 0: 'decoy', 4: 'chief' }, s)), 0);
+      expect([1, 3]).toContain(g.confessions[0].col);
+    }
+  });
+
+  test('confession tells the truth otherwise', () => {
+    for (let s = 0; s < 20; s++) {
+      const g = arrest(newGame(placed({ 0: 'shill', 8: 'chief' }, s)), 0);
+      expect(g.confessions[0]).toEqual({ cell: 0, decoy: false, col: 3 });
+    }
+  });
+
+  test('lying confession with no boss-free column says nothing (col null)', () => {
+    const g = arrest(newGame(placed({ 0: 'decoy', 3: 'chief', 4: 'chief', 5: 'shadow' })), 0);
+    expect(g.confessions[0].col).toBeNull();
+  });
+
+  test('only remaining bosses count: a caught boss no longer makes the accomplice lie', () => {
+    let g = newGame(placed({ 0: 'shill', 1: 'chief', 8: 'briber' }));
+    g = arrest(g, 1); // 0번 옆 주범을 먼저 잡음
+    g = arrest(g, 0);
+    expect(g.confessions[0].col).toBe(3); // 남은 주범(8번)의 세로줄, 참
+  });
+
+  test('no confession once every boss is caught (the case is over)', () => {
+    const g = arrest(newGame(DEF), 4);
+    expect(arrest(g, 0)).toBe(g);
+  });
+
+  test('same arrest order gives the same confession', () => {
+    const run = () => arrest(arrest(newGame(placed({ 0: 'decoy', 4: 'chief', 8: 'chief' })), 3), 0).confessions;
+    expect(run()).toEqual(run());
+  });
+
+  test('decoy confession is marked decoy', () => {
+    expect(arrest(newGame(DEF), 0).confessions[0].decoy).toBe(true);
+    expect(arrest(newGame(placed({ 0: 'shill', 8: 'chief' })), 0).confessions[0].decoy).toBe(false);
+  });
+});
 
 describe('game', () => {
   test('investigate costs 2h, arrest 1h, ability 0h', () => {
@@ -47,21 +121,13 @@ describe('game', () => {
     expect(g.abilities[0].same).toBe(true);
   });
 
-  test('arresting a good costs 2 rep; evil costs none', () => {
+  test('arresting a good costs 2 rep; boss costs none', () => {
     let g = newGame(DEF);
     expect(g.rep).toBe(10);
     g = arrest(g, 3);
     expect(g.rep).toBe(8);
-    g = arrest(g, 0);
-    expect(g.rep).toBe(8);
-  });
-
-  test('all evil arrested → solved', () => {
-    let g = newGame(DEF);
-    g = arrest(g, 0);
-    expect(g.status).toBe('playing');
     g = arrest(g, 4);
-    expect(g.status).toBe('solved');
+    expect(g.rep).toBe(8);
   });
 
   test('five good arrests → failed', () => {
@@ -106,7 +172,7 @@ describe('game', () => {
 
   test('finished game ignores actions', () => {
     let g = newGame(DEF);
-    g = arrest(arrest(g, 0), 4);
+    g = arrest(g, 4);
     expect(g.status).toBe('solved');
     expect(investigate(g, 1)).toBe(g);
     expect(arrest(g, 1)).toBe(g);
@@ -139,7 +205,7 @@ describe('game', () => {
     expect(k.clues[2]).toBeNull();
     expect(k.clues[5]).toEqual(DEF.clues[5]);
     expect(k.clues[0]).toBeNull();
-    expect(k.arrested).toEqual(['thief', undefined, undefined, undefined, undefined, undefined, 'guard', undefined, undefined]);
+    expect(k.arrested).toEqual(['decoy', undefined, undefined, undefined, undefined, undefined, 'guard', undefined, undefined]);
     expect(k.abilities).toEqual(g.abilities);
     expect('knownClaims' in k).toBe(false);
   });

@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { loadSave, writeSave } from './save';
 
-const def = { v: 1, cleared: [], seenCards: [], endlessBest: 0 };
+const def = { v: 2, cleared: [], seenCards: [], endlessBest: 0 };
 const get = (x: unknown) => ({ getItem: () => JSON.stringify(x) });
 
 describe('save', () => {
@@ -13,20 +13,26 @@ describe('save', () => {
   });
 
   test('strict shape validation', () => {
-    expect(loadSave(get({ v: 1, cleared: ['a'], seenCards: [], endlessBest: 0 }))).toEqual(def);
-    expect(loadSave(get({ v: 1, cleared: [1], seenCards: [2], endlessBest: 0 }))).toEqual(def);
-    expect(loadSave(get({ v: 1, cleared: [1], seenCards: [], endlessBest: '3' }))).toEqual(def);
-    expect(loadSave(get({ v: 1, cleared: [1], seenCards: [], endlessBest: null }))).toEqual(def);
-    expect(loadSave(get({ v: 1, cleared: [1], seenCards: [], endlessBest: 1, endless: { n: 1, rep: 'x', seed: 1 } }))).toEqual(def);
+    expect(loadSave(get({ v: 2, cleared: ['a'], seenCards: [], endlessBest: 0 }))).toEqual(def);
+    expect(loadSave(get({ v: 2, cleared: [1], seenCards: [2], endlessBest: 0 }))).toEqual(def);
+    expect(loadSave(get({ v: 2, cleared: [1], seenCards: [], endlessBest: '3' }))).toEqual(def);
+    expect(loadSave(get({ v: 2, cleared: [1], seenCards: [], endlessBest: null }))).toEqual(def);
+    expect(loadSave(get({ v: 2, cleared: [1], seenCards: [], endlessBest: 1, endless: { n: 1, rep: 'x', seed: 1 } }))).toEqual(def);
     expect(loadSave(get(null))).toEqual(def);
   });
 
+  test('v1 save migrates: keeps cleared, seenCards, endlessBest; drops endless', () => {
+    const v1 = { v: 1, cleared: [1, 2], seenCards: ['role:chief'], endlessBest: 5, endless: { n: 6, rep: 4, seed: 3 } };
+    expect(loadSave(get(v1))).toEqual({ v: 2, cleared: [1, 2], seenCards: ['role:chief'], endlessBest: 5 });
+    expect(loadSave(get({ ...v1, cleared: ['x'] }))).toEqual(def);
+  });
+
   test('round trip incl. endless', () => {
-    const s = { v: 1 as const, cleared: [0, 1], seenCards: ['a'], endlessBest: 4, endless: { n: 2, rep: 7, seed: 99 } };
+    const s = { v: 2 as const, cleared: [0, 1], seenCards: ['a'], endlessBest: 4, endless: { n: 2, rep: 7, seed: 99 } };
     let raw = '';
     writeSave({ setItem: (k, v) => { expect(k).toBe('village-case-save'); raw = v; } }, s);
     expect(loadSave({ getItem: () => raw })).toEqual(s);
-    const s2 = { v: 1 as const, cleared: [], seenCards: [], endlessBest: 0 };
+    const s2 = { v: 2 as const, cleared: [], seenCards: [], endlessBest: 0 };
     writeSave({ setItem: (_k, v) => { raw = v; } }, s2);
     expect(loadSave({ getItem: () => raw })).toEqual(s2);
   });
