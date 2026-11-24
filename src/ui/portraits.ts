@@ -119,6 +119,103 @@ export const PORTRAITS: Record<RoleId, Portrait> = {
   },
 
   // ---------- 말썽꾼 ----------
+  taxi: {
+    bg: '#5a5040',
+    art: `<path d="M8 60 Q9 42 30 40 Q51 42 52 60Z" fill="#7a6a4e"/>
+<path d="M30 41 L26 60 M30 41 L34 60" stroke="#5d4f38" stroke-width="1.5"/>
+<rect x="26" y="33" width="8" height="8" fill="${SKIN}"/>
+<ellipse cx="30" cy="26" rx="8.5" ry="10" fill="${SKIN}"/>
+<path d="M20 22 Q21 12 31 13 Q41 13 41 21 Z" fill="#4a3c2a"/>
+<path d="M21 19.5 h19" stroke="#d8c46a" stroke-width="1.6" stroke-dasharray="2 2"/>
+<path d="M19 22 Q30 18 45 23 L45 25 Q31 22 19 24Z" fill="#3a2e20"/>
+<circle cx="45" cy="52" r="8" fill="none" stroke="#2a241d" stroke-width="2.5"/>
+<path d="M37 52 H53 M45 52 V60" stroke="#2a241d" stroke-width="2"/>`,
+  },
+  operator: {
+    bg: '#4a4f63',
+    art: `<path d="M9 60 Q10 42 30 40 Q50 42 51 60Z" fill="#5f6f8e"/>
+<rect x="27" y="33" width="6" height="8" fill="${SKIN}"/>
+<ellipse cx="30" cy="26" rx="8.5" ry="10" fill="${SKIN}"/>
+<path d="M19 31 Q17 13 30 13 Q43 13 41 31 L38 31 Q39 19 30 18 Q21 19 22 31Z" fill="#2a2018"/>
+<path d="M19 24 Q19 10 30 10 Q41 10 41 24" stroke="#1d1d22" stroke-width="2" fill="none"/>
+<rect x="16.5" y="21" width="4.5" height="8" rx="1.5" fill="#1d1d22"/>
+<path d="M19 28 Q20 34 27 33" stroke="#1d1d22" stroke-width="1.5" fill="none"/>
+<circle cx="27.5" cy="33" r="1.4" fill="#1d1d22"/>
+<path d="M40 60 Q42 50 48 48 M46 60 Q47 53 52 51" stroke="#b6443a" stroke-width="1.6" fill="none"/>
+<rect x="46.5" y="46.5" width="3.2" height="3.2" fill="#d4c08a"/>`,
+  },
+  priest: {
+    bg: '#4b4658',
+    art: `<path d="M8 60 Q9 41 30 39 Q51 41 52 60Z" fill="#1e1c1f"/>
+<rect x="26" y="32" width="8" height="7" fill="${SKIN}"/>
+<rect x="27" y="38" width="6" height="4" fill="#f2efe6"/>
+<ellipse cx="30" cy="25" rx="8.5" ry="10" fill="${SKIN}"/>
+<path d="M21.5 25 Q20.5 18 23.5 15.5 Q22.5 22 24.5 25Z M38.5 25 Q39.5 18 36.5 15.5 Q37.5 22 35.5 25Z" fill="#6b5a48"/>
+<path d="M43 44 v13 M39 48.5 h8" stroke="#c8b16a" stroke-width="2.2"/>`,
+  },
+  barber: {
+    bg: '#3f5a5e',
+    art: `<path d="M9 60 Q10 42 30 40 Q50 42 51 60Z" fill="#e8e4da"/>
+<circle cx="37" cy="47" r="1" fill="#9a9488"/><circle cx="37" cy="53" r="1" fill="#9a9488"/>
+<rect x="27" y="33" width="6" height="8" fill="${SKIN}"/>
+<ellipse cx="30" cy="25" rx="8.5" ry="10" fill="${SKIN}"/>
+<path d="M21 24 Q19 13 30 13 Q41 13 39 22 Q35 15 27 17 Q23 19 21 24Z" fill="#1f1a16"/>
+<path d="M24.5 31 Q30 27.5 35.5 31 Q30 30 24.5 31Z" fill="#1f1a16" stroke="#1f1a16" stroke-width="1.2"/>
+<circle cx="12" cy="54" r="2.6" fill="none" stroke="#7a7d82" stroke-width="1.6"/>
+<circle cx="17.5" cy="56.5" r="2.6" fill="none" stroke="#7a7d82" stroke-width="1.6"/>
+<path d="M14 52 L23 43 M19 54.5 L24.5 44.5" stroke="#9aa0a6" stroke-width="1.6"/>`,
+  },
+  laundry: {
+    bg: '#55605a',
+    art: `<path d="M9 60 Q10 42 30 40 Q50 42 51 60Z" fill="#7d6b8a"/>
+<path d="M21 45 H39 V60 H21Z" fill="#e7e0d0"/>
+<path d="M23 45 L25 40 M37 45 L35 40" stroke="#e7e0d0" stroke-width="2"/>
+<rect x="27" y="33" width="6" height="8" fill="${SKIN}"/>
+<ellipse cx="30" cy="26" rx="8.5" ry="10" fill="${SKIN}"/>
+<path d="M20 23 Q20 12 30 12 Q40 12 40 23 Q30 17 20 23Z" fill="#b8574a"/>
+<path d="M39.5 19 l6 -3 l-1.5 6Z" fill="#b8574a"/>
+<path d="M37 57 Q39 49 47 49 L53 49 L53 57Z" fill="#8c9096"/>
+<path d="M42 49 Q44 45 50 45 L50 49" stroke="#3a3530" stroke-width="1.6" fill="none"/>`,
+  },
+  dog: {
+    bg: '#4f5a48',
+    art: `<path d="M8 60 Q9 42 30 40 Q51 42 52 60Z" fill="#5f6b4a"/>
+<rect x="26" y="33" width="8" height="8" fill="${SKIN}"/>
+<path d="M21 39 Q30 45 39 39 L39 43 Q30 48 21 43Z" fill="#a8483c"/>
+<rect x="33" y="43" width="4.5" height="10" fill="#a8483c"/>
+<ellipse cx="30" cy="26" rx="8.5" ry="10" fill="${SKIN}"/>
+<path d="M20 23 Q20 10 30 10 Q40 10 40 23Z" fill="#c2913f"/>
+<rect x="19" y="20.5" width="22" height="4" rx="1.5" fill="#a87a30"/>
+<circle cx="30" cy="9" r="2.6" fill="#c2913f"/>
+<ellipse cx="13" cy="53" rx="7" ry="6" fill="#9a7b55"/>
+<path d="M7 47 l-1.5 8.5 l4.5 -3Z M19 47 l1.5 8.5 l-4.5 -3Z" fill="#6e5538"/>
+<circle cx="11" cy="52" r="0.9" fill="#1d1a17"/><circle cx="15" cy="52" r="0.9" fill="#1d1a17"/>
+<ellipse cx="13" cy="55.5" rx="1.6" ry="1.1" fill="#1d1a17"/>`,
+  },
+  restaurant: {
+    bg: '#6a4d3a',
+    art: `<path d="M9 60 Q10 42 30 40 Q50 42 51 60Z" fill="#f0ece2"/>
+<circle cx="25" cy="48" r="1.1" fill="#9a9488"/><circle cx="25" cy="54" r="1.1" fill="#9a9488"/>
+<circle cx="35" cy="48" r="1.1" fill="#9a9488"/><circle cx="35" cy="54" r="1.1" fill="#9a9488"/>
+<rect x="27" y="33" width="6" height="8" fill="${SKIN}"/>
+<ellipse cx="30" cy="26" rx="8.5" ry="10" fill="${SKIN}"/>
+<path d="M21 21 Q22 12 30 12 Q38 12 39 21 Q30 16 21 21Z" fill="#2c241c"/>
+<path d="M20.5 19.5 Q30 15.5 39.5 19.5 L39.5 23.5 Q30 19.5 20.5 23.5Z" fill="#e9e4d6"/>
+<path d="M39 21 l5 -1.5 l-1 4Z" fill="#e9e4d6"/>
+<path d="M46 37 L46 51" stroke="#8d8a84" stroke-width="2.2"/>
+<ellipse cx="46" cy="53.5" rx="5" ry="3.3" fill="#8d8a84"/>`,
+  },
+  grandma: {
+    bg: '#5e5048',
+    art: `<path d="M8 60 Q9 42 30 40 Q51 42 52 60Z" fill="#7b4f6a"/>
+<path d="M13 46 Q30 57 47 46 L45 60 H15Z" fill="#956582"/>
+<rect x="27" y="33" width="6" height="8" fill="${SKIN}"/>
+<ellipse cx="30" cy="26" rx="8.5" ry="10" fill="${SKIN}"/>
+<g fill="#d4cfc6"><circle cx="22" cy="21" r="4"/><circle cx="25.5" cy="16" r="4.2"/><circle cx="30.5" cy="14.5" r="4.2"/><circle cx="35.5" cy="16" r="4.2"/><circle cx="38.5" cy="21" r="3.8"/></g>
+<path d="M26 31 Q30 33.5 34 31" stroke="#8a6f55" stroke-width="1" fill="none"/>
+<circle cx="45" cy="53" r="5.5" fill="#c0603f"/>
+<path d="M40 46 L51 59 M50 46 L39 59" stroke="#d9c79a" stroke-width="1.3"/>`,
+  },
   braggart: {
     // 두 팔을 번쩍 든 과장된 몸짓, 크게 벌린 입, 나비넥타이, 말아 올린 앞머리
     bg: '#6b4f3f',
@@ -167,17 +264,7 @@ export const PORTRAITS: Record<RoleId, Portrait> = {
 <ellipse cx="38.5" cy="32" rx="4" ry="5.5" fill="${SKIN}"/>
 <path d="M29 32.5 q1.5 1 3 0" stroke="#2a241d" stroke-width="1" fill="none"/>`,
   },
-  hidden: {
-    // 깃을 높이 세운 코트로 코 아래를 가리고, 납작모를 눈 바로 위까지 눌러 씀
-    bg: '#4c4a44',
-    art: `<path d="M6 60 Q7 42 30 40 Q53 42 54 60Z" fill="#6f6a5e"/>
-<ellipse cx="30" cy="27" rx="8.5" ry="9.5" fill="${SKIN}"/>
-<path d="M15 60 L16 30 L30 37 L44 30 L45 60Z" fill="#7f796b"/>
-<path d="M16 30 L30 37 L44 30 L42 36 L30 42 L18 36Z" fill="#5c574c"/>
-<path d="M19 22 Q20 13 31 13 Q42 14 42 21 L44 23 Q30 26 18 23Z" fill="#4a4338"/>
-<path d="M25 26 h3 M32 26 h3" stroke="#2a241d" stroke-width="1.3"/>
-<path d="M30 40 v20" stroke="#5c574c" stroke-width="1.2"/>`,
-  },
+
 
   // ---------- 공범 ----------
   thief: {
@@ -238,21 +325,19 @@ export const PORTRAITS: Record<RoleId, Portrait> = {
 <rect x="33" y="30" width="4" height="5" fill="#8c7646"/>
 <path d="M55 26 q3 5 0 10 M57 23 q5 8 0 16" stroke="#e6dccb" stroke-width="1" fill="none"/>`,
   },
-  smooth: {
-    // 비스듬히 쓴 모자, 한쪽 눈 찡긋, 비죽 웃음, 목에 두른 스카프
-    bg: '#322a30',
-    art: `<path d="M8 60 Q9 42 30 40 Q51 42 52 60Z" fill="#5a4652"/>
-<path d="M22 40 Q30 47 38 40 L36 50 Q30 53 24 50Z" fill="#9a6a5a"/>
-<rect x="27" y="33" width="6" height="7" fill="${SKIN}"/>
-<ellipse cx="30" cy="26" rx="8.5" ry="10" fill="${SKIN}"/>
-<g transform="rotate(-14 30 18)"><path d="M13 21 Q30 17 47 21 Q43 23 30 23 Q17 23 13 21Z" fill="#2a2228"/>
-<path d="M21 21 Q21 10 30 11 Q39 10 39 21Z" fill="#3c3038"/><rect x="21" y="18" width="18" height="2.5" fill="#8e4a3c"/></g>
-<path d="M24.5 27 q1.8 -1.6 3.6 0" stroke="#2a241d" stroke-width="1.2" fill="none"/>
-<circle cx="34" cy="26.5" r="1.3" fill="#2a241d"/>
-<path d="M26 32 Q31 34 35 30.5" stroke="#2a241d" stroke-width="1.2" fill="none"/>`,
-  },
+
 
   // ---------- 주범 ----------
+  decoy: {
+    bg: '#2b2630',
+    art: `<path d="M8 60 Q9 41 30 39 Q51 41 52 60Z" fill="#3c3640"/>
+<rect x="26" y="32" width="8" height="8" fill="${SKIN}"/>
+<ellipse cx="30" cy="25" rx="8.5" ry="10" fill="${SKIN}"/>
+<path d="M20.5 18 L23 9 L27 14 L30 6.5 L33 14 L37 9 L39.5 18Z" fill="#b89a42"/>
+<path d="M24.5 24 Q26.5 22.5 28 24.5 M32 24.5 Q33.5 22.5 35.5 24" stroke="#141114" stroke-width="1.3" fill="none"/>
+<path d="M24 19.5 Q30 21.5 36 19.5" stroke="#3a3238" stroke-width="1" fill="none"/>
+<path d="M23 31.5 Q26 28.5 30 30.5 Q34 28.5 37 31.5 Q34 33.5 30 32 Q26 33.5 23 31.5Z" fill="#141114"/>`,
+  },
   chief: {
     // 아주 넓은 어깨, 홈부르크 모자, 시가와 연기
     bg: '#241f1c',
@@ -295,6 +380,19 @@ export const PORTRAITS: Record<RoleId, Portrait> = {
 <rect x="38" y="43" width="15" height="8" fill="#8f9b78" transform="rotate(-10 40 50)"/>
 <rect x="39" y="44" width="15" height="8" fill="#a1ad88" transform="rotate(10 40 50)"/>
 <circle cx="46" cy="50" r="2" fill="#5e6a4e"/>`,
+  },
+  framer: {
+    bg: '#221c22',
+    art: `<path d="M8 60 Q9 41 30 39 Q51 41 52 60Z" fill="#2a2228"/>
+<path d="M30 40 L24 53 L30 48 L36 53Z" fill="#5a1f22"/>
+<rect x="26" y="32" width="8" height="8" fill="${SKIN}"/>
+<ellipse cx="30" cy="25" rx="8.5" ry="10" fill="${SKIN}"/>
+<path d="M20.5 25 Q19 12 30 12 Q41 12 39.5 25 Q38 17 33 17 L30 21 L27 17 Q22 17 20.5 25Z" fill="#0f0d0e"/>
+<path d="M25 25.5 l3 -1 M35 25.5 l-3 -1" stroke="#1a1416" stroke-width="1.3"/>
+<path d="M28 33 L30 37.5 L32 33Z" fill="#0f0d0e"/>
+<rect x="38" y="46" width="12" height="13" fill="#d9cfb8" transform="rotate(8 44 52)"/>
+<path d="M41 49 l6 6 M47 49 l-6 6" stroke="#a3271d" stroke-width="1.9"/>
+<path d="M35 58 L49 41" stroke="#e8e0cc" stroke-width="1.6"/>`,
   },
 };
 
