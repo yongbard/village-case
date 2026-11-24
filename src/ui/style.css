@@ -115,58 +115,72 @@ button { font: inherit; color: inherit; }
 .spacer { flex: 1; }
 .kicker { color: var(--red); font-size: 13px; font-weight: 700; letter-spacing: 0.08em; }
 
-/* ---------- 타이틀 ---------- */
+/* ---------- 타이틀: 서류철 표지 ---------- */
 .title-screen {
   min-height: calc(100dvh - 60px);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 40px;
+  gap: 34px;
 }
-.title-block {
+.folder {
   position: relative;
-  background: var(--card);
-  border: 1.5px solid var(--line);
-  border-radius: 4px 14px 14px 14px;
-  padding: 36px 24px 32px;
-  box-shadow: 0 2px 0 var(--paper-deep), 0 10px 24px rgba(60, 45, 20, 0.08);
+  margin-top: 22px;
+  padding: 30px 18px 22px;
+  border-radius: 3px 12px 3px 3px;
+  box-shadow: 0 8px 18px rgba(20, 12, 4, 0.55);
 }
-.title-block::before { /* 서류철 탭 */
+.folder::before { /* 서류철 탭 */
   content: '';
   position: absolute;
-  top: -14px;
-  left: -1.5px;
-  width: 110px;
-  height: 14px;
-  background: var(--card);
-  border: 1.5px solid var(--line);
-  border-bottom: none;
-  border-radius: 8px 8px 0 0;
+  top: -18px;
+  left: 0;
+  width: 120px;
+  height: 20px;
+  background: var(--manila);
+  border-radius: 6px 6px 0 0;
 }
+.folder-stamp { position: absolute; top: 6px; right: 14px; transform: rotate(8deg); font-size: 18px; }
+.title-block {
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px #b89a63;
+  padding: 18px 16px 16px;
+  text-align: center;
+}
+.title-block .kicker { color: var(--ink-soft); letter-spacing: 0.4em; font-weight: 400; }
 .game-title {
-  font-family: var(--serif);
+  font-family: var(--title);
+  font-weight: 400;
   font-size: 44px;
   line-height: 1.15;
-  margin: 10px 0 14px;
-  letter-spacing: 0.02em;
+  margin: 8px 0 4px;
+  letter-spacing: 0.06em;
 }
-.tagline { color: var(--muted); }
+.folder-sub { color: var(--ink-soft); font-size: 14px; }
+.tagline { color: var(--muted); font-size: 14px; margin-top: 10px; }
 .title-menu { display: flex; flex-direction: column; gap: 10px; }
 
-/* ---------- 스테이지 목록 ---------- */
+/* ---------- 스테이지 목록: 장마다 서류 묶음, 스테이지는 파일 탭 ---------- */
 .list-head, .head-row { display: flex; align-items: center; gap: 8px; min-height: 48px; }
-.list-head h1, .case-title { flex: 1; font-family: var(--serif); font-size: 22px; text-align: center; }
+.list-head h1, .case-title { flex: 1; font-family: var(--title); font-size: 24px; text-align: center; }
 .back { padding: 0 8px; margin-left: -8px; }
 .list-count { color: var(--muted); font-weight: 600; min-width: 64px; text-align: right; }
-.chapter { margin-top: 18px; }
-.chapter h2 { font-size: 15px; display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
-.chapter h2 small { color: var(--muted); font-weight: 500; }
-.stage-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.list-screen .list-head, .list-screen .list-head .btn.ghost, .list-screen .list-count { color: var(--on-cork); }
+.chapter { margin-top: 16px; padding: 10px 12px 14px; border-radius: 2px; }
+.chapter:nth-of-type(odd) { transform: rotate(-0.5deg); }
+.chapter:nth-of-type(even) { transform: rotate(0.4deg); }
+.chapter h2 { font-size: 18px; display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+.chapter h2 small { color: var(--muted); font-family: var(--body); }
+.stage-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px 8px; }
 .stage {
-  min-height: 62px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--card);
+  position: relative;
+  min-height: 58px;
+  margin-top: 6px;
+  border: none;
+  border-radius: 0 3px 3px 3px;
+  background: var(--manila);
+  color: var(--ink);
+  box-shadow: 0 2px 3px rgba(20, 12, 4, 0.35);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -174,11 +188,20 @@ button { font: inherit; color: inherit; }
   cursor: pointer;
   padding: 4px 0;
 }
+.stage::before { /* 파일 탭 */
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 0;
+  width: 55%;
+  height: 7px;
+  background: var(--manila);
+  border-radius: 3px 3px 0 0;
+}
 .stage-no { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; }
-.stage-state { font-size: 11px; color: var(--muted); }
-.stage.done { border-color: var(--good); background: var(--good-soft); }
-.stage.done .stage-state { color: var(--good); font-weight: 700; }
-.stage.locked { border: 1.5px dashed var(--line); background: transparent; color: var(--muted); cursor: default; }
+.stage-state { font-size: 11px; color: #5e4820; }
+.stage-state.stamp-ink { font-size: 12px; border-width: 2px; padding: 0 4px; letter-spacing: 0.05em; transform: rotate(-8deg); line-height: 1.2; }
+.stage.locked { opacity: 0.45; cursor: default; box-shadow: none; }
 
 /* ---------- 사건 화면: 코르크판 ---------- */
 .hint-btn { min-width: 72px; }
@@ -568,7 +591,7 @@ button { font: inherit; color: inherit; }
 
 /* ---------- 서류철 바탕: 코르크판 위 글자와 종이 ---------- */
 /* 사건·타이틀 밖의 화면은 코르크판 위 종이 한 장 */
-.list-screen, .codex-screen, .rules-screen, .result-screen, .loading-screen {
+.codex-screen, .rules-screen, .result-screen, .loading-screen {
   background: var(--card);
   color: var(--ink);
   padding: 12px 14px 20px;

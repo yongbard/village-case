@@ -35,10 +35,16 @@ export function showTitle(): void {
       { class: 'screen title-screen' },
       h(
         'div',
-        { class: 'title-block' },
-        h('p', { class: 'kicker' }, '사건 기록철'),
-        h('h1', { class: 'game-title' }, '마을 수사록'),
-        h('p', { class: 'tagline' }, '진술을 모으고, 거짓말을 가려내고, 숨은 악을 체포하세요.'),
+        { class: 'folder manila' },
+        h('span', { class: 'folder-stamp stamp-ink', 'aria-hidden': 'true' }, '기밀'),
+        h(
+          'div',
+          { class: 'title-block' },
+          h('p', { class: 'kicker' }, '수 사 기 록'),
+          h('h1', { class: 'game-title' }, '마을 수사록'),
+          h('p', { class: 'folder-sub' }, '작은 마을 · 미해결 사건철'),
+          h('p', { class: 'tagline' }, '진술을 모으고, 거짓말을 가려내고, 숨은 악을 체포하세요.'),
+        ),
       ),
       h(
         'nav',
@@ -46,27 +52,27 @@ export function showTitle(): void {
         h(
           'button',
           { class: 'btn primary wide big', 'data-action': 'stages', onclick: showStageList },
-          '스테이지',
+          '사건 파일',
           h('small', {}, `${cleared.length} / ${STAGES.length} 해결`),
         ),
         endless &&
           h(
             'button',
             { class: 'btn primary wide big', 'data-action': 'endless-resume', onclick: () => startEndless(true) },
-            '무한 모드 이어 하기',
+            '끝없는 수사 이어 하기',
             h('small', {}, `${endless.n}번째 사건 · 평판 ${endless.rep}`),
           ),
         h(
           'button',
           { class: `btn wide big${endless ? '' : ' primary'}`, 'data-action': 'endless-new', onclick: () => startEndless(false) },
-          endless ? '무한 모드 새로 시작' : '무한 모드',
+          endless ? '끝없는 수사 새로 시작' : '끝없는 수사',
           h('small', {}, `최고 기록 ${endlessBest}`),
         ),
         h(
           'div',
           { class: 'title-row' },
-          h('button', { class: 'btn wide', 'data-action': 'codex', onclick: showCodex }, '도감', h('small', {}, `${metRoles} / ${Object.keys(ROLES).length}`)),
-          h('button', { class: 'btn wide', 'data-action': 'rules', onclick: showRules }, '규칙'),
+          h('button', { class: 'btn wide', 'data-action': 'codex', onclick: showCodex }, '인물 카드철', h('small', {}, `${metRoles} / ${Object.keys(ROLES).length}`)),
+          h('button', { class: 'btn wide', 'data-action': 'rules', onclick: showRules }, '수사 규칙'),
         ),
         h(
           'form',

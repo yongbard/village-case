@@ -23,13 +23,13 @@ export function showStageList(): void {
         'header',
         { class: 'list-head' },
         h('button', { class: 'btn ghost back', onclick: showTitle }, '‹ 처음'),
-        h('h1', {}, '스테이지'),
+        h('h1', {}, '사건 파일'),
         h('span', { class: 'list-count' }, `${cleared.length} / ${STAGES.length}`),
       ),
       CHAPTERS.map((c) =>
         h(
           'section',
-          { class: 'chapter' },
+          { class: 'chapter paper' },
           h('h2', {}, `${c.no}장`, h('small', {}, `${c.stages[0]} ~ ${c.stages[1]}`)),
           h(
             'div',
@@ -47,7 +47,7 @@ export function showStageList(): void {
                   onclick: () => startStage(s.id),
                 },
                 h('span', { class: 'stage-no' }, String(s.id)),
-                h('span', { class: 'stage-state' }, done ? '✓ 해결' : open ? `${s.def.w}×${s.def.h}` : '잠김'),
+                h('span', { class: done ? 'stage-state stamp-ink' : 'stage-state' }, done ? '해결' : open ? `${s.def.w}×${s.def.h}` : '잠김'),
               );
             }),
           ),

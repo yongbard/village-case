@@ -73,6 +73,7 @@ try {
   // 1. 타이틀
   await page.goto(url, { waitUntil: 'networkidle0' });
   check('title screen', (await text('.game-title')) === '마을 수사록');
+  check('title menu labels: case files, endless, cards, rules', (await text('[data-action="stages"]'))?.startsWith('사건 파일') && (await text('[data-action="endless-new"]'))?.startsWith('끝없는 수사') && (await text('[data-action="codex"]'))?.startsWith('인물 카드철') && (await text('[data-action="rules"]')) === '수사 규칙');
   check('document title / lang', (await page.title()) === '마을 수사록' && (await page.$eval('html', (e) => e.lang)) === 'ko');
   await shot('01-title');
 
@@ -80,6 +81,7 @@ try {
   await page.click('[data-action="stages"]');
   await page.waitForSelector('.stage[data-stage="1"]');
   const locked = await page.$eval('.stage[data-stage="2"]', (e) => e.disabled);
+  check('stage list titled 사건 파일', (await text('.list-head h1')) === '사건 파일');
   check('stage list: 1 open, 2 locked', !(await page.$eval('.stage[data-stage="1"]', (e) => e.disabled)) && locked);
   await noSideScroll('stage list');
   await shot('02-stages', true);
