@@ -21,3 +21,12 @@ test('font css does not use a reserved name', () => {
   const css = readFileSync(fileURLToPath(new URL('../ui/fonts.css', import.meta.url)), 'utf8');
   expect(css.replace(/\/\*[\s\S]*?\*\//g, '')).not.toMatch(RESERVED);
 });
+
+test('served body subsets are renamed away from the reserved Plex name', async () => {
+  for (const file of ['sans-500.woff2', 'sans-700.woff2']) {
+    const sfnt = await subsetFont(readFileSync(join(FONTS, file)), 'a', { targetFormat: 'truetype' });
+    const names = readNames(sfnt).filter((n) => [1, 4, 6, 16].includes(n.nameID));
+    expect(names.filter((n) => /plex/i.test(n.value)), file).toEqual([]);
+    expect(names.find((n) => n.nameID === 1)?.value, file).toBe('Village Sans');
+  }
+});

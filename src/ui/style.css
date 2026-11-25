@@ -29,10 +29,10 @@
   --trouble-soft: #f3e8cf;
   --mark: #f3d566;
   --radius: 3px;
-  /* 글꼴 (fonts.css): 제목·도장 송명, 본문 고운바탕, 메모 손글씨 */
-  --title: 'Song Myung', 'Gowun Batang', 'Noto Serif KR', Batang, serif;
-  --body: 'Gowun Batang', 'Noto Serif KR', AppleMyungjo, Batang, serif;
-  --hand: 'Village Hand', 'Gowun Batang', cursive;
+  /* 글꼴 (fonts.css): 제목·도장 송명, 본문 고딕(Village Sans), 메모 손글씨 */
+  --title: 'Song Myung', 'Village Sans', 'Noto Serif KR', Batang, serif;
+  --body: 'Village Sans', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --hand: 'Village Hand', 'Village Sans', cursive;
   --serif: var(--title);
   --sans: var(--body);
   color-scheme: light;

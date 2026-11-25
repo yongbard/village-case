@@ -1,5 +1,6 @@
 /* 글꼴 (SIL OFL, src/public/fonts/OFL.txt). 게임에 나오는 글자만 남긴 부분 집합: npm run fonts 로 다시 만든다.
-   손글씨는 나눔손글씨 펜의 부분 집합인데, 라이선스의 예약 글꼴 이름 때문에 Village Hand 로 이름을 바꿔 낸다. */
+   손글씨는 나눔손글씨 펜, 본문은 IBM Plex Sans KR 의 부분 집합인데, 라이선스의 예약 글꼴 이름 때문에 Village Hand·Village Sans 로 이름을 바꿔 낸다.
+   본문은 또렷하게 보이도록 Medium(500) 파일을 보통 굵기(400)로 선언한다. */
 @font-face {
   font-family: 'Song Myung';
   src: url('/fonts/song-myung.woff2') format('woff2');
@@ -7,14 +8,14 @@
   font-display: swap;
 }
 @font-face {
-  font-family: 'Gowun Batang';
-  src: url('/fonts/gowun-batang-400.woff2') format('woff2');
+  font-family: 'Village Sans';
+  src: url('/fonts/sans-500.woff2') format('woff2');
   font-weight: 400;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Gowun Batang';
-  src: url('/fonts/gowun-batang-700.woff2') format('woff2');
+  font-family: 'Village Sans';
+  src: url('/fonts/sans-700.woff2') format('woff2');
   font-weight: 700;
   font-display: swap;
 }

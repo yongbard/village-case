@@ -13,11 +13,11 @@ const RAW = join(ROOT, 'data', 'fonts-src');
 const OUT = join(SRC, 'public', 'fonts');
 const BASE = 'https://github.com/google/fonts/raw/main/ofl';
 
-// rename: OFL 예약 글꼴 이름이 있는 글꼴은 부분 집합(수정본)을 이 이름으로 바꿔 낸다 (나눔손글씨 펜 → Village Hand)
+// rename: OFL 예약 글꼴 이름이 있는 글꼴은 부분 집합(수정본)을 이 이름으로 바꿔 낸다 (나눔손글씨 펜 → Village Hand, IBM Plex Sans KR → Village Sans)
 const FONTS: { src: string; out: string; rename?: string }[] = [
   { src: 'songmyung/SongMyung-Regular.ttf', out: 'song-myung.woff2' },
-  { src: 'gowunbatang/GowunBatang-Regular.ttf', out: 'gowun-batang-400.woff2' },
-  { src: 'gowunbatang/GowunBatang-Bold.ttf', out: 'gowun-batang-700.woff2' },
+  { src: 'ibmplexsanskr/IBMPlexSansKR-Medium.ttf', out: 'sans-500.woff2', rename: 'Village Sans' },
+  { src: 'ibmplexsanskr/IBMPlexSansKR-Bold.ttf', out: 'sans-700.woff2', rename: 'Village Sans' },
   { src: 'nanumpenscript/NanumPenScript-Regular.ttf', out: 'hand-pen.woff2', rename: 'Village Hand' },
 ];
 
@@ -45,7 +45,7 @@ for (const f of FONTS) {
 writeFileSync(join(OUT, 'glyphs.txt'), glyphs);
 // 글꼴마다 저작권 줄이 달라 세 라이선스를 이어 붙인다
 const licenses: string[] = [];
-for (const dir of ['songmyung', 'gowunbatang', 'nanumpenscript']) {
+for (const dir of ['songmyung', 'ibmplexsanskr', 'nanumpenscript']) {
   licenses.push(`==== ${dir} ====\n${readFileSync(await fetchOnce(`${dir}/OFL.txt`), 'utf8')}`);
 }
 writeFileSync(join(OUT, 'OFL.txt'), licenses.join('\n\n'));
