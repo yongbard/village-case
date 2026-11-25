@@ -124,7 +124,7 @@ try {
   check('roster reopens from the header memo', ((await text('[data-action="roster-close"]')) ?? '') === '닫기');
   await page.click('[data-action="roster-close"]');
   await page.waitForSelector('.overlay', { hidden: true });
-  check('header memo counts caught bosses', ((await text('[data-stat="bosses"]')) ?? '').startsWith('체포 0/1 · 두목 1'), await text('[data-stat="bosses"]'));
+  check('header memo counts caught bosses', ((await text('[data-stat="bosses"]')) ?? '').replace(/\u00a0/g, ' ').startsWith('체포 0/1 · 두목 1'), await text('[data-stat="bosses"]'));
   const memoBox = await (await page.$('[data-stat="bosses"]')).boundingBox();
   check('header memo fits the width', memoBox.x >= 0 && memoBox.x + memoBox.width <= W, `x ${memoBox.x} w ${memoBox.width}`);
   await page.waitForSelector('.guide-bubble');
@@ -264,6 +264,9 @@ try {
   const g30 = await (await page.$('.grid')).boundingBox();
   check('stage 30: grid fits width', g30.x >= 0 && g30.x + g30.width <= W, `x ${g30.x} w ${g30.width}`);
   await noSideScroll('stage 30');
+  // 직업이 많은 사건: 위 메모가 줄을 넘겨 다 보이고 화면 폭 안에 있다
+  const memo30 = await page.$eval('[data-stat="bosses"]', (e) => { const r = e.getBoundingClientRect(); return { t: e.textContent, x: r.x, right: r.right, cut: e.scrollWidth > e.clientWidth + 1, lines: Math.round(r.height / parseFloat(getComputedStyle(e).lineHeight || '20')) }; });
+  check('stage 30: header memo lists every role, wrapped inside the width', memo30.t.split(' · ').length >= 5 && memo30.t.split(' · ').every((x) => !x.includes(' ')) /* 직업과 수 사이는 줄바꿈 없는 공백 */ && memo30.x >= 0 && memo30.right <= W && !memo30.cut, JSON.stringify(memo30));
   await shot('09-stage30', true);
 
   // 10. 종지기(시각 계기)와 기자(능력)가 다 있는 스테이지(가장 뒤 것): 끝까지 풀고 능력이 든 해설

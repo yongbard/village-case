@@ -164,6 +164,9 @@ test('guide: stage 1 walks investigate, read, note, arrest; cells are on the boa
   const text = GUIDE[1].map((g) => g.text).join('\n');
   for (const word of ['조사', '진술', '메모', '체포', '거짓말', '인원표', '주범']) expect(text).toContain(word);
   expect(GUIDE[2].length).toBeLessThan(GUIDE[1].length);
+  // 안내가 진술을 옮길 때는 화면 진술과 같은 말(수상한 사람)을 쓴다
+  expect(text).not.toMatch(/악이 없다/);
+  expect(text).toContain('수상한 사람이 없다');
   // 체포를 안내하는 칸은 실제로 악이다
   const arrest = GUIDE[1].filter((g) => g.cell !== undefined && g.text.includes('체포'));
   expect(arrest.length).toBeGreaterThan(0);

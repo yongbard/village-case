@@ -26,6 +26,6 @@ export function rosterRows(roster: Record<RoleId, number>): RosterRow[] {
 export function rosterSummary(roster: Record<RoleId, number>): string {
   return rosterRows(roster)
     .filter((row) => row.camp !== 'witness')
-    .flatMap((row) => row.items.map((x) => `${x.name} ${x.count}`))
+    .flatMap((row) => row.items.map((x) => `${x.name}\u00a0${x.count}`)) // 줄을 넘길 때 직업과 수가 갈라지지 않게
     .join(' · ');
 }

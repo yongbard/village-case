@@ -21,6 +21,6 @@ test('a camp with nobody still shows with 0', () => {
 });
 
 test('summary lists non-witness roles by count, boss → accomplice → trouble', () => {
-  expect(rosterSummary({ chief: 2, thief: 1, blackmailer: 1, gossip: 2, postman: 3 })).toBe('두목 2 · 좀도둑 1 · 협박꾼 1 · 소문쟁이 2');
+  expect(rosterSummary({ chief: 2, thief: 1, blackmailer: 1, gossip: 2, postman: 3 })).toBe('두목\u00a02 · 좀도둑\u00a01 · 협박꾼\u00a01 · 소문쟁이\u00a02'); // 줄바꿈 때 직업과 수가 갈라지지 않게
   expect(rosterSummary({ postman: 9 })).toBe('');
 });

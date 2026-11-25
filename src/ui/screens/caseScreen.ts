@@ -449,7 +449,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
           'button',
           { class: 'stat ratio', 'data-action': 'roster', onclick: () => showRoster() },
           h('small', {}, '인원표 보기'),
-          h('b', { 'data-stat': 'bosses' }, `체포 ${caught}/${bossTotal} · ${rosterSummary(def.roster)}`),
+          h('b', { 'data-stat': 'bosses' }, `체포\u00a0${caught}/${bossTotal} · ${rosterSummary(def.roster)}`),
         ),
       ),
       h(
