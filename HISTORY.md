@@ -128,4 +128,5 @@
   - 글꼴: 숫자용 Village Mono (IBM Plex Mono Medium·SemiBold 의 라틴 글자만, 예약 이름 Plex 때문에 이름 바꿈).
 - 데이터: 글꼴 원본 data/fonts-src/ibmplexmono_*.ttf (npm run fonts 가 받음). 부분 집합 합계 405.5KB(글자 648개, mono 두 파일 약 21KB).
 - 결과: 시험 171개(19 파일, logs/2026-11-25-paper-ui-test.log), 타입 검사, 빌드(미리 받기 597KiB), check-ui 119개(93 + 26, logs/2026-11-25-paper-ui-check.log), check-offline 통과(글꼴 4종). 스크린샷 logs/ui-check/ (01-title, 02-stages, 03-case-guide, 05-menu, 07-result, 09-stage30, 15-endless-result, 17-codex, 18-rules, x1 ~ x3 는 이어 하기 타이틀·푼 스테이지·불러오는 중).
-- 구현 중 정한 것: 작업 기록 .superpowers/sdd/2026-11-25-paper-ui-plan/progress.md 의 Ruling 줄 (끝나면 logs/2026-11-25-paper-ui-ledger.md 로 옮김).
+- 구현 중 정한 것: 작업 기록 logs/2026-11-25-paper-ui-ledger.md 의 Ruling 줄. 큰 것: 결과 화면의 다음 사건 줄은 해설 위(해설이 길면 단추가 밀려 남), 힌트 단추를 노란 쪽지 탭으로(설계에 있고 계획에 빠졌던 것), 직업 창 링크 문구 "{직업}의 말하는 방식"(조사 처리 없이), 인원표 안내 문구를 "인원표 전체"로.
+- 최종 검토(별도 검토자): 심각 0, 중요 2, 작은 것 8. 고친 것: (1) 결과 화면 요약 줄이 15px → 14px 로 작아졌던 것, (2) 이번에 안 쓰게 된 CSS 규칙·색 토큰 정리(검사 추가), (3) 작은 것에서 올린 것: 체포한 칸의 진술 글자가 너무 옅었음(대비 3.9:1 → 6:1, 검사 추가). 시험 172개, check-ui 121개, check-offline 통과. 미룬 작은 것: 힌트 탭 기울기 3도, 글자 단추 13px, 시드 사건 결과의 요약 줄 중복, 화면 읽기 프로그램의 칸 번호 "번", 증상 검사가 못 잡는 모양(100%·em 반경, 안쪽 그림자 띠), 능력 단추 모양, 결과 제목 순서.
