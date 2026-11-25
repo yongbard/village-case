@@ -47,3 +47,27 @@ test('endless case generation stays under the time limit', () => {
     expect(performance.now() - t, `n=${n} seed ${500 + s}`).toBeLessThan(2500 * TIME_SCALE);
   }
 }, 120_000);
+
+// 사건 코드 고정: 같은 (n, 시드)가 늘 같은 사건인지 (기기 사이뿐 아니라 코드를 고친 뒤에도).
+// 일의 양을 바꾸는 수정(탐색 순서, CHECK_COST, overBudget 부르는 자리, WORK·CANDIDATES·기준)은 후보 선택을 바꿔
+// 이어 하던 판과 공유한 사건 코드를 다른 사건으로 만든다. 이 시험이 깨지면 그 영향을 알고 값을 새로 적는다.
+const fingerprint = (d: object) => {
+  let h = 2166136261;
+  for (const ch of JSON.stringify(d)) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+  return h.toString(16);
+};
+test('endless case codes are pinned (first, later and over-limit candidates)', () => {
+  const golden: [number, number, string, number, string][] = [
+    [1, 1, 'floor', 0, '122f2c2'],
+    [1, 3, 'floor', 4, 'd974fa19'],
+    [1, 23, 'over', 0, '95d0c052'],
+    [8, 19, 'over', 1, '511fa76d'],
+    [8, 47, 'floor', 1, 'f9ae8323'],
+    [13, 4, 'over', 1, '2b5d2b1b'],
+    [13, 12, 'floor', 2, 'd5b100e6'],
+  ];
+  for (const [n, seed, how, candidate, fp] of golden) {
+    const p = pickEndless(n, seed);
+    expect([p.how, p.candidate, fingerprint({ faces: p.def.faces, clues: p.def.clues, truth: p.def.truth })], `n=${n} seed ${seed}`).toEqual([how, candidate, fp]);
+  }
+}, 60_000);

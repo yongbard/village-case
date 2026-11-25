@@ -8,7 +8,10 @@ import { abilityAs, cellAdmits, consistent, holdsAs, isCountKind, modeAt, taintE
 import { ANY_WITNESS, type Clue, type Knowledge, type Mode, type RoleId, type World } from './types';
 
 export const WORLD_CAP = 20000;
-/** 세계 하나의 consistent 검사를 탐색 몇 걸음으로 칠지 (일의 양 한도가 시간과 비례하게, 2026-11-25 측정) */
+/**
+ * 세계 하나의 consistent 검사를 탐색 몇 걸음으로 칠지 (일의 양 한도가 시간과 대략 비례하게, 2026-11-25 측정).
+ * 이 값이나 걸음·한도를 보는 자리를 바꾸면 무한 모드 사건 고르기가 바뀌어 사건 코드가 다른 사건이 된다 (endless.test 의 고정 시험).
+ */
 const CHECK_COST = 32;
 
 /** 비교용 정규 문자열 */
@@ -63,6 +66,15 @@ export interface Budget {
   work?: number;
   /** 탐색 걸음 수 (여러 탐색에 걸쳐 쌓인다: 작은 탐색을 많이 해도 1024 걸음마다 한 번 한도를 본다) */
   ticks?: number;
+}
+
+/** 걸음 cost 만큼 쌓고 1024 걸음을 넘을 때마다 한도를 본다. 한도를 넘었으면 true. */
+export function spend(b: Budget | undefined, cost: number): boolean {
+  if (!b) return false;
+  const before = b.ticks ?? 0;
+  b.ticks = before + cost;
+  if (before >> 10 !== b.ticks >> 10) overBudget(b);
+  return b.expired;
 }
 
 /** 한도를 넘었는가 (넘었으면 expired 를 켠다) */
@@ -228,12 +240,9 @@ export function forEachWorld(
   const witCount = new Map<RoleId, number>(); // 직업이 정해진 진짜 증인 수 (roster 이하)
   let placed = 0;
   let stop = false;
-  /** 걸음 cost 만큼 쌓고, 1024 걸음을 넘을 때마다 한도를 본다 (넘었으면 stop) */
+  /** 걸음 cost 만큼 쓴다 (한도를 넘었으면 stop) */
   const tick = (cost: number): boolean => {
-    if (!budget) return false;
-    const before = budget.ticks ?? 0;
-    budget.ticks = before + cost;
-    if (before >> 10 !== budget.ticks >> 10 && overBudget(budget)) stop = true;
+    if (spend(budget, cost)) stop = true;
     return stop;
   };
 

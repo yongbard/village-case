@@ -2,7 +2,9 @@ import { expect, test } from 'vitest';
 import { role } from './roles';
 import { consistent } from './rules';
 import { type CaseDef } from './types';
-import { abilityCells, checkCase, fullKnowledge, signature } from './unique';
+import { endlessParams, generateValid } from './generate';
+import { TIME_SCALE } from './testcases';
+import { abilityCells, checkCase, fullKnowledge, signature, solvedKnowledge, solvedKnowledgeWithin } from './unique';
 
 // 고정 사건 (시드 탐색으로 찾은 뒤 값을 그대로 적었다). 생성기에 의존하지 않는다.
 const ev8 = (base: number, n: number) => ({ kind: 'evil8' as const, base, n });
@@ -61,4 +63,17 @@ test('signature marks boss cells only; fullKnowledge, abilityCells basics', () =
   expect(k.abilities).toEqual([]);
   expect(k.arrested.every((a) => a === undefined)).toBe(true);
   expect(abilityCells(BOSS_ONLY_UNIQUE)).toEqual(BOSS_ONLY_UNIQUE.faces.flatMap((f, i) => (role(f).ability ? [i] : [])));
+});
+
+test('solvedKnowledgeWithin equals solvedKnowledge when the budget is enough', () => {
+  const def = generateValid(endlessParams(4), 21);
+  expect(solvedKnowledgeWithin(def, { deadline: Infinity, expired: false, work: 1e9 })).toEqual(solvedKnowledge(def));
+});
+
+test('solvedKnowledgeWithin gives up on the work limit instead of searching every ability pair', () => {
+  // 4×5 주범 3: 능력 대상 짝을 다 뒤져도 못 찾는 사건이라 한도 없이는 이 PC 에서 5초쯤 걸렸다
+  const def = generateValid(endlessParams(13), 70020);
+  const t0 = performance.now();
+  expect(solvedKnowledgeWithin(def, { deadline: Infinity, expired: false, work: 1500 })).toBeNull();
+  expect(performance.now() - t0).toBeLessThan(3000 * TIME_SCALE); // 한도 없이는 5초쯤, 전체 시험을 함께 돌리면 느려진다
 });

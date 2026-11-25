@@ -405,7 +405,8 @@ export function explainWork(k: Knowledge, work: number): Step[] | null {
   return explainBudget(k, { deadline: Infinity, expired: false, work });
 }
 
-function explainBudget(k: Knowledge, budget: Budget): Step[] | null {
+/** explain 을 주어진 한도(시간·일의 양) 안에서만. 다 못 따지면 null. */
+export function explainBudget(k: Knowledge, budget: Budget): Step[] | null {
   const { worlds, capped } = solve(k, WORLD_CAP, budget);
   if (overBudget(budget)) return null;
   const out = stepsFrom(k, worlds, capped, Infinity, budget);

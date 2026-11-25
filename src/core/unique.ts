@@ -2,7 +2,7 @@
 // 다 조사한 관찰로 맞는 세계를 한 번만 구하고, 능력(G2)은 그 세계 목록을 답으로 나눠 따진다.
 import { role } from './roles';
 import { abilityAnswer, abilityTruth, campAt, consistent, evilIn, modeAt } from './rules';
-import { WORLD_CAP, forEachWorld, solve } from './solve';
+import { WORLD_CAP, forEachWorld, overBudget, solve, spend, type Budget } from './solve';
 
 /** 관찰과 맞는 세계가 하나라도 있는가 */
 export function existsWorld(k: Knowledge): boolean {
@@ -141,6 +141,14 @@ export function checkCase(def: CaseDef): CheckResult {
  * 능력 칸이 없으면 fullKnowledge 그대로. 좁혀지는 길을 못 찾으면(G2 를 어긴 사건) 능력 없이 돌려준다.
  */
 export function solvedKnowledge(def: CaseDef): Knowledge {
+  return solvedKnowledgeWithin(def)!;
+}
+
+/**
+ * solvedKnowledge 를 한도 안에서만: 한도를 넘으면 null. 능력 대상 짝을 다 뒤지는 데 큰 판은 수 초가 걸려
+ * 무한 모드 사건 고르기가 일의 양 한도와 함께 쓴다 (budget 이 없으면 끝까지).
+ */
+export function solvedKnowledgeWithin(def: CaseDef, budget?: Budget): Knowledge | null {
   const k = fullKnowledge(def);
   const n = def.w * def.h;
   const unique = (ws: World[]) => new Set(ws.map(signature)).size <= 1;
@@ -150,6 +158,7 @@ export function solvedKnowledge(def: CaseDef): Knowledge {
       const rest = left.filter((x) => x !== cell);
       for (let a = 0; a < n; a++) for (let b = a + 1; b < n; b++) {
         if (a === cell || b === cell) continue;
+        if (spend(budget, ws.length + 1)) return null;
         const same = abilityAnswer(def, cell, a, b);
         const keep = ws.filter((w) => {
           const t = abilityTruth(w, cell, a, b);
@@ -161,6 +170,10 @@ export function solvedKnowledge(def: CaseDef): Knowledge {
     }
     return null;
   };
-  k.abilities = search(solve(k).worlds, abilityCells(def), []) ?? [];
+  const { worlds } = solve(k, WORLD_CAP, budget);
+  if (overBudget(budget)) return null;
+  const abilities = search(worlds, abilityCells(def), []);
+  if (budget?.expired) return null;
+  k.abilities = abilities ?? [];
   return k;
 }

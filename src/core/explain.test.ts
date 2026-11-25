@@ -276,5 +276,5 @@ test('a small work limit is also a short time, even when most time is in consist
   const k = solvedKnowledge(generateValid({ w: 4, h: 5, trouble: 3, accomplice: 1, boss: 3, pool: all }, 9648));
   const t0 = performance.now();
   explainWork(k, 1000);
-  expect(performance.now() - t0).toBeLessThan(1500 * TIME_SCALE);
+  expect(performance.now() - t0).toBeLessThan(3000 * TIME_SCALE); // 한도 없이는 12초쯤, 전체 시험을 함께 돌리면 느려진다
 });
