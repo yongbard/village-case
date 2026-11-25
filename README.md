@@ -12,7 +12,7 @@
 
 ## 현재 상태
 
-- 2026-11-25: 읽기 쉽게 다듬기(브랜치 readability, 아직 push 안 함). 진술은 "수상한 사람" 말투(칸 번호는 그대로), 사건 화면 위 메모는 직업별 인원(체포 0/2 · 두목 2 · …), 본문 글꼴은 고딕 Village Sans(IBM Plex Sans KR 부분 집합). 시험 167개, check-ui 93개, check-offline 통과, 최종 검토 반영. 설계 docs/2026-11-25-readability-design.md
+- 2026-11-25: 읽기 쉽게 다듬기 배포(Actions 45532213075). 진술은 "수상한 사람" 말투(칸 번호는 그대로), 사건 화면 위 메모는 직업별 인원(체포 0/2 · 두목 2 · …), 본문 글꼴은 고딕 Village Sans(IBM Plex Sans KR 부분 집합). 시험 167개, check-ui 93개, check-offline 통과, 최종 검토 반영. 설계 docs/2026-11-25-readability-design.md
 - 2026-11-24 오후: 규칙 개편 1단계 "주범 사냥" 구현·배포(main push, Actions 45352954799 통과). 목표는 주범 모두 체포, 직업 28개, 칸 번호를 밝힌 직업 말투 진술, 인원표, 거짓일 수 있는 자백. 스테이지 30개 새로 만듦. 시험 162개, check-ui 90개, check-offline, 교차 검증 3000 통과. 2단계(시간 사건: 두목 살인·의사·술꾼)와 3단계(인상착의)는 설계 7장.
 - 2026-11-23: 구현 10개 작업 완료(브랜치 feat/v1). 스테이지 30개(5스테이지 × 6장), 무한 모드, 오프라인(PWA), GitHub Pages 배포 workflow 까지 만듦.
 - 시험 114개 통과(13 파일), 타입 검사(npm run typecheck), 사건 교차 검증(npm run test:cross) 와 화면 확인(check-ui) 통과.
