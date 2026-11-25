@@ -3,6 +3,7 @@ import { CHAPTERS, type Stage } from '../../content/chapters';
 import stagesJson from '../../content/stages.json';
 import { cardsFor } from '../../content/tutorial';
 import { h, mount } from '../dom';
+import { tape } from '../paper';
 import { getSave, updateSave } from '../store';
 import { showCards } from '../tutorialOverlay';
 import { showCase } from './caseScreen';
@@ -12,9 +13,12 @@ import { showTitle } from './title';
 export const STAGES = stagesJson as unknown as Stage[];
 
 const isOpen = (id: number, cleared: number[]) => id === 1 || cleared.includes(id - 1) || cleared.includes(id);
+const pad2 = (n: number) => String(n).padStart(2, '0');
 
 export function showStageList(): void {
   const { cleared } = getSave();
+  // 지금 할 것: 열렸고 아직 안 푼 것 중 가장 앞 스테이지
+  const current = STAGES.find((s) => isOpen(s.id, cleared) && !cleared.includes(s.id))?.id;
   mount(
     h(
       'main',
@@ -29,8 +33,9 @@ export function showStageList(): void {
       CHAPTERS.map((c) =>
         h(
           'section',
-          { class: 'chapter paper' },
-          h('h2', {}, `${c.no}장`, h('small', {}, `${c.stages[0]} ~ ${c.stages[1]}`)),
+          { class: 'chapter leaf' },
+          tape(),
+          h('h2', {}, `제${c.no}장`, h('small', {}, `${pad2(c.stages[0])} – ${pad2(c.stages[1])}`)),
           h(
             'div',
             { class: 'stage-grid' },
@@ -40,13 +45,13 @@ export function showStageList(): void {
               return h(
                 'button',
                 {
-                  class: `stage${done ? ' done' : ''}${open ? '' : ' locked'}`,
+                  class: `stage${done ? ' done' : ''}${s.id === current ? ' current' : ''}${open ? '' : ' locked'}`,
                   'data-stage': s.id,
                   disabled: !open,
                   'aria-label': `${s.id}스테이지${done ? ', 해결함' : open ? '' : ', 잠김'}`,
                   onclick: () => startStage(s.id),
                 },
-                h('span', { class: 'stage-no' }, String(s.id)),
+                h('span', { class: 'stage-no' }, pad2(s.id)),
                 h('span', { class: done ? 'stage-state stamp-ink' : 'stage-state' }, done ? '해결' : open ? `${s.def.w}×${s.def.h}` : '잠김'),
               );
             }),

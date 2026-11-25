@@ -126,6 +126,9 @@ try {
   const locked = await page.$eval('.stage[data-stage="2"]', (e) => e.disabled);
   check('stage list titled 사건 파일', (await text('.list-head h1')) === '사건 파일');
   check('stage list: 1 open, 2 locked', !(await page.$eval('.stage[data-stage="1"]', (e) => e.disabled)) && locked);
+  const current = await page.$$eval('.stage.current', (ss) => ss.map((s) => s.dataset.stage));
+  check('stage list: exactly one current stage, the first open unsolved', JSON.stringify(current) === '["1"]', JSON.stringify(current));
+  check('stage list: chapter heads read 제N장', ((await text('.list-screen section h2')) ?? '').startsWith('제1장'), await text('.list-screen section h2'));
   await noSideScroll('stage list');
   await shot('02-stages', true);
   await noSlop('stage list');
