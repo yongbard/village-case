@@ -151,9 +151,14 @@ try {
   check('roster reopens from the header memo', ((await text('[data-action="roster-close"]')) ?? '') === '닫기');
   await page.click('[data-action="roster-close"]');
   await page.waitForSelector('.overlay', { hidden: true });
-  check('header memo counts caught bosses', ((await text('[data-stat="bosses"]')) ?? '').replace(/\u00a0/g, ' ').startsWith('체포 0/1 · 두목 1'), await text('[data-stat="bosses"]'));
-  const memoBox = await (await page.$('[data-stat="bosses"]')).boundingBox();
+  check('header memo counts caught bosses', ((await text('[data-stat="bosses"]')) ?? '').replace(/\s+/g, ' ') === '0 / 1', await text('[data-stat="bosses"]'));
+  const memoBox = await (await page.$('section.case-form')).boundingBox();
   check('header memo fits the width', memoBox.x >= 0 && memoBox.x + memoBox.width <= W, `x ${memoBox.x} w ${memoBox.width}`);
+  await page.click('.case-form .roster-row[data-role="chief"]');
+  await page.waitForSelector('.sheet .sheet-head');
+  check('case form: tapping a role row opens its role sheet', ((await text('.sheet .sheet-head b')) ?? '') === '두목', await text('.sheet .sheet-head b'));
+  await page.click('.sheet .btn.wide');
+  await page.waitForSelector('.overlay', { hidden: true });
   await page.waitForSelector('.guide-bubble');
   const bubble = await text('.guide-bubble .bubble-text');
   check('stage 1: first GUIDE bubble visible', bubble === GUIDE[1][0].text, bubble ?? 'none');
@@ -296,9 +301,10 @@ try {
   const g30 = await (await page.$('.grid')).boundingBox();
   check('stage 30: grid fits width', g30.x >= 0 && g30.x + g30.width <= W, `x ${g30.x} w ${g30.width}`);
   await noSideScroll('stage 30');
-  // 직업이 많은 사건: 위 메모가 줄을 넘겨 다 보이고 화면 폭 안에 있다
-  const memo30 = await page.$eval('[data-stat="bosses"]', (e) => { const r = e.getBoundingClientRect(); return { t: e.textContent, x: r.x, right: r.right, cut: e.scrollWidth > e.clientWidth + 1, lines: Math.round(r.height / parseFloat(getComputedStyle(e).lineHeight || '20')) }; });
-  check('stage 30: header memo lists every role, wrapped inside the width', memo30.t.split(' · ').length >= 5 && memo30.t.split(' · ').every((x) => !x.includes(' ')) /* 직업과 수 사이는 줄바꿈 없는 공백 */ && memo30.x >= 0 && memo30.right <= W && !memo30.cut, JSON.stringify(memo30));
+  // 직업이 많은 사건: 위 양식의 명단이 증인 아닌 직업을 다 보이고, 줄마다 누를 만한 높이에 화면 폭 안, 이름이 잘리지 않는다
+  const hidden30 = Object.entries(stages[29].def.roster).filter(([id, n]) => n > 0 && role(id).camp !== 'witness').length;
+  const rows30 = await page.$$eval('.case-form .roster-row', (rs) => rs.map((e) => { const r = e.getBoundingClientRect(); const b = e.querySelector('b'); return { h: r.height, x: r.x, right: r.right, cut: b.scrollWidth > b.clientWidth + 1 }; }));
+  check('stage 30: header memo lists every role, wrapped inside the width', hidden30 >= 5 && rows30.length === hidden30 && rows30.every((r) => r.h >= 44 && r.x >= 0 && r.right <= W && !r.cut), `${hidden30} roles; ${JSON.stringify(rows30)}`);
   await shot('09-stage30', true);
   await noSlop('stage 30');
 

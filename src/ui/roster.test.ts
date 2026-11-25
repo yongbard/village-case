@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { rosterRows, rosterSummary } from './roster';
+import { rosterList, rosterRows } from './roster';
 
 test('rows: boss, accomplice, trouble, witness; roles in table order; zero roles dropped', () => {
   const rows = rosterRows({ chief: 1, briber: 1, thief: 2, braggart: 1, pharmacist: 4, postman: 3, mayor: 0 });
@@ -20,7 +20,12 @@ test('a camp with nobody still shows with 0', () => {
   ]);
 });
 
-test('summary lists non-witness roles by count, boss → accomplice → trouble', () => {
-  expect(rosterSummary({ chief: 2, thief: 1, blackmailer: 1, gossip: 2, postman: 3 })).toBe('두목\u00a02 · 좀도둑\u00a01 · 협박꾼\u00a01 · 소문쟁이\u00a02'); // 줄바꿈 때 직업과 수가 갈라지지 않게
-  expect(rosterSummary({ postman: 9 })).toBe('');
+test('list: non-witness roles with counts and camps, boss → accomplice → trouble', () => {
+  expect(rosterList({ chief: 2, thief: 1, blackmailer: 1, gossip: 2, postman: 3 })).toEqual([
+    { id: 'chief', name: '두목', count: 2, camp: 'boss' },
+    { id: 'thief', name: '좀도둑', count: 1, camp: 'accomplice' },
+    { id: 'blackmailer', name: '협박꾼', count: 1, camp: 'accomplice' },
+    { id: 'gossip', name: '소문쟁이', count: 2, camp: 'trouble' },
+  ]);
+  expect(rosterList({ postman: 9 })).toEqual([]);
 });

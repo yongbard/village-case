@@ -20,7 +20,7 @@ import { h, mount, overlay, toast } from '../dom';
 import { CAMP_NAME, SIDE_MARK, SIDE_NAME } from '../labels';
 import { guideBubble } from '../tutorialOverlay';
 import { photo } from '../portraits';
-import { rosterRows, rosterSummary } from '../roster';
+import { rosterList, rosterRows } from '../roster';
 import { speechList } from '../speech';
 import { requestHint } from '../workerClient';
 import { showStageList } from './stageList';
@@ -435,32 +435,38 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
         ),
       ),
       endless && h('p', { class: 'seed-line', 'data-seed': opts.code ?? def.seed }, `시드 ${opts.code ?? def.seed}`),
+      // 사건 양식 한 장: 위 칸 셋(경과·평판·체포한 주범), 아래 이 마을에 숨은 직업 명단
       h(
-        'div',
-        { class: 'stats' },
-        h('span', { class: 'stat' }, h('small', {}, '경과'), h('b', { 'data-stat': 'hour' }, `${g.hour}시간`)),
+        'section',
+        { class: 'leaf case-form' },
         h(
-          'span',
-          { class: `stat${g.rep <= 4 ? ' low' : ''}` },
-          h('small', {}, '평판'),
-          h('b', { 'data-stat': 'rep' }, String(g.rep)),
-        ),
-        h(
-          'button',
-          { class: 'stat ratio', 'data-action': 'roster', onclick: () => showRoster() },
-          h('small', {}, '인원표 보기'),
-          h('b', { 'data-stat': 'bosses' }, `체포\u00a0${caught}/${bossTotal} · ${rosterSummary(def.roster)}`),
-        ),
-      ),
-      h(
-        'div',
-        { class: 'roles', 'aria-label': '이번 사건의 말썽꾼·악 직업' },
-        [...new Set(def.inPlay)].map((id) =>
+          'table',
+          { class: 'form-grid' },
           h(
-            'button',
-            { class: `chip camp-${role(id).camp}`, onclick: () => showRole(id) },
-            role(id).name,
-            h('small', {}, CAMP_NAME[role(id).camp]),
+            'tr',
+            {},
+            h('td', {}, h('span', { class: 'label' }, '경과'), h('b', { class: 'val', 'data-stat': 'hour' }, String(g.hour), h('small', {}, '시간'))),
+            h('td', {}, h('span', { class: 'label' }, '평판'), h('b', { class: `val${g.rep <= 4 ? ' red' : ''}`, 'data-stat': 'rep' }, String(g.rep))),
+            h('td', {}, h('span', { class: 'label' }, '체포한 주범'), h('b', { class: 'val red', 'data-stat': 'bosses' }, `${caught} / ${bossTotal}`)),
+          ),
+        ),
+        h(
+          'div',
+          { class: 'roster-head' },
+          h('span', { class: 'label' }, '이 마을에 숨은 직업'),
+          h('button', { class: 'link', 'data-action': 'roster', onclick: () => showRoster() }, '인원표 전체'),
+        ),
+        h(
+          'div',
+          { class: 'roster-rows' },
+          rosterList(def.roster).map((x) =>
+            h(
+              'button',
+              { class: 'roster-row', 'data-role': x.id, onclick: () => showRole(x.id) },
+              h('b', {}, x.name),
+              h('span', { class: `stamp-mark camp-${x.camp}` }, CAMP_NAME[x.camp]),
+              h('span', { class: 'count' }, `×${x.count}`),
+            ),
           ),
         ),
       ),

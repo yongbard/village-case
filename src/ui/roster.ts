@@ -22,10 +22,9 @@ export function rosterRows(roster: Record<RoleId, number>): RosterRow[] {
   });
 }
 
-/** 증인을 뺀 직업별 인원 한 줄: "두목 2 · 좀도둑 1 · 소문쟁이 2" (주범 → 공범 → 말썽꾼). 사건 화면 위 메모 줄에 쓴다. */
-export function rosterSummary(roster: Record<RoleId, number>): string {
+/** 증인을 뺀 직업 목록 (주범 → 공범 → 말썽꾼, 직업표 순서). 사건 화면 위 양식의 "이 마을에 숨은 직업" 명단에 쓴다. */
+export function rosterList(roster: Record<RoleId, number>): { id: RoleId; name: string; count: number; camp: Camp }[] {
   return rosterRows(roster)
     .filter((row) => row.camp !== 'witness')
-    .flatMap((row) => row.items.map((x) => `${x.name}\u00a0${x.count}`)) // 줄을 넘길 때 직업과 수가 갈라지지 않게
-    .join(' · ');
+    .flatMap((row) => row.items.map((x) => ({ ...x, camp: row.camp })));
 }
