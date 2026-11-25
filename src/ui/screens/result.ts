@@ -2,14 +2,18 @@
 import { describeStep, type Step } from '../../core/explain';
 import { type Game } from '../../core/game';
 import { role } from '../../core/roles';
-import { type AbilityObs, type CaseDef } from '../../core/types';
+import { ANY_WITNESS, type AbilityObs, type CaseDef } from '../../core/types';
 import { abilityText } from '../clueText';
 import { h, mount } from '../dom';
+import { tape, tocRow } from '../paper';
 import { showStageList, startStage, STAGES } from './stageList';
 import { type Stage } from '../../content/chapters';
 
 export interface ResultView {
+  /** 보고서 머리 오른쪽 번호 자리 (예: 사건 No. 01) */
   kicker: string;
+  /** 보고서 양식 칸: [라벨, 값] */
+  facts: [string, string][];
   solved: boolean;
   sub: string;
   def: CaseDef;
@@ -40,26 +44,39 @@ function explainBody(def: CaseDef, e: Explain | null, failed = false): (HTMLElem
   ];
 }
 
+/** 체포한 주범 "{잡은 수} / {전체}" */
+export function bossesCaught(def: CaseDef, arrested: boolean[]): string {
+  const bosses = def.truth.roles.flatMap((r, i) => (r !== ANY_WITNESS && role(r).camp === 'boss' ? [i] : []));
+  return `${bosses.filter((i) => arrested[i]).length} / ${bosses.length}`;
+}
+
 /** 결과 화면을 띄운다. 돌려주는 setExplain 으로 해설을 나중에 채운다 (화면을 벗어났으면 아무 일도 안 한다). */
 export function showResultView(v: ResultView): { setExplain: (e: Explain | null) => void } {
   const body = h('div', { class: 'explain-body' }, explainBody(v.def, v.explain));
+  // 테이프로 붙인 수사 보고서 한 장: 머리 양식 줄, 양식 칸, 큰 도장, 이동, 해설
   const root = h(
     'main',
     { class: 'screen result-screen' },
     h(
-      'header',
-      { class: `result-head ${v.solved ? 'solved' : 'failed'}` },
-      h('p', { class: 'kicker' }, v.kicker),
-      h('h1', { class: 'verdict stamp-ink', 'data-result': v.solved ? 'solved' : 'failed' }, v.solved ? '해결' : '미해결'),
-      h('p', { class: 'result-sub' }, v.sub),
-    ),
-    h('div', { class: 'result-actions' }, v.actions),
-    h(
       'section',
-      { class: 'explain' },
-      h('h2', {}, '수사 보고서'),
-      h('p', { class: 'explain-note' }, '처음부터 모든 칸을 조사했을 때 주범을 찾아가는 순서입니다.'),
-      body,
+      { class: 'leaf report' },
+      tape(),
+      h(
+        'header',
+        { class: `result-head ${v.solved ? 'solved' : 'failed'}` },
+        h('p', { class: 'report-no' }, h('span', {}, '수사 보고서'), h('span', { class: 'report-kicker' }, v.kicker)),
+        h('h2', { class: 'report-title' }, '보고서'),
+        h('table', { class: 'form-grid' }, h('tr', {}, v.facts.map(([k, val]) => h('td', {}, h('span', { class: 'label' }, k), h('b', { class: 'val' }, val))))),
+        h('h1', { class: 'verdict stamp-ink', 'data-result': v.solved ? 'solved' : 'failed' }, v.solved ? '해결' : '미해결'),
+        h('p', { class: 'result-sub' }, v.sub),
+      ),
+      h('div', { class: 'result-actions' }, v.actions),
+      h(
+        'section',
+        { class: 'explain' },
+        h('p', { class: 'label explain-head' }, '처음부터 모든 칸을 조사했을 때 주범을 찾아가는 순서'),
+        body,
+      ),
     ),
   );
   mount(root);
@@ -73,16 +90,22 @@ export function showResultView(v: ResultView): { setExplain: (e: Explain | null)
 export function showResult(stage: Stage, g: Game): void {
   const solved = g.status === 'solved';
   const hasNext = solved && stage.id < STAGES.length;
+  const pad2 = (n: number) => String(n).padStart(2, '0');
   showResultView({
-    kicker: `${stage.id}스테이지`,
+    kicker: `사건 No. ${pad2(stage.id)}`,
+    facts: [
+      ['경과', `${g.hour}시간`],
+      ['남은 평판', String(g.rep)],
+      ['체포한 주범', bossesCaught(stage.def, g.arrested)],
+    ],
     solved,
-    sub: solved ? `주범을 모두 체포했습니다 · 경과 ${g.hour}시간 · 남은 평판 ${g.rep}` : '평판이 바닥났습니다. 다시 해 보세요.',
+    sub: solved ? '주범을 모두 체포했습니다.' : '평판이 바닥났습니다. 다시 해 보세요.',
     def: stage.def,
     explain: { steps: stage.steps, abilities: stage.abilities },
     actions: [
-      hasNext && h('button', { class: 'btn primary wide', 'data-action': 'next', onclick: () => startStage(stage.id + 1) }, '다음 스테이지'),
-      h('button', { class: `btn wide${hasNext ? '' : ' primary'}`, 'data-action': 'retry', onclick: () => startStage(stage.id) }, '다시 하기'),
-      h('button', { class: 'btn ghost wide', onclick: showStageList }, '스테이지 목록'),
+      hasNext && tocRow({ name: '다음 스테이지', val: `No. ${pad2(stage.id + 1)}`, attrs: { class: 'go', 'data-action': 'next', onclick: () => startStage(stage.id + 1) } }),
+      h('button', { class: hasNext ? 'link' : 'btn primary wide', 'data-action': 'retry', onclick: () => startStage(stage.id) }, '다시 하기'),
+      h('button', { class: 'link', 'data-action': 'list', onclick: showStageList }, '스테이지 목록'),
     ].filter((x): x is HTMLButtonElement => !!x),
   });
 }

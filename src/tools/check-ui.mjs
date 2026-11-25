@@ -257,6 +257,11 @@ try {
   check('result: verdict is a stamp', await page.$eval('[data-result]', (e) => e.classList.contains('stamp-ink')));
   const steps = await page.$$eval('.steps li', (ls) => ls.map((l) => l.textContent));
   check('result: explanation lines', steps.length >= 1, `${steps.length} lines, first: ${steps[0]}`);
+  const facts = await page.$$eval('.result-screen .form-grid td', (ts) => ts.map((t) => t.textContent));
+  check('result: report has 3 facts', facts.length === 3, JSON.stringify(facts));
+  const stepNo = await page.$eval('.steps li', (l) => { const s = getComputedStyle(l, '::before'); return { content: s.content, r: s.borderTopLeftRadius, bg: s.backgroundColor }; });
+  check('result: steps numbered 01… without circles', /counter\(step, decimal-leading-zero\)/.test(stepNo.content) && stepNo.r === '0px' && stepNo.bg === 'rgba(0, 0, 0, 0)', JSON.stringify(stepNo));
+  check('result: next case is a table-of-contents row', await page.$eval('[data-action="next"]', (e) => e.classList.contains('toc-row')).catch(() => false));
   await noSideScroll('result');
   await shot('07-result', true);
   await noSlop('result');
@@ -264,7 +269,7 @@ try {
   check('save: stage 1 cleared', save?.cleared?.includes(1));
 
   // 8. 목록에서 2가 열렸는지
-  await page.click('.result-actions .btn.ghost');
+  await page.click('.result-actions [data-action="list"]');
   await page.waitForSelector('.stage[data-stage="2"]');
   check('stage 2 unlocked', !(await page.$eval('.stage[data-stage="2"]', (e) => e.disabled)));
 

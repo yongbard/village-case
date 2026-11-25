@@ -2,9 +2,10 @@
 import { type Step } from '../core/explain';
 import { type AbilityObs, type CaseDef } from '../core/types';
 import { h, mount } from './dom';
+import { tocRow } from './paper';
 import { formatCode } from './seedCode';
 import { showCase } from './screens/caseScreen';
-import { showResultView } from './screens/result';
+import { bossesCaught, showResultView } from './screens/result';
 import { showTitle } from './screens/title';
 import { getSave, updateSave } from './store';
 import { requestExplain, requestGenerate } from './workerClient';
@@ -134,14 +135,19 @@ function finish(st: State, def: CaseDef, solved: boolean, rep: number, hour: num
     explainInto(
       def,
       showResultView({
-        kicker: `무한 모드 · ${st.n}번째 사건`,
+        kicker: `무한 · ${st.n}번째 사건`,
+        facts: [
+          ['경과', `${hour}시간`],
+          ['평판', `${rep} → ${next.rep}`],
+          ['최고 기록', String(best)],
+        ],
         solved: true,
-        sub: `경과 ${hour}시간 · 평판 ${rep} → ${next.rep} · 푼 사건 ${st.n} · 최고 기록 ${best}`,
+        sub: `푼 사건 ${st.n}`,
         def,
         explain: null,
         actions: [
-          h('button', { class: 'btn primary wide', 'data-action': 'next', onclick: () => runCase(next) }, '다음 사건'),
-          h('button', { class: 'btn ghost wide', onclick: showTitle }, '처음으로'),
+          tocRow({ name: '다음 사건', val: `${next.n}번째`, attrs: { class: 'go', 'data-action': 'next', onclick: () => runCase(next) } }),
+          h('button', { class: 'link', onclick: showTitle }, '처음으로'),
         ],
       }),
     );
@@ -151,13 +157,18 @@ function finish(st: State, def: CaseDef, solved: boolean, rep: number, hour: num
       def,
       showResultView({
         kicker: '무한 모드',
+        facts: [
+          ['경과', `${hour}시간`],
+          ['푼 사건', String(done)],
+          ['최고 기록', String(best)],
+        ],
         solved: false,
-        sub: `푼 사건 ${done} · 최고 기록 ${best}`,
+        sub: '평판이 바닥났습니다.',
         def,
         explain: null,
         actions: [
           h('button', { class: 'btn primary wide', 'data-action': 'retry', onclick: () => startEndless(false) }, '새로 시작'),
-          h('button', { class: 'btn ghost wide', onclick: showTitle }, '처음으로'),
+          h('button', { class: 'link', onclick: showTitle }, '처음으로'),
         ],
       }),
     );
@@ -181,13 +192,18 @@ export function startSeedCase(n: number, seed: number): void {
             def,
             showResultView({
               kicker: `시드 ${code}`,
+              facts: [
+                ['경과', `${g.hour}시간`],
+                ['남은 평판', String(g.rep)],
+                ['체포한 주범', bossesCaught(def, g.arrested)],
+              ],
               solved: g.status === 'solved',
               sub: g.status === 'solved' ? `경과 ${g.hour}시간 · 남은 평판 ${g.rep}` : '평판이 바닥났습니다.',
               def,
               explain: null,
               actions: [
                 h('button', { class: 'btn primary wide', 'data-action': 'retry', onclick: () => startSeedCase(n, seed) }, '같은 사건 다시'),
-                h('button', { class: 'btn ghost wide', onclick: showTitle }, '처음으로'),
+                h('button', { class: 'link', onclick: showTitle }, '처음으로'),
               ],
             }),
           ),

@@ -597,25 +597,33 @@ button { font: inherit; color: inherit; }
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { transform: translateY(24px); opacity: 0; } }
 
-/* ---------- 결과 ---------- */
-.result-head { text-align: center; padding: 28px 0 18px; }
-.result-head h1 { font-family: var(--serif); font-size: 52px; line-height: 1.2; margin: 4px 0; }
-.result-head.solved h1 { color: var(--good); }
-.result-head.failed h1 { color: var(--evil); }
-.result-sub { color: var(--muted); font-weight: 600; }
-.result-actions { display: flex; flex-direction: column; gap: 8px; }
-.explain { margin-top: 24px; }
-.explain h2 { font-size: 17px; }
+/* ---------- 결과: 테이프로 붙인 수사 보고서 한 장 ---------- */
+.report { --tilt: 0.4deg; margin-top: 18px; padding: 18px 16px 16px; }
+.report-no { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-soft); }
+.report-kicker { font-family: var(--mono); }
+.report-title { font-size: 26px; text-align: center; letter-spacing: 0.4em; margin: 8px 0 12px; }
+.result-head { text-align: center; }
+.report .form-grid { text-align: left; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+.report .form-grid .val { font-size: 18px; }
+.result-sub { color: var(--ink-soft); font-size: 14px; margin-bottom: 14px; }
+/* 다음 사건은 먹 테두리 목차 줄 하나, 다시 하기·목록은 밑줄 글자 */
+.result-actions { display: flex; flex-wrap: wrap; justify-content: center; column-gap: 24px; }
+.result-actions .toc-row, .result-actions .btn.wide { width: 100%; }
+.toc-row.go { border: 2px solid var(--ink); padding: 0 14px; align-items: center; }
+.toc-row.go .toc-name { font-size: 20px; }
+.explain { margin-top: 18px; }
+.explain-head { display: block; margin-bottom: 4px; }
 .explain-note { color: var(--muted); font-size: 13px; margin: 2px 0 8px; }
-.abilities { margin: 0 0 8px; padding: 8px 12px 8px 28px; background: var(--card); border-radius: var(--radius); font-size: 14px; }
-.steps { margin: 0; padding: 0; list-style: none; counter-reset: step; border-top: 1.5px solid var(--ink); }
+.abilities { margin: 0 0 8px; padding: 0 0 0 20px; font-size: 14px; color: var(--ink-soft); }
+.steps { margin: 0; padding: 0; list-style: none; counter-reset: step; border-top: 1px solid var(--ink); }
 .steps li {
   counter-increment: step;
   display: flex;
   gap: 10px;
   padding: 9px 2px 9px 0;
-  border-bottom: 1px dashed var(--line);
+  border-bottom: 1px dashed var(--hair);
 }
+.steps li.side-evil { color: var(--red); }
 .steps li::before { /* 여백의 두 자리 단계 번호 */
   content: counter(step, decimal-leading-zero);
   flex: none;
@@ -671,7 +679,7 @@ button { font: inherit; color: inherit; }
 
 /* ---------- 서류철 바탕: 코르크판 위 글자와 종이 ---------- */
 /* 사건·타이틀 밖의 화면은 코르크판 위 종이 한 장 */
-.codex-screen, .rules-screen, .result-screen, .loading-screen {
+.codex-screen, .rules-screen, .loading-screen {
   background: var(--card);
   color: var(--ink);
   padding: 12px 14px 20px;
@@ -704,13 +712,13 @@ h1, h2 { font-family: var(--title); font-weight: 400; }
 }
 .overlay { background: rgba(20, 12, 4, 0.55); }
 
-/* ---------- 결과: 수사 보고서와 도장 ---------- */
+/* 결과 도장 */
 .result-head { position: relative; }
 .result-head .verdict {
   display: inline-block;
   font-size: 46px;
   line-height: 1.25;
-  margin: 22px 0 22px;
+  margin: 20px 0 14px;
   padding: 0 18px;
   border-width: 5px;
   transform: rotate(-6deg);
@@ -722,7 +730,6 @@ h1, h2 { font-family: var(--title); font-weight: 400; }
   from { transform: rotate(-6deg) scale(1.7); opacity: 0; }
   to { transform: rotate(-6deg) scale(1); opacity: 1; }
 }
-.explain h2 { font-size: 20px; }
 
 /* ---------- 인물 카드철 ---------- */
 .codex-item { border: none; border-radius: 2px; box-shadow: 0 2px 5px rgba(20, 12, 4, 0.3); }
