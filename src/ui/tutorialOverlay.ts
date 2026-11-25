@@ -15,9 +15,9 @@ export function showCards(keys: string[], onSeen: (key: string) => void): void {
     const close = overlay(
       h(
         'div',
-        { class: 'card-box', role: 'dialog', 'aria-modal': 'true' },
+        { class: 'card-box index-card', role: 'dialog', 'aria-modal': 'true' },
         r && photo(key, 'card-photo'),
-        h('p', { class: 'kicker' }, r ? `새 직업 · ${CAMP_NAME[r.camp]}` : '새 규칙'),
+        h('span', { class: 'label' }, r ? `새 직업 · ${CAMP_NAME[r.camp]}` : '새 규칙'),
         h('h2', {}, card.title),
         h('p', { class: 'card-body' }, card.body),
         h(

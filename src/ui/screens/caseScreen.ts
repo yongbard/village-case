@@ -17,7 +17,7 @@ import { ANY_WITNESS, type CaseDef, type Claim, type RoleId, type Side } from '.
 import { GUIDE } from '../../content/tutorial';
 import { abilityText, clueMarks, clueText, confessionText, pendingText } from '../clueText';
 import { h, mount, overlay, toast } from '../dom';
-import { CAMP_NAME, SIDE_MARK, SIDE_NAME } from '../labels';
+import { CAMP_NAME, SIDE_NAME } from '../labels';
 import { tape } from '../paper';
 import { guideBubble } from '../tutorialOverlay';
 import { photo } from '../portraits';
@@ -48,7 +48,7 @@ const TILT = [-2, 1.2, -0.8, 1.6, -1.4];
 /** 칸 구석의 메모 표시 */
 const NOTE_MARK: Record<Note, string> = { good: '선', evil: '악', unsure: '?' };
 /** 메뉴의 메모 단추 */
-const NOTE_BUTTON: Record<Note, string> = { good: '○ 선', evil: '● 악', unsure: '?' };
+const NOTE_BUTTON: Record<Note, string> = { good: '선', evil: '악', unsure: '?' };
 const NOTE_NAME: Record<Note, string> = { good: '선', evil: '악', unsure: '모름' };
 
 /** 체포로 드러난 진짜 직업 (직업을 모르는 증인은 겉 직업으로) */
@@ -226,7 +226,8 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
     close = overlay(
       h(
         'div',
-        { class: 'sheet roster-sheet', role: 'dialog', 'aria-modal': 'true', 'data-sheet': 'roster' },
+        { class: 'sheet index-card roster-sheet', role: 'dialog', 'aria-modal': 'true', 'data-sheet': 'roster' },
+        h('span', { class: 'label' }, '인원표'),
         h('h2', { class: 'roster-title' }, '이번 사건의 인원'),
         h('p', { class: 'roster-goal' }, `주범 ${bossTotal}명을 모두 체포하면 해결입니다.`),
         h('p', { class: 'roster-note' }, "증언의 '수상한 사람'은 악(공범·주범)입니다."),
@@ -237,7 +238,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
             h(
               'tr',
               { class: `camp-${row.camp}` },
-              h('th', {}, row.label),
+              h('th', {}, h('span', { class: `stamp-mark camp-${row.camp}` }, row.label)),
               h(
                 'td',
                 {},
@@ -248,7 +249,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
             ),
           ),
         ),
-        h('button', { class: 'btn wide', 'data-action': 'roster-close', onclick: () => close() }, first ? '수사 시작' : '닫기'),
+        h('button', { class: first ? 'btn primary wide' : 'btn ghost wide', 'data-action': 'roster-close', onclick: () => close() }, first ? '수사 시작' : '닫기'),
       ),
     );
   }
@@ -291,37 +292,34 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
       const side = sideOf(r.id);
       body = h(
         'div',
-        { class: 'sheet', role: 'dialog', 'aria-modal': 'true' },
-        h('div', { class: 'sheet-head' }, photo(r.id, 'sheet-photo'), h('b', {}, `${i + 1}번 칸`), h('span', {}, '체포함')),
+        { class: 'sheet index-card', role: 'dialog', 'aria-modal': 'true' },
+        sheetHead(photo(r.id, 'sheet-photo'), `${i + 1}번 칸 · 체포함`, r.name),
         h(
           'p',
           { class: `sheet-truth side-${side}` },
-          `${SIDE_MARK[side]} ${r.name} · ${CAMP_NAME[r.camp]} (${SIDE_NAME[side]})`,
+          h('span', { class: `stamp-mark camp-${r.camp}` }, CAMP_NAME[r.camp]),
+          ` ${SIDE_NAME[side]}`,
         ),
         h('p', { class: 'sheet-desc' }, r.desc),
         g.investigated[i] && h('p', { class: 'sheet-clue' }, `겉 직업 ${face.name}: ${statements(g, i).join(' / ')}`),
         canUseAbility(i) && abilityButton(i, run),
-        h('button', { class: 'btn wide', onclick: () => close() }, '닫기'),
+        h('button', { class: 'btn ghost wide', onclick: () => close() }, '닫기'),
       );
     } else {
       const note = g.notes[i];
       body = h(
         'div',
-        { class: 'sheet', role: 'dialog', 'aria-modal': 'true' },
-        h(
-          'div',
-          { class: 'sheet-head' },
-          g.investigated[i] && photo(face.id, 'sheet-photo'),
-          h('b', {}, `${i + 1}번 칸`),
-          h('span', {}, g.investigated[i] ? face.name : '조사하지 않음'),
-        ),
+        { class: 'sheet index-card', role: 'dialog', 'aria-modal': 'true' },
+        g.investigated[i]
+          ? sheetHead(photo(face.id, 'sheet-photo'), `${i + 1}번 칸 · 조사함`, face.name)
+          : sheetHead(null, `${i + 1}번 칸 · 조사하지 않음`, '?'),
         g.investigated[i] &&
-          h('p', { class: 'sheet-clue', onclick: run(() => toggleMarks(`line:${i}`, marksOf(i))) }, statements(g, i).join(' / ')),
+          h('p', { class: 'sheet-clue ruled', onclick: run(() => toggleMarks(`line:${i}`, marksOf(i))) }, `“${statements(g, i).join(' / ')}”`),
         g.investigated[i] &&
           h(
             'button',
-            { class: 'btn ghost role-link', 'data-action': 'role', onclick: run(() => showRole(face.id, i)) },
-            `${face.name} · 말하는 방식`,
+            { class: 'link role-link', 'data-action': 'role', onclick: run(() => showRole(face.id, i)) },
+            `${face.name}의 말하는 방식`,
           ),
         h(
           'div',
@@ -329,7 +327,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
           h(
             'button',
             {
-              class: 'btn action',
+              class: 'btn action primary',
               'data-action': 'investigate',
               disabled: g.investigated[i],
               onclick: run(() => {
@@ -351,7 +349,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
         h(
           'div',
           { class: 'sheet-memo' },
-          h('span', { class: 'memo-label' }, '메모'),
+          h('span', { class: 'memo-label label' }, '내 메모'),
           (['good', 'evil', 'unsure'] as Note[]).map((n) =>
             h(
               'button',
@@ -403,13 +401,18 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
     close = overlay(
       h(
         'div',
-        { class: 'sheet', role: 'dialog', 'aria-modal': 'true' },
-        h('div', { class: 'sheet-head' }, photo(id, 'sheet-photo'), h('b', {}, r.name), h('span', {}, `${CAMP_NAME[r.camp]} · ${SIDE_NAME[sideOf(id)]}`)),
+        { class: 'sheet index-card', role: 'dialog', 'aria-modal': 'true' },
+        sheetHead(photo(id, 'sheet-photo'), `${CAMP_NAME[r.camp]} · ${SIDE_NAME[sideOf(id)]}`, r.name),
         h('p', { class: 'sheet-desc' }, r.desc),
         speechList(id, cell === undefined ? undefined : { w: def.w, h: def.h, cell }),
-        h('button', { class: 'btn wide', onclick: () => close() }, '닫기'),
+        h('button', { class: 'btn ghost wide', onclick: () => close() }, '닫기'),
       ),
     );
+  }
+
+  /** 색인 카드 머리: 기운 사진 + 작은 라벨 + 이름 */
+  function sheetHead(pic: HTMLElement | null, label: string, name: string): HTMLElement {
+    return h('div', { class: 'sheet-head' }, pic, h('div', {}, h('span', { class: 'label' }, label), h('b', {}, name)));
   }
 
   function header(): HTMLElement {

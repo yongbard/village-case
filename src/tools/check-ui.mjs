@@ -184,6 +184,12 @@ try {
   await page.waitForSelector('.sheet [data-note="good"]');
   await settle();
   await shot('05-menu');
+  const menuHead = await page.$eval('.sheet .sheet-head', (e) => ({ label: e.querySelector('.label')?.textContent, name: e.querySelector('b')?.textContent })).catch(() => null);
+  check('cell menu: head reads N번 칸 and the face name', menuHead?.label?.startsWith('5번 칸 · 조사함') && menuHead.name === role(s1.def.faces[4]).name, JSON.stringify(menuHead));
+  const arrestBtn = await page.$eval('.sheet [data-action="arrest"]', (e) => { const s = getComputedStyle(e); return { style: s.borderTopStyle, color: s.borderTopColor }; });
+  check('cell menu: arrest is a red double-bordered stamp', arrestBtn.style === 'double' && arrestBtn.color === 'rgb(179, 38, 30)', JSON.stringify(arrestBtn));
+  const memoRow = await page.$$eval('.sheet .sheet-memo button', (bs) => bs.map((b) => { const r = b.getBoundingClientRect(); return { top: Math.round(r.top), h: r.height }; }));
+  check('cell menu: memo row is one form line', memoRow.length === 4 && memoRow.every((m) => m.top === memoRow[0].top && m.h >= 48), JSON.stringify(memoRow));
   await noSlop('cell menu');
   await page.click('.sheet [data-note="good"]');
   await page.waitForSelector('.cell[data-cell="4"] .note-good');
