@@ -13,13 +13,18 @@ const RAW = join(ROOT, 'data', 'fonts-src');
 const OUT = join(SRC, 'public', 'fonts');
 const BASE = 'https://github.com/google/fonts/raw/main/ofl';
 
-// rename: OFL 예약 글꼴 이름이 있는 글꼴은 부분 집합(수정본)을 이 이름으로 바꿔 낸다 (나눔손글씨 펜 → Village Hand, IBM Plex Sans KR → Village Sans)
-const FONTS: { src: string; out: string; rename?: string }[] = [
+// rename: OFL 예약 글꼴 이름이 있는 글꼴은 부분 집합(수정본)을 이 이름으로 바꿔 낸다 (나눔손글씨 펜 → Village Hand, IBM Plex Sans KR → Village Sans, IBM Plex Mono → Village Mono)
+// latin: 숫자 글꼴처럼 라틴 글자만 쓰는 글꼴은 화면 글자 중 U+0020 ~ U+024F 와 몇몇 문장부호만 남긴다 (한글은 본문 글꼴로 보인다)
+const FONTS: { src: string; out: string; rename?: string; latin?: boolean }[] = [
   { src: 'songmyung/SongMyung-Regular.ttf', out: 'song-myung.woff2' },
   { src: 'ibmplexsanskr/IBMPlexSansKR-Medium.ttf', out: 'sans-500.woff2', rename: 'Village Sans' },
   { src: 'ibmplexsanskr/IBMPlexSansKR-Bold.ttf', out: 'sans-700.woff2', rename: 'Village Sans' },
   { src: 'nanumpenscript/NanumPenScript-Regular.ttf', out: 'hand-pen.woff2', rename: 'Village Hand' },
+  { src: 'ibmplexmono/IBMPlexMono-Medium.ttf', out: 'mono-500.woff2', rename: 'Village Mono', latin: true },
+  { src: 'ibmplexmono/IBMPlexMono-SemiBold.ttf', out: 'mono-600.woff2', rename: 'Village Mono', latin: true },
 ];
+const LATIN_EXTRA = '·×–→›';
+const latinOnly = (s: string) => [...s].filter((c) => (c.codePointAt(0)! >= 0x20 && c.codePointAt(0)! <= 0x24f) || LATIN_EXTRA.includes(c)).join('');
 
 async function fetchOnce(path: string): Promise<string> {
   const file = join(RAW, path.replace('/', '_'));
@@ -37,15 +42,15 @@ const glyphs = displayGlyphs(SRC);
 let total = 0;
 for (const f of FONTS) {
   const raw = new Uint8Array(readFileSync(await fetchOnce(f.src)));
-  const out = await subsetFont(Buffer.from(f.rename ? renameFamily(raw, f.rename) : raw), glyphs, { targetFormat: 'woff2' });
+  const out = await subsetFont(Buffer.from(f.rename ? renameFamily(raw, f.rename) : raw), f.latin ? latinOnly(glyphs) : glyphs, { targetFormat: 'woff2' });
   writeFileSync(join(OUT, f.out), out);
   total += out.length;
   console.log(`${f.out}  ${(out.length / 1024).toFixed(1)} KB`);
 }
 writeFileSync(join(OUT, 'glyphs.txt'), glyphs);
-// 글꼴마다 저작권 줄이 달라 세 라이선스를 이어 붙인다
+// 글꼴마다 저작권 줄이 달라 라이선스를 이어 붙인다
 const licenses: string[] = [];
-for (const dir of ['songmyung', 'ibmplexsanskr', 'nanumpenscript']) {
+for (const dir of ['songmyung', 'ibmplexsanskr', 'nanumpenscript', 'ibmplexmono']) {
   licenses.push(`==== ${dir} ====\n${readFileSync(await fetchOnce(`${dir}/OFL.txt`), 'utf8')}`);
 }
 writeFileSync(join(OUT, 'OFL.txt'), licenses.join('\n\n'));

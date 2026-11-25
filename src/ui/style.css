@@ -40,6 +40,7 @@
   --title: 'Song Myung', 'Village Sans', 'Noto Serif KR', Batang, serif;
   --body: 'Village Sans', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   --hand: 'Village Hand', 'Village Sans', cursive;
+  --mono: 'Village Mono', var(--body); /* 숫자: 칸·쪽·사건 번호, 경과·평판 값, 시드 (한글은 본문 글꼴로) */
   --serif: var(--title);
   --sans: var(--body);
   color-scheme: light;
@@ -548,6 +549,9 @@ button { font: inherit; color: inherit; }
   color: var(--pencil);
 }
 .steps li.side-evil::before { color: var(--red); }
+
+/* 숫자 자리는 고정폭 */
+.cell .num, .stage-no, .stat b, .seed-line, .list-count, .ln-num, .bubble-count, .steps li::before { font-family: var(--mono); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

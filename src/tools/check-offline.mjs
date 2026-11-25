@@ -1,5 +1,5 @@
 // 오프라인 확인: 빌드 결과(dist)를 띄워 한 번 열고 서비스 워커가 미리 받게 한 뒤, 서버를 끄고 다시 연다.
-// 글꼴 세 가지와 타이틀·1스테이지 화면이 그대로 뜨면 OK. 먼저 npm run build.
+// 글꼴 네 가지와 타이틀·1스테이지 화면이 그대로 뜨면 OK. 먼저 npm run build.
 // node src/tools/check-offline.mjs → 단계마다 OK/FAIL, 하나라도 실패하면 종료 코드 1.
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -36,8 +36,8 @@ try {
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForSelector('.game-title', { timeout: 10000 });
   check('offline: title screen opens', (await page.$eval('.game-title', (e) => e.textContent)) === '마을 수사록');
-  for (const family of ['Song Myung', 'Village Sans', 'Village Hand']) {
-    const loaded = await page.evaluate(async (f) => (await document.fonts.load(`16px "${f}"`, '마을 수사록')).length > 0, family);
+  for (const family of ['Song Myung', 'Village Sans', 'Village Hand', 'Village Mono']) {
+    const loaded = await page.evaluate(async (f) => (await document.fonts.load(`16px "${f}"`, '마을 수사록 01')).length > 0, family);
     check(`offline: font ${family} loads from cache`, loaded);
   }
   const titleFont = await page.$eval('.game-title', (e) => getComputedStyle(e).fontFamily);

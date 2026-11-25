@@ -30,3 +30,12 @@ test('served body subsets are renamed away from the reserved Plex name', async (
     expect(names.find((n) => n.nameID === 1)?.value, file).toBe('Village Sans');
   }
 });
+
+test('served numeral subsets are renamed away from the reserved Plex name', async () => {
+  for (const file of ['mono-500.woff2', 'mono-600.woff2']) {
+    const sfnt = await subsetFont(readFileSync(join(FONTS, file)), '0', { targetFormat: 'truetype' });
+    const names = readNames(sfnt).filter((n) => [1, 4, 6, 16].includes(n.nameID));
+    expect(names.filter((n) => /plex/i.test(n.value)), file).toEqual([]);
+    expect(names.find((n) => n.nameID === 1)?.value, file).toBe('Village Mono');
+  }
+});
