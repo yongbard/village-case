@@ -28,7 +28,14 @@
   --trouble: #94660f;
   --trouble-soft: #f3e8cf;
   --mark: #f3d566;
-  --radius: 3px;
+  /* 서류 괘선·연필·볼펜 */
+  --rule: #c5d0d3;
+  --margin: #d98a7e;
+  --hair: #b9a98b;
+  --blue: #2c4a8a;
+  --pencil: #8a7a63;
+  /* 종이는 각진다: 둥근 것은 핀뿐 */
+  --radius: 0;
   /* 글꼴 (fonts.css): 제목·도장 송명, 본문 고딕(Village Sans), 메모 손글씨 */
   --title: 'Song Myung', 'Village Sans', 'Noto Serif KR', Batang, serif;
   --body: 'Village Sans', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
@@ -54,7 +61,7 @@
   font-family: var(--title);
   color: var(--red);
   border: 3px double var(--red);
-  border-radius: 3px;
+  border-radius: 0;
   padding: 0 8px;
   letter-spacing: 0.15em;
 }
@@ -83,15 +90,14 @@ h1, h2, p { margin: 0; }
 small { font-size: 12px; }
 button { font: inherit; color: inherit; }
 
-/* ---------- 버튼 ---------- */
+/* ---------- 버튼: 먹 테두리 각진 단추, 결정은 고무도장, 가벼운 이동은 밑줄 글자 ---------- */
 .btn {
   min-height: 44px;
   padding: 0 14px;
-  border: 1px solid var(--line);
+  border: 1.5px solid var(--ink);
   border-radius: var(--radius);
   background: var(--card);
   color: var(--ink);
-  box-shadow: 0 2px 0 rgba(20, 12, 4, 0.35);
   font-weight: 700;
   cursor: pointer;
   display: inline-flex;
@@ -100,15 +106,15 @@ button { font: inherit; color: inherit; }
   gap: 6px;
   touch-action: manipulation;
 }
-.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:active:not(:disabled) { background-color: rgba(42, 36, 29, 0.1); } /* 눌린 잉크가 살짝 번진다 */
 .btn:disabled { opacity: 0.45; cursor: default; }
 .btn:focus-visible, .cell:focus-visible, .chip:focus-visible, .stage:focus-visible {
   outline: 3px solid var(--mark);
   outline-offset: 2px;
 }
-.btn.primary { border-left: 6px solid var(--red); }
-.btn.danger { color: var(--evil); border-color: var(--evil); }
-.btn.ghost { background: transparent; border-color: transparent; box-shadow: none; color: var(--muted); }
+.btn.primary { border: 2px solid var(--ink); font-family: var(--title); font-weight: 400; letter-spacing: 0.12em; }
+.btn.danger { color: var(--red); border-color: var(--red); }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--muted); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
 .btn.wide { width: 100%; }
 .btn.big { min-height: 60px; font-size: 18px; flex-direction: column; gap: 0; }
 .btn.big small { font-weight: 500; opacity: 0.85; }
@@ -127,7 +133,7 @@ button { font: inherit; color: inherit; }
   position: relative;
   margin-top: 22px;
   padding: 30px 18px 22px;
-  border-radius: 3px 12px 3px 3px;
+  border-radius: 0;
   box-shadow: 0 8px 18px rgba(20, 12, 4, 0.55);
 }
 .folder::before { /* 서류철 탭 */
@@ -138,7 +144,6 @@ button { font: inherit; color: inherit; }
   width: 120px;
   height: 20px;
   background: var(--manila);
-  border-radius: 6px 6px 0 0;
 }
 .folder-stamp { position: absolute; top: 6px; right: 14px; transform: rotate(8deg); font-size: 18px; }
 .title-block {
@@ -376,25 +381,23 @@ button { font: inherit; color: inherit; }
 .bubble {
   position: relative;
   background: var(--card);
-  border: 1.5px solid var(--line);
-  border-left: 5px solid var(--red);
+  border: none;
   border-radius: var(--radius);
   padding: 10px 12px;
 }
-.bubble::before { /* 격자를 가리키는 꼬리 */
+.bubble::before { /* 쪽지를 붙인 테이프 조각 */
   content: '';
   position: absolute;
   top: -8px;
-  left: 22px;
-  width: 12px;
-  height: 12px;
-  background: var(--card);
-  border-left: 1.5px solid var(--line);
-  border-top: 1.5px solid var(--line);
-  transform: rotate(45deg);
+  left: 50%;
+  width: 60px;
+  height: 16px;
+  margin-left: -30px;
+  background: rgba(233, 224, 190, 0.8);
+  box-shadow: 0 1px 1px rgba(20, 12, 4, 0.15);
+  transform: rotate(-3deg);
+  pointer-events: none;
 }
-.panel .bubble + .bubble::before { display: none; }
-.hint-bubble { border-left-color: #c9a92a; }
 .bubble-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
 .bubble-tag { font-family: var(--hand); font-size: 19px; color: var(--red); line-height: 1; }
 .hint-bubble .bubble-tag { color: #8a6d00; }
@@ -417,9 +420,9 @@ button { font: inherit; color: inherit; }
 }
 .ln-num { flex: none; width: 34px; color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; }
 .ln-body { flex: 1; }
-.ln-tag { flex: none; font-size: 12px; font-weight: 800; padding: 1px 7px; border-radius: 999px; color: #fff; }
-.clues li.side-evil .ln-tag { background: var(--evil); }
-.clues li.side-good .ln-tag { background: var(--good); }
+.ln-tag { flex: none; font-family: var(--title); font-size: 13px; line-height: 1.3; padding: 0 5px; border: 1.5px solid currentColor; border-radius: 0; }
+.clues li.side-evil .ln-tag { color: var(--red); }
+.clues li.side-good .ln-tag { color: var(--good); }
 .clues li.arrested .ln-body { color: var(--muted); }
 .empty { color: var(--muted); padding: 10px 0; border-top: 1.5px solid var(--ink); }
 
@@ -439,7 +442,7 @@ button { font: inherit; color: inherit; }
   max-height: 85vh;
   overflow-y: auto;
   background: var(--card);
-  border-radius: 16px 16px 0 0;
+  border-radius: 0;
   padding: 18px 16px calc(16px + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
@@ -480,7 +483,7 @@ button { font: inherit; color: inherit; }
   margin: auto 16px;
   width: min(398px, 100%);
   background: var(--card);
-  border-radius: 16px;
+  border-radius: 0;
   padding: 22px 20px 18px;
   display: flex;
   flex-direction: column;
@@ -502,7 +505,7 @@ button { font: inherit; color: inherit; }
   background: var(--ink);
   color: #fff;
   padding: 10px 16px;
-  border-radius: 999px;
+  border-radius: 0;
   font-weight: 600;
   font-size: 14px;
   text-align: center;
@@ -535,22 +538,16 @@ button { font: inherit; color: inherit; }
   padding: 9px 2px 9px 0;
   border-bottom: 1px dashed var(--line);
 }
-.steps li::before {
-  content: counter(step);
+.steps li::before { /* 여백의 두 자리 단계 번호 */
+  content: counter(step, decimal-leading-zero);
   flex: none;
   width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  font-size: 12px;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  margin-top: 1px;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--pencil);
 }
-.steps li.side-evil::before { background: var(--evil); }
-.steps li.side-good::before { background: var(--good); }
+.steps li.side-evil::before { color: var(--red); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -578,7 +575,7 @@ button { font: inherit; color: inherit; }
 .codex-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .codex-item { border: 1.5px solid var(--line); border-radius: var(--radius); background: var(--card); padding: 10px 12px; }
 .codex-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.codex-head span { font-size: 12px; font-weight: 600; padding: 1px 9px; border: 1px solid var(--line); border-radius: 999px; }
+.codex-head span { font-family: var(--title); font-size: 13px; padding: 0 6px; border: 1.5px solid currentColor; border-radius: 0; background: none; }
 .codex-item p { margin-top: 4px; font-size: 14px; }
 .codex-body { color: var(--muted); }
 .codex-item.unknown { color: var(--muted); }
@@ -611,36 +608,24 @@ button { font: inherit; color: inherit; }
 h1, h2 { font-family: var(--title); font-weight: 400; }
 .sheet {
   background: var(--card);
-  border-radius: 6px 6px 0 0;
+  border-radius: 0;
   box-shadow: 0 -4px 16px rgba(20, 12, 4, 0.4);
 }
 .sheet-head b, .card-box h2 { font-family: var(--title); font-weight: 400; }
-/* 새 직업·규칙 카드: 핀으로 꽂은 종이 */
-.card-box { position: relative; border-radius: var(--radius); background: var(--card); }
-.card-box::before {
-  content: '';
-  position: absolute;
-  top: -6px;
-  left: 50%;
-  margin-left: -7px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #e2574a, #9c2318);
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.5);
-}
-/* 안내 말풍선은 포스트잇, 힌트는 쪽지 */
-.bubble { border-radius: 2px; box-shadow: 0 2px 5px rgba(20, 12, 4, 0.4); border: none; border-left: 5px solid var(--red); }
-.bubble::before { border: none; }
-.guide-bubble, .guide-bubble::before { background: var(--postit); }
-.hint-bubble { background: var(--card); border-left-color: var(--mark); }
+/* 새 직업·규칙 카드: 위쪽 빨간 선 하나인 색인 카드 */
+.card-box { position: relative; border-radius: var(--radius); background: var(--card); border-top: 3px solid var(--red); }
+/* 안내 말풍선은 포스트잇, 힌트·능력 고르기는 테이프로 붙인 쪽지 */
+.bubble { box-shadow: 0 2px 5px rgba(20, 12, 4, 0.4); }
+.guide-bubble { background: var(--postit); }
+.guide-bubble::before { display: none; }
+.hint-bubble { background: var(--card); }
 .hint-bubble .bubble-tag { color: #8a6d00; }
 /* 알림: 타자 쪽지 */
 #toast {
   background: var(--card);
   color: var(--ink);
-  border-left: 5px solid var(--red);
-  border-radius: 2px;
+  border-top: 3px solid var(--red);
+  border-radius: 0;
   box-shadow: 0 3px 10px rgba(20, 12, 4, 0.5);
 }
 .overlay { background: rgba(20, 12, 4, 0.55); }
@@ -708,4 +693,4 @@ table.roster th { text-align: left; white-space: nowrap; padding: 8px 10px 8px 0
 table.roster td { padding: 6px 0; display: flex; flex-wrap: wrap; gap: 6px; }
 table.roster tr { border-bottom: 1px dashed var(--line); }
 table.roster tr.camp-boss th { color: var(--red); }
-.roster-role { border: 1px solid var(--line); background: var(--paper); border-radius: 999px; padding: 3px 10px; font: inherit; font-size: 14px; color: var(--ink); cursor: pointer; }
+.roster-role { border: 1px solid var(--hair); background: var(--paper); border-radius: 0; padding: 3px 10px; font: inherit; font-size: 14px; color: var(--ink); cursor: pointer; }

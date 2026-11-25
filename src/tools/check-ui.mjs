@@ -62,6 +62,23 @@ try {
     const sw = await page.evaluate(() => document.documentElement.scrollWidth);
     check(`${where}: no horizontal scroll`, sw <= W, `scrollWidth ${sw}`);
   };
+  // 템플릿 증상: 보이는 요소 중 모서리가 4px 넘게 둥근 것, 왼쪽 테두리가 3px 이상이고 위 테두리보다 굵은 것 (사진 svg 와 핀은 뺀다)
+  const noSlop = async (where) => {
+    const bad = await page.evaluate(() =>
+      [...document.querySelectorAll('body *')]
+        .filter((e) => !e.closest('svg') && !e.classList.contains('pin') && e.getClientRects().length > 0)
+        .filter((e) => {
+          const s = getComputedStyle(e);
+          const r = Math.max(...['TopLeft', 'TopRight', 'BottomLeft', 'BottomRight'].map((k) => parseFloat(s[`border${k}Radius`]) || 0));
+          const l = s.borderLeftStyle === 'none' ? 0 : parseFloat(s.borderLeftWidth);
+          const t = s.borderTopStyle === 'none' ? 0 : parseFloat(s.borderTopWidth);
+          return r > 4 || (l >= 3 && l > t);
+        })
+        .slice(0, 5)
+        .map((e) => `${e.tagName.toLowerCase()}.${[...e.classList].join('.')}`),
+    );
+    check(`${where}: no rounded boxes or side stripes`, bad.length === 0, bad.join(', '));
+  };
   // 창이 뜨는 움직임이 끝날 때까지 (스크린샷용)
   const settle = () => page.evaluate(() => Promise.all([...document.querySelectorAll('.overlay, .overlay > *')].flatMap((e) => e.getAnimations()).map((a) => a.finished)));
   // 힌트 단추를 누르고 답을 기다린다 (누르는 순간 '생각 중' 이 뜨고, 답이 오면 사라진다)
@@ -97,6 +114,7 @@ try {
   check('title menu labels: case files, endless, cards, rules', (await text('[data-action="stages"]'))?.startsWith('사건 파일') && (await text('[data-action="endless-new"]'))?.startsWith('끝없는 수사') && (await text('[data-action="codex"]'))?.startsWith('인물 카드철') && (await text('[data-action="rules"]')) === '수사 규칙');
   check('document title / lang', (await page.title()) === '마을 수사록' && (await page.$eval('html', (e) => e.lang)) === 'ko');
   await shot('01-title');
+  await noSlop('title');
 
   // 2. 스테이지 목록
   await page.click('[data-action="stages"]');
@@ -106,12 +124,14 @@ try {
   check('stage list: 1 open, 2 locked', !(await page.$eval('.stage[data-stage="1"]', (e) => e.disabled)) && locked);
   await noSideScroll('stage list');
   await shot('02-stages', true);
+  await noSlop('stage list');
 
   // 3. 스테이지 1 + 첫 안내 말풍선
   await page.click('.stage[data-stage="1"]');
   await page.waitForSelector('[data-sheet="roster"]');
   await settle();
   await shot('03a-roster');
+  await noSlop('roster sheet');
   const rosterText = (await text('[data-sheet="roster"] table.roster')) ?? '';
   check('stage 1: roster sheet lists camps and roles with counts', /두목 1/.test(rosterText) && /우체부 1/.test(rosterText) && /약사 7/.test(rosterText), rosterText);
   check('stage 1: roster explains 수상한 사람', ((await text('.roster-note')) ?? '').includes('수상한 사람'), await text('.roster-note'));
@@ -135,6 +155,7 @@ try {
   check('grid fills the width', gridBox.width >= W - 40 && gridBox.x + gridBox.width <= W, `x ${gridBox.x} w ${gridBox.width}`);
   await noSideScroll('case screen');
   await shot('03-case-guide');
+  await noSlop('case screen with guide');
 
   // 4. 힌트 (worker) — 아무것도 조사하지 않았으니 조사할 칸을 알려 준다
   await page.click('[data-action="hint"]');
@@ -142,6 +163,7 @@ try {
   const hintText = await text('[data-hint="result"] .bubble-text');
   check('hint answers from worker', /조사해 보세요|번은 (선|악|주범|공범)/.test(hintText ?? ''), hintText ?? 'none');
   await shot('04-hint');
+  await noSlop('hint bubble');
 
   // 5. 메모: 가운데 칸 조사 후 선 메모
   await page.click('[data-action="guide-next"]');
@@ -150,6 +172,7 @@ try {
   await page.waitForSelector('.sheet [data-note="good"]');
   await settle();
   await shot('05-menu');
+  await noSlop('cell menu');
   await page.click('.sheet [data-note="good"]');
   await page.waitForSelector('.cell[data-cell="4"] .note-good');
   check('memo mark shows in cell corner', true);
@@ -216,6 +239,7 @@ try {
   check('result: explanation lines', steps.length >= 1, `${steps.length} lines, first: ${steps[0]}`);
   await noSideScroll('result');
   await shot('07-result', true);
+  await noSlop('result');
   const save = await page.evaluate(() => JSON.parse(localStorage.getItem('village-case-save')));
   check('save: stage 1 cleared', save?.cleared?.includes(1));
 
@@ -250,6 +274,7 @@ try {
   await page.waitForSelector('.card-box');
   await settle();
   await shot('08-card');
+  await noSlop('new role card');
   let cardPhoto = false;
   let cards = 0;
   while (await page.$('.card-box')) {
@@ -268,6 +293,7 @@ try {
   const memo30 = await page.$eval('[data-stat="bosses"]', (e) => { const r = e.getBoundingClientRect(); return { t: e.textContent, x: r.x, right: r.right, cut: e.scrollWidth > e.clientWidth + 1, lines: Math.round(r.height / parseFloat(getComputedStyle(e).lineHeight || '20')) }; });
   check('stage 30: header memo lists every role, wrapped inside the width', memo30.t.split(' · ').length >= 5 && memo30.t.split(' · ').every((x) => !x.includes(' ')) /* 직업과 수 사이는 줄바꿈 없는 공백 */ && memo30.x >= 0 && memo30.right <= W && !memo30.cut, JSON.stringify(memo30));
   await shot('09-stage30', true);
+  await noSlop('stage 30');
 
   // 10. 종지기(시각 계기)와 기자(능력)가 다 있는 스테이지(가장 뒤 것): 끝까지 풀고 능력이 든 해설
   const sB = [...stages].reverse().find((s) => s.def.faces.includes('bellringer') && s.def.faces.includes('reporter'));
@@ -402,6 +428,7 @@ try {
   check('codex: unknown shows only ?', (await page.$$eval('.codex-item.unknown', (ls) => ls.every((l) => l.querySelector('b').textContent === '?'))));
   await noSideScroll('codex');
   await shot('17-codex', true);
+  await noSlop('codex');
   await page.click('.back');
   await page.click('[data-action="rules"]');
   await page.waitForSelector('.concept');
@@ -409,6 +436,7 @@ try {
   check('rules: titled 수사 규칙', (await text('.rules-screen h1')) === '수사 규칙');
   await noSideScroll('rules');
   await shot('18-rules', true);
+  await noSlop('rules');
   await page.click('.back');
 
   // 15. 시드로 하기: 잘못된 입력은 막고, 숫자는 그 사건 한 판 (무한 모드 기록은 그대로)
