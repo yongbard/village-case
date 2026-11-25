@@ -12,6 +12,7 @@
 
 ## 현재 상태
 
+- 2026-11-25 저녁: 무한 모드 난이도 올리기(브랜치 endless-difficulty, 아직 main 에 안 합침). 1번째부터 4×4·주범 1·공범 2·말썽꾼 2(스테이지 4장 수준), 13번째부터 4×5·주범 3. 사건마다 후보를 최대 12개 만들어 진술이 판의 35% 칸 이상 필요하고 난이도 2 이상인 것만 냄(쉬운 사건 거르기). 같은 사건 코드는 어느 기기에서나 같은 사건(시간이 아닌 일의 양으로 거름). 시험 183개, check-ui 122개, check-offline 통과. 설계 docs/2026-11-25-endless-difficulty-design.md
 - 2026-11-25 오후: UI 다시 그리기 "서류철 물건" 배포(Actions 45549970625). 사진·판 카드는 그대로, 나머지를 목차·양식·줄 공책·색인 카드·고무도장·쪽지로 바꿈. 둥근 상자·왼쪽 색 띠·알약 꼬리표·동그라미 숫자를 없애고 정적 검사(style.test.ts)와 화면 검사(noSlop)로 막음. 숫자 글꼴 Village Mono(IBM Plex Mono 부분 집합) 추가. 시험 172개, check-ui 121개, check-offline 통과, 최종 검토 반영. 설계 docs/2026-11-25-paper-ui-design.md
 - 2026-11-25: 읽기 쉽게 다듬기 배포(Actions 45532213075). 진술은 "수상한 사람" 말투(칸 번호는 그대로), 사건 화면 위 메모는 직업별 인원(체포 0/2 · 두목 2 · …), 본문 글꼴은 고딕 Village Sans(IBM Plex Sans KR 부분 집합). 시험 167개, check-ui 93개, check-offline 통과, 최종 검토 반영. 설계 docs/2026-11-25-readability-design.md
 - 2026-11-24 오후: 규칙 개편 1단계 "주범 사냥" 구현·배포(main push, Actions 45352954799 통과). 목표는 주범 모두 체포, 직업 28개, 칸 번호를 밝힌 직업 말투 진술, 인원표, 거짓일 수 있는 자백. 스테이지 30개 새로 만듦. 시험 162개, check-ui 90개, check-offline, 교차 검증 3000 통과. 2단계(시간 사건: 두목 살인·의사·술꾼)와 3단계(인상착의)는 설계 7장.
@@ -50,11 +51,13 @@ village_case_261123/
 │   ├── 2026-11-25-readability-plan.md      그 구현 계획 (작업 4개)
 │   ├── 2026-11-25-paper-ui-design.md       UI 다시 그리기 설계 (서류철 물건)
 │   ├── 2026-11-25-paper-ui-plan.md         그 구현 계획 (작업 10개)
+│   ├── 2026-11-25-endless-difficulty-design.md  무한 모드 난이도 짧은 설계
+│   ├── 2026-11-25-endless-difficulty-plan.md    그 구현 계획 (작업 4개)
 │   └── mockups/    그래픽 시안 (png, html, 시안을 찍는 2026-11-25-render.mjs)
 ├── src/            (Vite root)
 │   ├── index.html  진입 페이지
 │   ├── public/     아이콘 icon-192.png, icon-512.png (make-icons.mjs 가 만듦), fonts/ 글꼴 부분 집합 woff2 6개(송명, 본문 고딕 Village Sans 500·700, 손글씨 Village Hand, 숫자 Village Mono 500·600) + glyphs.txt + OFL.txt (make-fonts.ts 가 만듦)
-│   ├── core/       규칙·솔버·생성기·게임 상태·저장 (+ 시험)
+│   ├── core/       규칙·솔버·생성기·게임 상태·저장, 무한 모드 사건 고르기 endless.ts (+ 시험)
 │   ├── content/    장 구성, 튜토리얼 카드, stages.json (+ 시험)
 │   ├── ui/         화면(main, screens/, 무한 모드, 워커, 스타일 style.css(+ 템플릿 증상 검사 style.test.ts), 서류 조각 paper.ts(목차 줄·테이프), 글꼴 fonts.css, 인물 사진 portraits.ts, 진술 문장 clueText.ts, 인원표 roster.ts)
 │   └── tools/      build-stages.ts(스테이지 생성), test-cross.mjs(교차 검증 3000건), check-ui.mjs(화면 확인), check-offline.mjs(오프라인 확인), make-icons.mjs(아이콘 생성), make-fonts.ts·glyphs.ts(글꼴 부분 집합), contact-sheet.mjs(인물 사진 대조표), peek-case.mjs(사건 화면 미리 보기)
