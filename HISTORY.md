@@ -119,3 +119,13 @@
 
 - 한 일: readability 를 main 에 합침(fast-forward). 사용자 승인 후 main push(커밋 7개, 앞서 로컬에만 있던 11-24 기록 커밋 포함). 브랜치 삭제.
 - 결과: Actions 실행 45532213075 통과(5분 52초), https://yongbard.github.io/village-case/ 응답 200, fonts/sans-500.woff2 응답 200, 배포된 번들에 "수상한 사람" 진술과 인원표 안내 문구가 있는 것 확인.
+
+## 2026-11-25 오후 UI 다시 그리기 "서류철 물건" (브랜치 paper-ui)
+
+- 한 일: 사용자 요청 "전체적으로 UI 고도화, 이미지는 괜찮으나 나머지 웹 UI가 AI slop임". 설계 docs/2026-11-25-paper-ui-design.md, 시안 docs/mockups/2026-11-25-paper-screens.png, 계획 docs/2026-11-25-paper-ui-plan.md (작업 10개, 이 대화에서 직접 구현). 규칙·엔진·진술 문장·인물 사진·판 카드는 그대로.
+  - 증상 검사: src/ui/style.test.ts (둥근 모서리 5px 이상, 왼쪽 굵은 띠, 핀 밖의 동그라미 금지), check-ui 의 noSlop (화면 11곳에서 실제 계산된 모서리·테두리 검사).
+  - 화면: 타이틀 = 서류철 표지 + 목차 한 장(사건 코드 칸 포함), 스테이지 목록 = 장마다 원고지 칸(해결 도장, 지금 할 칸 연필 테두리, 잠긴 칸 사선), 사건 머리 = 양식 한 장(경과·평판·체포한 주범 + 숨은 직업 명단, 예전 메모 줄과 꼬리표를 합침), 진술 기록 = 줄 공책(괘선 28px, 여백 번호, 선·악 판정 도장, 형광펜), 힌트 = 노란 쪽지 탭, 말풍선 = 쪽지, 아래 창 = 색인 카드(체포 = 빨간 이중 테두리 도장, 메모 = 한 줄 양식), 결과 = 수사 보고서, 인물 카드철 = 색인 카드 + 진영별 뒤집힌 카드, 규칙 = 제N조 지침서, 불러오는 중 = 쪽지.
+  - 글꼴: 숫자용 Village Mono (IBM Plex Mono Medium·SemiBold 의 라틴 글자만, 예약 이름 Plex 때문에 이름 바꿈).
+- 데이터: 글꼴 원본 data/fonts-src/ibmplexmono_*.ttf (npm run fonts 가 받음). 부분 집합 합계 405.5KB(글자 648개, mono 두 파일 약 21KB).
+- 결과: 시험 171개(19 파일, logs/2026-11-25-paper-ui-test.log), 타입 검사, 빌드(미리 받기 597KiB), check-ui 119개(93 + 26, logs/2026-11-25-paper-ui-check.log), check-offline 통과(글꼴 4종). 스크린샷 logs/ui-check/ (01-title, 02-stages, 03-case-guide, 05-menu, 07-result, 09-stage30, 15-endless-result, 17-codex, 18-rules, x1 ~ x3 는 이어 하기 타이틀·푼 스테이지·불러오는 중).
+- 구현 중 정한 것: 작업 기록 .superpowers/sdd/2026-11-25-paper-ui-plan/progress.md 의 Ruling 줄 (끝나면 logs/2026-11-25-paper-ui-ledger.md 로 옮김).
