@@ -125,16 +125,17 @@ export function generateValid(p: GenParams, seed: number, maxTries = 500): CaseD
 }
 
 /**
- * 무한 모드 n 번째 사건(1부터)의 매개변수. 판·말썽꾼·주범·악(공범 + 주범) 수는 n 에 대해 줄지 않는다.
- * n >= 21 은 상한(4×5, 말썽꾼 3, 주범 3, 공범 1). 주범 3 + 공범 2 는 4×5 에서 사건 하나에 중앙값 3초를 넘어
+ * 무한 모드 n 번째 사건(1부터)의 매개변수. 스테이지를 다 해 본 사람이 하는 모드라 스테이지 4장 수준(4×4, 주범 1)에서
+ * 시작한다(설계 docs/2026-11-25-endless-difficulty-design.md). 판·말썽꾼·주범·악(공범 + 주범) 수는 n 에 대해 줄지 않는다.
+ * n >= 13 은 상한(4×5, 말썽꾼 3, 주범 3, 공범 1). 주범 3 + 공범 2 는 4×5 에서 사건 하나에 중앙값 3초를 넘어
  * 주범이 3명이 될 때 공범을 1명으로 줄인다(악 4명은 그대로). 같은 직업이 여럿 나올 수 있어 인원은 직업 수에 묶이지 않는다.
  */
 export function endlessParams(n: number): GenParams {
-  const [w, h] = n <= 4 ? [3, 3] : n <= 10 ? [3, 4] : n <= 17 ? [4, 4] : [4, 5];
-  const tier = n <= 3 ? 1 : n <= 7 ? 2 : n <= 12 ? 3 : n <= 18 ? 4 : 5;
+  const [w, h] = n <= 7 ? [4, 4] : [4, 5];
+  const tier = n <= 3 ? 3 : n <= 5 ? 4 : 5;
   const pool = Object.values(ROLES).filter((d) => d.tier <= tier).map((d) => d.id);
-  const trouble = n <= 2 ? 0 : n <= 8 ? 1 : n <= 15 ? 2 : 3;
-  const accomplice = n <= 2 ? 0 : n <= 6 ? 1 : n <= 20 ? 2 : 1;
-  const boss = n <= 8 ? 1 : n <= 20 ? 2 : 3;
+  const trouble = n <= 12 ? 2 : 3;
+  const accomplice = n <= 12 ? 2 : 1;
+  const boss = n <= 3 ? 1 : n <= 12 ? 2 : 3;
   return { w, h, trouble: pool.some((id) => role(id).camp === 'trouble') ? trouble : 0, accomplice, boss, pool };
 }

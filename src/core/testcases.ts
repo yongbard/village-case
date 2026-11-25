@@ -5,6 +5,7 @@ import { pick, randInt, shuffle, type Rng } from './rng';
 import { ROLES, role, rosterOf } from './roles';
 import { abilityTruth } from './rules';
 import { witnessValue } from './solve';
+import { type GenParams } from './generate';
 import { type AbilityObs, type Camp, type CaseDef, type Knowledge, type RoleId, type World } from './types';
 
 const idsOf = (camp: Camp): RoleId[] => Object.values(ROLES).filter((d) => d.camp === camp).map((d) => d.id);
@@ -102,3 +103,17 @@ export function emptyKnowledgeOf(def: CaseDef): Knowledge {
 
 /** 시간 한도 시험의 배수: CI(GitHub 러너)는 느릴 수 있어 3배로 둔다. 로컬은 1. */
 export const TIME_SCALE = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.CI ? 3 : 1;
+
+/**
+ * 2026-11-25 까지의 무한 모드 틀 (3×3 에서 시작). 엔진 시험이 판 크기·속도를 지키려고 쓴다.
+ * 게임의 무한 모드 틀은 generate.ts 의 endlessParams.
+ */
+export function legacyEndlessParams(n: number): GenParams {
+  const [w, h] = n <= 4 ? [3, 3] : n <= 10 ? [3, 4] : n <= 17 ? [4, 4] : [4, 5];
+  const tier = n <= 3 ? 1 : n <= 7 ? 2 : n <= 12 ? 3 : n <= 18 ? 4 : 5;
+  const pool = Object.values(ROLES).filter((d) => d.tier <= tier).map((d) => d.id);
+  const trouble = n <= 2 ? 0 : n <= 8 ? 1 : n <= 15 ? 2 : 3;
+  const accomplice = n <= 2 ? 0 : n <= 6 ? 1 : n <= 20 ? 2 : 1;
+  const boss = n <= 8 ? 1 : n <= 20 ? 2 : 3;
+  return { w, h, trouble: pool.some((id) => role(id).camp === 'trouble') ? trouble : 0, accomplice, boss, pool };
+}

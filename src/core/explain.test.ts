@@ -1,11 +1,11 @@
 import { expect, test } from 'vitest';
 import { describeStep, difficulty, explain, explainWithin, explainWork, nextHint, type Step } from './explain';
-import { endlessParams, generateValid } from './generate';
+import { generateValid } from './generate';
 import { claimHolds, campAt, consistent } from './rules';
 import { ROLES } from './roles';
 import { solve } from './solve';
 import { investigate, knowledgeOf, newGame } from './game';
-import { emptyKnowledgeOf, TIME_SCALE } from './testcases';
+import { emptyKnowledgeOf, legacyEndlessParams, TIME_SCALE } from './testcases';
 import { type CaseDef, type Claim, type Knowledge } from './types';
 import { abilityCells, checkCase, fullKnowledge, solvedKnowledge } from './unique';
 
@@ -61,7 +61,7 @@ test('one-clue deduction: faces first, then the clue, ending on the boss', () =>
 
 test('explain ends when every boss cell has a boss step', () => {
   for (const n of [3, 9, 14]) for (let s = 0; s < 5; s++) {
-    const def = generateValid(endlessParams(n), 40 + s);
+    const def = generateValid(legacyEndlessParams(n), 40 + s);
     const steps = explain(solvedKnowledge(def));
     for (const st of steps) expect(holdsIn(def, st)).toBe(true);
     const bossSteps = steps.filter((st) => st.claim === 'boss').map((st) => st.cell).sort((a, b) => a - b);
@@ -73,7 +73,7 @@ test('explain ends when every boss cell has a boss step', () => {
 
 test('steps are proofs: each claim holds in every world', () => {
   for (const n of [3, 6, 9]) for (let s = 0; s < 6; s++) {
-    const def = generateValid(endlessParams(n), 500 + s);
+    const def = generateValid(legacyEndlessParams(n), 500 + s);
     const k = solvedKnowledge(def);
     const steps = explain(k);
     steps.forEach((st, i) => {
@@ -86,7 +86,7 @@ test('steps are proofs: each claim holds in every world', () => {
 
 test('two bosses: both get boss steps', () => {
   for (let s = 0; s < 4; s++) {
-    const def = generateValid(endlessParams(12), 60 + s);
+    const def = generateValid(legacyEndlessParams(12), 60 + s);
     expect(bossCells(def).length).toBe(2);
     const steps = explain(solvedKnowledge(def));
     expect(steps.filter((st) => st.claim === 'boss').map((st) => st.cell).sort((a, b) => a - b)).toEqual(bossCells(def));
@@ -95,7 +95,7 @@ test('two bosses: both get boss steps', () => {
 
 test('steps fixed by faces alone come first', () => {
   for (let s = 0; s < 6; s++) {
-    const steps = explain(solvedKnowledge(generateValid(endlessParams(6), 7 + s)));
+    const steps = explain(solvedKnowledge(generateValid(legacyEndlessParams(6), 7 + s)));
     const facesOnly = (st: Step) => st.because !== 'all' && st.because.length === 0 && !st.usesEarlier;
     const k = steps.filter(facesOnly).length;
     steps.forEach((st, i) => expect(facesOnly(st)).toBe(i < k));
@@ -137,12 +137,12 @@ test('describeStep reads like a deduction', () => {
 });
 
 test('hint asks to investigate when nothing is investigated', () => {
-  const def = generateValid(endlessParams(20), 3);
+  const def = generateValid(legacyEndlessParams(20), 3);
   expect(nextHint(emptyKnowledgeOf(def))).toEqual({ kind: 'investigate', cell: 0 });
 });
 
 test('hint never throws on capped knowledge', () => {
-  const def = generateValid(endlessParams(30), 4);
+  const def = generateValid(legacyEndlessParams(30), 4);
   expect(() => nextHint(emptyKnowledgeOf(def))).not.toThrow();
 });
 
@@ -164,7 +164,7 @@ test('nextHint never points at an arrested cell', () => {
 
 test('hint points to an unused ability when nothing is left to investigate or deduce', () => {
   let def: CaseDef | undefined;
-  for (let s = 0; !def || abilityCells(def).length === 0; s++) def = generateValid(endlessParams(14), s);
+  for (let s = 0; !def || abilityCells(def).length === 0; s++) def = generateValid(legacyEndlessParams(14), s);
   const cells = abilityCells(def);
   const k = fullKnowledge(def);
   k.knownClaims = Array(def.w * def.h).fill(undefined);
@@ -175,7 +175,7 @@ test('hint points to an unused ability when nothing is left to investigate or de
 
 test('explain on 4x4 finishes under 3s and ends on the bosses', () => {
   for (const [n, s] of [[14, 0], [16, 1], [17, 2]]) {
-    const def = generateValid(endlessParams(n), s);
+    const def = generateValid(legacyEndlessParams(n), s);
     expect(def.w * def.h).toBe(16);
     const t0 = performance.now();
     const steps = explain(solvedKnowledge(def));
@@ -189,7 +189,7 @@ test('explain on 4x4 finishes under 3s and ends on the bosses', () => {
 // 그 이유는 앞 힌트들(+ usesEarlier 가 아니면 이유만)으로 정말 증명된다
 test('repeated hints with fed-back answers name new cells until the bosses are known', () => {
   for (const [n, s] of [[9, 1], [12, 2], [20, 3]]) {
-    const def = generateValid(endlessParams(n), s);
+    const def = generateValid(legacyEndlessParams(n), s);
     const cells = def.w * def.h;
     const k = solvedKnowledge(def);
     k.knownClaims = Array(cells).fill(undefined);
@@ -213,7 +213,7 @@ test('repeated hints with fed-back answers name new cells until the bosses are k
 }, 120_000);
 
 test('hint on partial knowledge stays within its time budget and is sound', () => {
-  const def = generateValid(endlessParams(30), 11);
+  const def = generateValid(legacyEndlessParams(30), 11);
   for (const skip of [[2, 4, 5, 6, 19], [0, 7, 11, 15, 16]]) {
     let g = newGame(def);
     for (let c = 0; c < 20; c++) if (!skip.includes(c)) g = investigate(g, c);
@@ -228,7 +228,7 @@ test('hint on partial knowledge stays within its time budget and is sound', () =
 
 test('hint with an exhausted budget never returns an unproven step', () => {
   for (const [n, s] of [[9, 5], [20, 6], [30, 7]]) {
-    const def = generateValid(endlessParams(n), s);
+    const def = generateValid(legacyEndlessParams(n), s);
     const h = nextHint(fullKnowledge(def), 0);
     if (h.kind === 'step') {
       expect(h.step.because).toBe('all');
@@ -238,7 +238,7 @@ test('hint with an exhausted budget never returns an unproven step', () => {
 });
 
 test('explainWithin: null when the budget runs out, same as explain otherwise', () => {
-  const def = generateValid(endlessParams(14), 3);
+  const def = generateValid(legacyEndlessParams(14), 3);
   const k = solvedKnowledge(def);
   expect(explainWithin(k, 0)).toBeNull();
   expect(explainWithin(k, 60_000)).toEqual(explain(k));

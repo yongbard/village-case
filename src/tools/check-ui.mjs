@@ -416,6 +416,7 @@ try {
   await shot('14-endless-1');
   const def1 = await page.evaluate(() => window.__game?.def);
   check('endless: window.__game exposed in dev', !!def1);
+  check('endless: first case is 4x4 or larger', def1.w * def1.h >= 16, `${def1.w}x${def1.h}`);
   for (const i of evilOf(def1)) await tapCell(i, 'arrest');
   await page.waitForSelector('[data-result]', { timeout: 5000 });
   check('endless: case 1 solved', (await text('[data-result]')) === '해결');
@@ -493,7 +494,7 @@ try {
   check('seed play: plain integer shows its code', (await text('.seed-line')) === '시드 10-4242', await text('.seed-line'));
   await shot('19-seed-case');
   const def15 = await page.evaluate(() => window.__game?.def);
-  check('seed play: 3x4 grid or larger (endlessParams(10))', def15.w * def15.h >= 12, `${def15.w}x${def15.h}`);
+  check('seed play: 4x5 grid (endlessParams(10))', def15.w * def15.h === 20, `${def15.w}x${def15.h}`);
   // 쓸모없어진 힌트: 힌트를 누르고 곧바로 조사하면 그 힌트는 버려지고(돌고 있으면 worker 를 새로 띄운다),
   // 다음 힌트와 아래의 사건 만들기가 그대로 된다
   await page.click('[data-action="hint"]');

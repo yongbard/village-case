@@ -2,12 +2,12 @@ import { expect, test } from 'vitest';
 import { endlessParams, generateValid } from './generate';
 import { ROLES } from './roles';
 import { consistent } from './rules';
-import { TIME_SCALE } from './testcases';
+import { legacyEndlessParams, TIME_SCALE } from './testcases';
 import { abilityCells, checkCase, fullKnowledge, signature } from './unique';
 
 test('generated cases: truth consistent, unique, matches truth', () => {
   for (let n = 1; n <= 30; n++) for (let s = 0; s < 5; s++) {
-    const def = generateValid(endlessParams(n), n * 1000 + s);
+    const def = generateValid(legacyEndlessParams(n), n * 1000 + s);
     expect(consistent(fullKnowledge(def), def.truth)).toBe(true);
     const res = checkCase(def);
     expect(res.ok).toBe(true);
@@ -17,11 +17,11 @@ test('generated cases: truth consistent, unique, matches truth', () => {
 }, 120_000);
 
 test('same seed same case', () =>
-  expect(generateValid(endlessParams(10), 99)).toEqual(generateValid(endlessParams(10), 99)));
+  expect(generateValid(legacyEndlessParams(10), 99)).toEqual(generateValid(legacyEndlessParams(10), 99)));
 
 test('case seed is the seed given to generateValid', () => {
-  expect(generateValid(endlessParams(10), 99).seed).toBe(99);
-  expect(generateValid(endlessParams(1), 12345).seed).toBe(12345);
+  expect(generateValid(legacyEndlessParams(10), 99).seed).toBe(99);
+  expect(generateValid(legacyEndlessParams(1), 12345).seed).toBe(12345);
 });
 
 const POOL = ['postman', 'pharmacist', 'grandma', 'dog', 'mayor', 'guard', 'restaurant', 'braggart', 'lost', 'thief', 'shill', 'lookout', 'chief'];
@@ -33,7 +33,7 @@ test('must roles always present', () => {
 
 test('roster matches truth and includes witnesses', () => {
   for (const s of [1, 2, 3]) {
-    const def = generateValid(endlessParams(10), s);
+    const def = generateValid(legacyEndlessParams(10), s);
     const total = Object.values(def.roster).reduce((a, b) => a + b, 0);
     expect(total).toBe(def.w * def.h);
     for (const [id, c] of Object.entries(def.roster)) expect(def.truth.roles.filter((r) => r === id).length).toBe(c);
@@ -43,7 +43,7 @@ test('roster matches truth and includes witnesses', () => {
 
 test('disguise faces come from witness roles in the roster', () => {
   for (let s = 0; s < 10; s++) {
-    const def = generateValid(endlessParams(14), s);
+    const def = generateValid(legacyEndlessParams(14), s);
     def.truth.roles.forEach((r, i) => {
       if (ROLES[r].camp === 'accomplice' || ROLES[r].camp === 'boss') expect(def.roster[def.faces[i]] ?? 0).toBeGreaterThan(0);
     });
@@ -68,11 +68,13 @@ test('endless generation is fast enough', () => { // Review Focus 1
   }
 });
 
-test('endlessParams: n=1 start, n>=25 cap, monotone', () => {
+test('endlessParams: starts at chapter-4 level, n>=13 cap, monotone', () => {
   const p1 = endlessParams(1);
-  expect([p1.w, p1.h, p1.accomplice, p1.trouble, p1.boss]).toEqual([3, 3, 0, 0, 1]);
-  expect(p1.pool.every((id) => ROLES[id].tier === 1)).toBe(true);
-  for (const n of [25, 40]) {
+  expect([p1.w, p1.h, p1.trouble, p1.accomplice, p1.boss]).toEqual([4, 4, 2, 2, 1]);
+  expect(p1.pool.every((id) => ROLES[id].tier <= 3)).toBe(true);
+  expect(endlessParams(4).boss).toBe(2);
+  expect([endlessParams(8).w, endlessParams(8).h]).toEqual([4, 5]);
+  for (const n of [13, 25, 40]) {
     const p = endlessParams(n);
     expect([p.w, p.h, p.trouble, p.accomplice, p.boss]).toEqual([4, 5, 3, 1, 3]);
     expect(p.pool.length).toBe(28);
