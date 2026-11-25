@@ -3,7 +3,9 @@ import { CROSS_CASES, crossCheck } from './crossCheck';
 import { makeRng, shuffle } from './rng';
 import { solveBrute } from './brute';
 import { forEachWorld, solve, worldKey } from './solve';
+import { generateValid } from './generate';
 import { type RoleId } from './types';
+import { fullKnowledge } from './unique';
 import { emptyKnowledge, emptyKnowledgeOf, randomInPlay, randomKnowledge, randomTruth } from './testcases';
 
 // 기본 600판(npm test). 3000판 전체는 npm run test:cross (CROSS_CASES=3000).
@@ -79,3 +81,19 @@ test('frame target chosen inside the search', () => {
   expect(ks.length).toBe(9 * 8 * 7); // 모사꾼 자리 9 × 대역 8 × 누명 대상(나머지 선 7)
   expect(ks).toEqual(keysOf(solveBrute(k)));
 });
+
+test('work budget is charged across many small searches', () => {
+  // 해설은 작은 탐색을 수천 번 한다: 한 번에 1024 걸음이 안 되어도 일의 양은 쌓여야 한다
+  const k = fullKnowledgeSmall();
+  const one = { deadline: Infinity, expired: false, work: 0 };
+  forEachWorld(k, () => {}, undefined, one);
+  expect(one.expired).toBe(false); // 한 번은 1024 걸음 미만
+  const many = { deadline: Infinity, expired: false, work: 0 };
+  for (let i = 0; i < 5000 && !many.expired; i++) forEachWorld(k, () => {}, undefined, many);
+  expect(many.expired).toBe(true);
+});
+
+function fullKnowledgeSmall() {
+  const pool = ['chief', 'thief', 'postman', 'pharmacist', 'priest'] as RoleId[];
+  return fullKnowledge(generateValid({ w: 3, h: 3, trouble: 0, accomplice: 1, boss: 1, pool }, 1));
+}

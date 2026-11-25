@@ -8,6 +8,8 @@ import { abilityAs, cellAdmits, consistent, holdsAs, isCountKind, modeAt, taintE
 import { ANY_WITNESS, type Clue, type Knowledge, type Mode, type RoleId, type World } from './types';
 
 export const WORLD_CAP = 20000;
+/** 세계 하나의 consistent 검사를 탐색 몇 걸음으로 칠지 (일의 양 한도가 시간과 비례하게, 2026-11-25 측정) */
+const CHECK_COST = 32;
 
 /** 비교용 정규 문자열 */
 export function worldKey(w: World): string {
@@ -59,6 +61,8 @@ export interface Budget {
   deadline: number;
   expired: boolean;
   work?: number;
+  /** 탐색 걸음 수 (여러 탐색에 걸쳐 쌓인다: 작은 탐색을 많이 해도 1024 걸음마다 한 번 한도를 본다) */
+  ticks?: number;
 }
 
 /** 한도를 넘었는가 (넘었으면 expired 를 켠다) */
@@ -224,7 +228,14 @@ export function forEachWorld(
   const witCount = new Map<RoleId, number>(); // 직업이 정해진 진짜 증인 수 (roster 이하)
   let placed = 0;
   let stop = false;
-  let ticks = 0;
+  /** 걸음 cost 만큼 쌓고, 1024 걸음을 넘을 때마다 한도를 본다 (넘었으면 stop) */
+  const tick = (cost: number): boolean => {
+    if (!budget) return false;
+    const before = budget.ticks ?? 0;
+    budget.ticks = before + cost;
+    if (before >> 10 !== budget.ticks >> 10 && overBudget(budget)) stop = true;
+    return stop;
+  };
 
   const isWitness = (i: number) => role(roles[i]).camp === 'witness';
 
@@ -314,6 +325,7 @@ export function forEachWorld(
         for (const s of mustTaint) {
           if (!sources.some((p) => taint[p] === s && effectOf(roles[p]) !== 'frame')) return;
         }
+        if (tick(CHECK_COST)) return;
         const wd: World = { roles: [...roles], taint: [...taint] };
         if (!consistent(k, wd)) return;
         if (visit(wd) === true) stop = true;
@@ -333,10 +345,7 @@ export function forEachWorld(
 
   const fill = (i: number): void => {
     if (stop) return;
-    if (budget && (++ticks & 1023) === 0 && overBudget(budget)) {
-      stop = true;
-      return;
-    }
+    if (tick(1)) return;
     if (i === n) {
       if (placed === m) emit();
       return;

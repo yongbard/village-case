@@ -105,7 +105,7 @@ export function generateCase(p: GenParams, seed: number): CaseDef | null {
 }
 
 /** (seed, 시도 번호) → 시도마다 쓸 시드. 결정적이다. */
-function trySeed(seed: number, t: number): number {
+export function trySeed(seed: number, t: number): number {
   let x = (seed ^ Math.imul(t + 1, 0x9e3779b9)) | 0;
   x = Math.imul(x ^ (x >>> 16), 0x85ebca6b);
   x = Math.imul(x ^ (x >>> 13), 0xc2b2ae35);

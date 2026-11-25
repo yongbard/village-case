@@ -269,3 +269,12 @@ test('explainWork is deterministic: the least work that finishes is the same eve
   expect(least()).toBe(a);
   expect(explainWork(k, a)).toEqual(explain(k));
 });
+
+test('a small work limit is also a short time, even when most time is in consistency checks', () => {
+  // 4×5 주범 3: 시간 대부분이 세계마다의 consistent 검사라 탐색 걸음만 세면 한도 1000 에도 10초가 걸렸다
+  const all = Object.values(ROLES).map((r) => r.id);
+  const k = solvedKnowledge(generateValid({ w: 4, h: 5, trouble: 3, accomplice: 1, boss: 3, pool: all }, 9648));
+  const t0 = performance.now();
+  explainWork(k, 1000);
+  expect(performance.now() - t0).toBeLessThan(1500 * TIME_SCALE);
+});
