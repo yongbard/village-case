@@ -1,6 +1,7 @@
 // 규칙: 한 판의 규칙 요약(주범 사냥 설계 4장)과 개념 카드.
 import { CARDS } from '../../content/tutorial';
 import { h, mount } from '../dom';
+import { tape } from '../paper';
 import { showTitle } from './title';
 
 const SUMMARY: { head: string; items: string[] }[] = [
@@ -55,13 +56,19 @@ export function showRules(): void {
         h('h1', {}, '수사 규칙'),
         h('span', { class: 'list-count' }),
       ),
-      SUMMARY.map((s) => h('section', { class: 'rule-block' }, h('h2', {}, s.head), h('ul', {}, s.items.map((t) => h('li', {}, t))))),
+      // 수사 지침서 한 장: 조항(제N조)마다 여백 번호 목록, 개념은 용어 | 설명 양식
       h(
-        'section',
-        { class: 'rule-block' },
-        h('h2', {}, '알아 둘 개념'),
-        ['roster', 'trouble', 'taint', 'confession', 'ability', 'trigger'].map((k) =>
-          h('div', { class: 'concept', 'data-concept': k }, h('b', {}, CARDS[k].title), h('p', {}, CARDS[k].body)),
+        'div',
+        { class: 'leaf rules-sheet' },
+        tape(),
+        SUMMARY.map((s, n) => h('section', { class: 'rule-block' }, h('h2', {}, `제${n + 1}조 ${s.head}`), h('ol', {}, s.items.map((t) => h('li', {}, t))))),
+        h(
+          'section',
+          { class: 'rule-block' },
+          h('h2', {}, `제${SUMMARY.length + 1}조 알아 둘 개념`),
+          ['roster', 'trouble', 'taint', 'confession', 'ability', 'trigger'].map((k) =>
+            h('div', { class: 'concept', 'data-concept': k }, h('b', {}, CARDS[k].title), h('p', {}, CARDS[k].body)),
+          ),
         ),
       ),
     ),

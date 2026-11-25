@@ -231,7 +231,8 @@ button { font: inherit; color: inherit; }
 .list-head h1, .case-title { flex: 1; font-family: var(--title); font-size: 24px; text-align: center; }
 .back { padding: 0 8px; margin-left: -8px; }
 .list-count { color: var(--muted); font-weight: 600; min-width: 64px; text-align: right; }
-.list-screen .list-head, .list-screen .list-head .btn.ghost, .list-screen .list-count { color: var(--on-cork); }
+/* 코르크판 위 화면 머리 글자는 밝게 */
+.list-head, .list-head .btn.ghost, .list-count { color: var(--on-cork); }
 .chapter { margin-top: 24px; padding: 16px 14px 16px; }
 .chapter:nth-of-type(odd) { --tilt: -0.5deg; }
 .chapter:nth-of-type(even) { --tilt: 0.4deg; }
@@ -533,9 +534,10 @@ button { font: inherit; color: inherit; }
 /* 진술 인용: 따옴표로 감싸 괘선 위에 */
 .sheet-clue { padding: 0 4px 0 54px; }
 .sheet-desc { color: var(--ink); }
-.speech { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; font-size: 14px; }
-.speech dt { font-weight: 700; color: var(--muted); white-space: nowrap; }
-.speech dd { margin: 0; }
+/* 말하는 방식: 양식 두 칸 (라벨 | 글) */
+.speech { margin: 0; display: grid; grid-template-columns: auto 1fr; font-size: 14px; border-top: 1px solid var(--ink); }
+.speech dt { padding: 6px 10px 6px 0; border-right: 1px solid var(--ink); border-bottom: 1px solid var(--hair); color: var(--ink-soft); white-space: nowrap; }
+.speech dd { margin: 0; padding: 6px 0 6px 10px; border-bottom: 1px solid var(--hair); }
 .codex-item .speech { margin-top: 8px; }
 .link.role-link { align-self: flex-start; font-size: 14px; text-decoration-style: dotted; }
 .ln-role { font: inherit; font-weight: 700; color: inherit; background: none; border: 0; padding: 0; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }
@@ -661,31 +663,37 @@ button { font: inherit; color: inherit; }
 .seed-msg { color: var(--red); font-size: 13px; }
 .seed-msg:not(:empty) { padding-bottom: 8px; }
 .seed-line { color: var(--muted); font-size: 12px; text-align: center; font-variant-numeric: tabular-nums; }
-.loading-screen { display: flex; flex-direction: column; justify-content: center; gap: 12px; min-height: 60vh; }
-.loading-text { text-align: center; font-family: var(--serif); font-size: 20px; }
-.codex-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.codex-item { border: 1.5px solid var(--line); border-radius: var(--radius); background: var(--card); padding: 10px 12px; }
-.codex-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.codex-head span { font-family: var(--title); font-size: 13px; padding: 0 6px; border: 1.5px solid currentColor; border-radius: 0; background: none; }
+/* 불러오는 중: 코르크판 위 쪽지 한 장 */
+.loading-screen { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; min-height: 60vh; }
+.slip { --tilt: -1deg; width: 100%; padding: 24px 18px; background: var(--card); color: var(--ink); box-shadow: 0 6px 10px -4px rgba(20, 12, 4, 0.55); transform: rotate(var(--tilt)); display: flex; flex-direction: column; gap: 12px; }
+.loading-text { text-align: center; font-family: var(--title); font-size: 20px; }
+.loading-screen > .link { color: var(--on-cork); }
+/* 인물 카드철: 만난 직업은 색인 카드, 못 만난 직업은 진영별 뒤집힌 작은 카드 */
+.codex-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.codex-item { padding: 12px 14px; box-shadow: 0 1px 0 rgba(20, 12, 4, 0.25), 0 6px 10px -4px rgba(20, 12, 4, 0.55); }
+.codex-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.codex-head b { font-family: var(--title); font-weight: 400; font-size: 22px; }
+.codex-tier { margin-left: auto; font-family: var(--mono); color: var(--pencil); }
 .codex-item p { margin-top: 4px; font-size: 14px; }
-.codex-body { color: var(--muted); }
-.codex-item.unknown { color: var(--muted); }
-.rule-block { margin-top: 18px; }
-.rule-block h2 { font-size: 16px; margin-bottom: 6px; }
-.rule-block ul { margin: 0; padding-left: 20px; }
-.rule-block li { margin-bottom: 4px; }
-.concept { border: 1.5px solid var(--line); border-radius: var(--radius); background: var(--card); padding: 10px 12px; margin-bottom: 8px; }
-.concept p { margin-top: 2px; font-size: 14px; color: var(--muted); }
+.codex-body { color: var(--ink-soft); }
+.codex-camp { margin-top: 22px; }
+.codex-camp h2 { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; font-size: 18px; color: var(--on-cork); }
+.codex-camp h2 small { font-family: var(--mono); opacity: 0.8; }
+.codex-camp ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 10px; }
+.codex-item.unknown { width: 64px; height: 80px; padding: 0; display: flex; align-items: center; justify-content: center; color: #5e4820; box-shadow: 0 2px 4px rgba(20, 12, 4, 0.45); }
+.codex-item.unknown b { font-family: var(--title); font-weight: 400; font-size: 26px; }
+/* 수사 규칙: 지침서 한 장, 조항마다 여백 번호 목록, 개념은 용어 | 설명 양식 */
+.rules-sheet { margin-top: 14px; padding: 16px 16px 18px; }
+.rule-block + .rule-block { margin-top: 20px; }
+.rule-block h2 { font-size: 19px; margin-bottom: 2px; padding-bottom: 4px; border-bottom: 1px solid var(--ink); }
+.rule-block ol { list-style: none; margin: 0; padding: 0; counter-reset: item; }
+.rule-block li { counter-increment: item; display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px dashed var(--hair); }
+.rule-block li::before { content: counter(item, decimal-leading-zero); flex: none; width: 22px; padding-top: 2px; font-family: var(--mono); font-size: 13px; color: var(--pencil); }
+.concept { display: grid; grid-template-columns: 7em 1fr; border-bottom: 1px solid var(--hair); }
+.concept b { padding: 8px 10px 8px 0; border-right: 1px solid var(--ink); font-size: 15px; }
+.concept p { margin: 0; padding: 8px 0 8px 10px; font-size: 14px; color: var(--ink-soft); }
 
 /* ---------- 서류철 바탕: 코르크판 위 글자와 종이 ---------- */
-/* 사건·타이틀 밖의 화면은 코르크판 위 종이 한 장 */
-.codex-screen, .rules-screen, .loading-screen {
-  background: var(--card);
-  color: var(--ink);
-  padding: 12px 14px 20px;
-  box-shadow: 0 4px 12px rgba(20, 12, 4, 0.5);
-  border-radius: var(--radius);
-}
 /* 사건 화면은 코르크판 그대로: 위 줄 글자는 밝게, 진술은 종이 */
 .case-screen .head-row, .case-screen .head-row .btn.ghost, .case-screen .seed-line { color: var(--on-cork); }
 .case-title { font-family: var(--title); font-weight: 400; letter-spacing: 0.04em; }
@@ -732,12 +740,9 @@ h1, h2 { font-family: var(--title); font-weight: 400; }
 }
 
 /* ---------- 인물 카드철 ---------- */
-.codex-item { border: none; border-radius: 2px; box-shadow: 0 2px 5px rgba(20, 12, 4, 0.3); }
 .codex-top { display: flex; gap: 12px; align-items: flex-start; }
 .codex-title { flex: 1; min-width: 0; }
 .codex-photo { width: 76px; height: 76px; flex: none; border: 4px solid #fff; box-shadow: 0 2px 4px rgba(20, 12, 4, 0.4); transform: rotate(-2deg); }
-.codex-item.unknown { color: #5e4820; background: repeating-linear-gradient(45deg, var(--manila-deep) 0 6px, var(--manila) 6px 12px); }
-.codex-item.unknown .codex-head b { font-family: var(--title); font-size: 22px; }
 
 /* ---------- 새 직업 카드 사진 ---------- */
 .card-photo { width: 96px; height: 96px; align-self: center; border: 5px solid #fff; box-shadow: 0 3px 6px rgba(20, 12, 4, 0.45); transform: rotate(-2deg); }

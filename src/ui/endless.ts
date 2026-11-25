@@ -48,9 +48,8 @@ function loading(text: string, extra: HTMLElement[] = []): void {
     h(
       'main',
       { class: 'screen loading-screen' },
-      h('p', { class: 'loading-text', 'data-loading': '' }, text),
-      ...extra,
-      h('button', { class: 'btn ghost wide', onclick: leave }, '처음으로'),
+      h('div', { class: 'slip' }, h('p', { class: 'loading-text', 'data-loading': '' }, text), ...extra),
+      h('button', { class: 'link', onclick: leave }, '처음으로'),
     ),
   );
 }

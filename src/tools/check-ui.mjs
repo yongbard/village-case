@@ -454,6 +454,8 @@ try {
   check('codex: titled 인물 카드철', (await text('.codex-screen h1')) === '인물 카드철');
   check('codex: met roles have photos, unknown do not', (await page.$$('.codex-item:not(.unknown) .photo')).length === known && (await page.$$('.codex-item.unknown .photo')).length === 0);
   check('codex: unknown shows only ?', (await page.$$eval('.codex-item.unknown', (ls) => ls.every((l) => l.querySelector('b').textContent === '?'))));
+  const camps = await page.$$eval('section.codex-camp', (ss) => ss.map((s) => [...s.querySelectorAll('.codex-item.unknown')].map((c) => Math.round(c.getBoundingClientRect().top))));
+  check('codex: unknown cards grouped by camp in rows', camps.length >= 1 && camps.flat().length === unknown && camps.filter((c) => c.length >= 2).every((c) => c[0] === c[1]), JSON.stringify(camps));
   await noSideScroll('codex');
   await shot('17-codex', true);
   await noSlop('codex');
@@ -461,6 +463,8 @@ try {
   await page.click('[data-action="rules"]');
   await page.waitForSelector('.concept');
   check('rules: 6 concept cards', (await page.$$('.concept')).length === 6);
+  const articles = await page.$$eval('.rule-block h2', (hs) => hs.map((x) => x.textContent));
+  check('rules: articles read 제N조', articles[0] === '제1조 판' && articles.every((t, i) => t.startsWith(`제${i + 1}조 `)), JSON.stringify(articles));
   check('rules: titled 수사 규칙', (await text('.rules-screen h1')) === '수사 규칙');
   await noSideScroll('rules');
   await shot('18-rules', true);
