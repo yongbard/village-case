@@ -1,0 +1,22 @@
+// 시안 html 의 {{P:id}}·{{BG:id}} 를 실제 인물 사진으로 바꿔 찍는다 (일회용)
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import puppeteer from 'puppeteer-core';
+import { createServer } from 'vite';
+const ROOT = process.cwd();
+const server = await createServer({ configFile: join(ROOT, 'vite.config.ts'), logLevel: 'error', server: { middlewareMode: true } });
+const { PORTRAITS } = await server.ssrLoadModule('/ui/portraits.ts');
+await server.close();
+const src = readFileSync(join(ROOT, 'docs/mockups/2026-11-25-paper-src.html'), 'utf8');
+const out = src.replace(/\{\{P:(\w+)\}\}/g, (_, id) => `<svg viewBox="0 0 60 60">${PORTRAITS[id].art}</svg>`).replace(/\{\{BG:(\w+)\}\}/g, (_, id) => PORTRAITS[id].bg);
+const html = join(ROOT, 'docs/mockups/2026-11-25-paper-screens.html');
+writeFileSync(html, out);
+const browser = await puppeteer.launch({ executablePath: 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true });
+const page = await browser.newPage();
+await page.setViewport({ width: 1710, height: 900, deviceScaleFactor: 1 });
+await page.goto(pathToFileURL(html).href, { waitUntil: 'networkidle0' });
+await page.evaluate(() => document.fonts.ready);
+await page.screenshot({ path: join(ROOT, 'docs/mockups/2026-11-25-paper-screens.png'), fullPage: true });
+await browser.close();
+console.log('ok');
