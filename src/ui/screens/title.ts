@@ -2,6 +2,7 @@
 import { ROLES } from '../../core/roles';
 import { h, mount } from '../dom';
 import { startEndless, startSeedCase } from '../endless';
+import { tape, tocRow } from '../paper';
 import { parseCode } from '../seedCode';
 import { getSave } from '../store';
 import { showCodex } from './codex';
@@ -13,10 +14,10 @@ export function showTitle(): void {
   const msg = h('p', { class: 'seed-msg', role: 'alert', 'data-seed-msg': '' });
   const input = h('input', {
     class: 'seed-input',
+    id: 'seed-input',
     type: 'text',
     inputmode: 'numeric',
-    placeholder: '시드 또는 사건 코드',
-    'aria-label': '시드',
+    placeholder: '예: 3-12345001',
     autocomplete: 'off',
   });
   const submit = (e: Event) => {
@@ -29,6 +30,14 @@ export function showTitle(): void {
     startSeedCase(code.n, code.seed);
   };
   const metRoles = seenCards.filter((k) => k in ROLES).length;
+  // 목차: 줄마다 쪽 번호가 01 부터 차례로 (이어 하기가 있을 때만 한 줄 늘어난다)
+  const rows = [
+    { name: '사건 파일', val: `${cleared.length} / ${STAGES.length}`, attrs: { 'data-action': 'stages', onclick: showStageList } },
+    endless && { name: '끝없는 수사 이어 하기', val: `${endless.n}번째 · 평판 ${endless.rep}`, attrs: { 'data-action': 'endless-resume', onclick: () => startEndless(true) } },
+    { name: endless ? '끝없는 수사 새로 시작' : '끝없는 수사', val: `최고 ${endlessBest}`, attrs: { 'data-action': 'endless-new', onclick: () => startEndless(false) } },
+    { name: '인물 카드철', val: `${metRoles} / ${Object.keys(ROLES).length}`, attrs: { 'data-action': 'codex', onclick: showCodex } },
+    { name: '수사 규칙', attrs: { 'data-action': 'rules', onclick: showRules } },
+  ].filter((r) => !!r);
   mount(
     h(
       'main',
@@ -40,7 +49,7 @@ export function showTitle(): void {
         h(
           'div',
           { class: 'title-block' },
-          h('p', { class: 'kicker' }, '수 사 기 록'),
+          h('p', { class: 'folder-no' }, h('span', {}, '사건 서류철'), h('span', {}, '제1권')),
           h('h1', { class: 'game-title' }, '마을 수사록'),
           h('p', { class: 'folder-sub' }, '작은 마을 · 미해결 사건철'),
           h('p', { class: 'tagline' }, '진술을 모으고, 거짓말을 가려내고, 숨은 악을 체포하세요.'),
@@ -48,37 +57,15 @@ export function showTitle(): void {
       ),
       h(
         'nav',
-        { class: 'title-menu' },
-        h(
-          'button',
-          { class: 'btn primary wide big', 'data-action': 'stages', onclick: showStageList },
-          '사건 파일',
-          h('small', {}, `${cleared.length} / ${STAGES.length} 해결`),
-        ),
-        endless &&
-          h(
-            'button',
-            { class: 'btn primary wide big', 'data-action': 'endless-resume', onclick: () => startEndless(true) },
-            '끝없는 수사 이어 하기',
-            h('small', {}, `${endless.n}번째 사건 · 평판 ${endless.rep}`),
-          ),
-        h(
-          'button',
-          { class: `btn wide big${endless ? '' : ' primary'}`, 'data-action': 'endless-new', onclick: () => startEndless(false) },
-          endless ? '끝없는 수사 새로 시작' : '끝없는 수사',
-          h('small', {}, `최고 기록 ${endlessBest}`),
-        ),
-        h(
-          'div',
-          { class: 'title-row' },
-          h('button', { class: 'btn wide', 'data-action': 'codex', onclick: showCodex }, '인물 카드철', h('small', {}, `${metRoles} / ${Object.keys(ROLES).length}`)),
-          h('button', { class: 'btn wide', 'data-action': 'rules', onclick: showRules }, '수사 규칙'),
-        ),
+        { class: 'leaf toc', 'aria-label': '목차' },
+        tape(),
+        h('h2', { class: 'toc-head' }, '목차'),
+        rows.map((r, i) => tocRow({ no: String(i + 1).padStart(2, '0'), ...r })),
         h(
           'form',
           { class: 'seed-form', 'data-seed-form': '', onsubmit: submit },
-          input,
-          h('button', { class: 'btn', type: 'submit', 'data-action': 'seed-play' }, '시드로 하기'),
+          h('label', { class: 'seed-field', for: 'seed-input' }, h('span', { class: 'label' }, '사건 코드로 열기'), input),
+          h('button', { class: 'btn primary', type: 'submit', 'data-action': 'seed-play' }, '열람'),
         ),
         msg,
       ),

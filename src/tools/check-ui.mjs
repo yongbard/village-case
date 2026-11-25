@@ -111,7 +111,11 @@ try {
   // 1. 타이틀
   await page.goto(url, { waitUntil: 'networkidle0' });
   check('title screen', (await text('.game-title')) === '마을 수사록');
-  check('title menu labels: case files, endless, cards, rules', (await text('[data-action="stages"]'))?.startsWith('사건 파일') && (await text('[data-action="endless-new"]'))?.startsWith('끝없는 수사') && (await text('[data-action="codex"]'))?.startsWith('인물 카드철') && (await text('[data-action="rules"]')) === '수사 규칙');
+  check('title menu labels: case files, endless, cards, rules', (await text('[data-action="stages"] .toc-name')) === '사건 파일' && (await text('[data-action="endless-new"] .toc-name'))?.startsWith('끝없는 수사') && (await text('[data-action="codex"] .toc-name')) === '인물 카드철' && (await text('[data-action="rules"] .toc-name')) === '수사 규칙');
+  const toc = await page.$$eval('.title-screen .toc .toc-row', (rs) => rs.map((r) => ({ h: r.getBoundingClientRect().height, no: r.querySelector('.toc-no')?.textContent })));
+  check('title: menu is one table of contents', toc.length >= 4 && toc.every((r) => r.h >= 56) && toc.every((r, i) => r.no === String(i + 1).padStart(2, '0')), JSON.stringify(toc));
+  const folderNo = await page.$$eval('.folder-no span', (ss) => ss.map((s) => s.textContent.trim()).join(' · ')).catch(() => null);
+  check('title: folder label reads 사건 서류철 · 제1권', folderNo === '사건 서류철 · 제1권', folderNo ?? 'none');
   check('document title / lang', (await page.title()) === '마을 수사록' && (await page.$eval('html', (e) => e.lang)) === 'ko');
   await shot('01-title');
   await noSlop('title');
