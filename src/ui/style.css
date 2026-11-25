@@ -268,7 +268,17 @@ button { font: inherit; color: inherit; }
 .stage.locked .stage-no, .stage.locked .stage-state { opacity: 0.45; }
 
 /* ---------- 사건 화면: 코르크판 ---------- */
-.hint-btn { min-width: 72px; }
+/* 힌트: 판 가장자리에 붙인 노란 쪽지 탭 */
+.btn.hint-btn {
+  min-width: 72px;
+  background: var(--postit);
+  border: 0;
+  font-family: var(--hand);
+  font-size: 22px;
+  font-weight: 400;
+  transform: rotate(3deg);
+  box-shadow: 0 3px 5px -2px rgba(20, 12, 4, 0.6);
+}
 /* 사건 양식 한 장: 위 칸 셋(경과·평판·체포한 주범), 아래 이 마을에 숨은 직업 명단 */
 .case-form { --tilt: 0.4deg; margin: 6px 0 16px; padding-bottom: 4px; }
 /* 양식 표: 1px 먹선 칸, 라벨은 왼쪽 위, 값은 그 아래 고정폭 숫자 */
@@ -464,30 +474,33 @@ button { font: inherit; color: inherit; }
 .bubble-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
 .bubble-tag { font-family: var(--hand); font-size: 19px; color: var(--red); line-height: 1; }
 .hint-bubble .bubble-tag { color: #8a6d00; }
-.bubble-count { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bubble-count { font-size: 12px; color: var(--pencil); }
 .bubble-text { font-size: 15px; }
 .bubble-nav { display: flex; gap: 6px; margin-top: 8px; align-items: center; }
 .bubble-nav .btn.ghost { padding: 0 6px; margin-left: -6px; font-weight: 500; }
 
-/* 진술 목록 */
-.clues { margin-top: 18px; }
-.clues h2 { font-size: 16px; display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
-.clues h2 small { color: var(--muted); font-weight: 500; }
-.clues ol { list-style: none; margin: 0; padding: 0; border-top: 1.5px solid var(--ink); }
-.clues li {
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-  padding: 9px 2px;
-  border-bottom: 1px dashed var(--line);
+/* 진술 기록: 테이프로 붙인 줄 공책. 파란 괘선 간격 = 글줄 높이(--lh), 왼쪽 빨간 여백선 안에 칸 번호 */
+.clues { margin-top: 18px; padding: 14px 12px 14px; }
+.clues h2 { font-size: 18px; display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+.clues h2 small { font-family: var(--mono); color: var(--pencil); }
+.ruled {
+  --lh: 28px;
+  line-height: var(--lh);
+  background-image:
+    linear-gradient(to right, transparent 45px, var(--margin) 45px, var(--margin) 46px, transparent 46px),
+    repeating-linear-gradient(to bottom, transparent 0 calc(var(--lh) - 1px), var(--rule) calc(var(--lh) - 1px) var(--lh));
+  border-top: 1px solid var(--ink);
 }
-.ln-num { flex: none; width: 34px; color: var(--muted); font-weight: 700; font-variant-numeric: tabular-nums; }
-.ln-body { flex: 1; }
-.ln-tag { flex: none; font-family: var(--title); font-size: 13px; line-height: 1.3; padding: 0 5px; border: 1.5px solid currentColor; border-radius: 0; }
+.clues ol { list-style: none; margin: 0; padding: 0; }
+.clues li { display: flex; align-items: baseline; line-height: var(--lh); }
+.ln-num { flex: none; width: 46px; padding-right: 9px; text-align: right; color: var(--pencil); font-size: 14px; }
+.ln-body { flex: 1; min-width: 0; padding-left: 9px; line-height: var(--lh); }
+/* 판정 도장: 줄 끝에 작게 찍은 선·악 */
+.ln-tag { flex: none; align-self: center; margin-left: 6px; font-family: var(--title); font-size: 14px; line-height: 18px; padding: 0 4px; border: 1.5px solid currentColor; border-radius: 0; transform: rotate(-4deg); }
 .clues li.side-evil .ln-tag { color: var(--red); }
 .clues li.side-good .ln-tag { color: var(--good); }
-.clues li.arrested .ln-body { color: var(--muted); }
-.empty { color: var(--muted); padding: 10px 0; border-top: 1.5px solid var(--ink); }
+.clues li.arrested .ln-body { color: var(--pencil); }
+.empty { color: var(--muted); padding: 0 0 0 54px; }
 
 /* ---------- 창 ---------- */
 .overlay {
@@ -666,12 +679,6 @@ button { font: inherit; color: inherit; }
 /* 사건 화면은 코르크판 그대로: 위 줄 글자는 밝게, 진술은 종이 */
 .case-screen .head-row, .case-screen .head-row .btn.ghost, .case-screen .seed-line { color: var(--on-cork); }
 .case-title { font-family: var(--title); font-weight: 400; letter-spacing: 0.04em; }
-.clues {
-  background: var(--card);
-  padding: 12px 12px 6px;
-  box-shadow: 0 3px 8px rgba(20, 12, 4, 0.45);
-  border-radius: var(--radius);
-}
 h1, h2 { font-family: var(--title); font-weight: 400; }
 .sheet {
   background: var(--card);
@@ -743,10 +750,15 @@ h1, h2 { font-family: var(--title); font-weight: 400; }
 .red-string { position: absolute; inset: 4px 2px 2px; width: calc(100% - 4px); height: calc(100% - 6px); pointer-events: none; z-index: 4; overflow: visible; }
 .red-string line { stroke: var(--red); stroke-width: 3; stroke-linecap: round; opacity: 0.85; }
 .ln-text { cursor: pointer; }
-.ln-body.marked .ln-text { background: var(--red-soft); }
+.ln-body.marked .ln-text { /* 형광펜: 글줄 아래쪽 절반 */
+  background: linear-gradient(transparent 52%, rgba(243, 213, 102, 0.8) 52%, rgba(243, 213, 102, 0.8) 88%, transparent 88%);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
 .sheet-clue { cursor: pointer; }
-.clues .confessions { margin-top: 10px; border-top: 1.5px solid var(--red); }
-.ln-confession .ln-body { font-family: var(--hand); font-size: 19px; line-height: 1.25; color: var(--ink); }
+.confessions-head { display: block; margin-top: 14px; color: var(--red); }
+.clues .confessions { border-top-color: var(--red); }
+.ln-confession .ln-body { font-family: var(--hand); font-size: 20px; color: var(--ink); }
 .cell.camp-accomplice .stamp { font-size: 15px; letter-spacing: 0; }
 .grid[style*='--w:4'] .cell.camp-accomplice .stamp, .grid[style*='--w:5'] .cell.camp-accomplice .stamp { font-size: 12px; }
 .grid[style*='--w:4'] .cell.camp-boss .stamp, .grid[style*='--w:5'] .cell.camp-boss .stamp { font-size: 13px; }

@@ -18,6 +18,7 @@ import { GUIDE } from '../../content/tutorial';
 import { abilityText, clueMarks, clueText, confessionText, pendingText } from '../clueText';
 import { h, mount, overlay, toast } from '../dom';
 import { CAMP_NAME, SIDE_MARK, SIDE_NAME } from '../labels';
+import { tape } from '../paper';
 import { guideBubble } from '../tutorialOverlay';
 import { photo } from '../portraits';
 import { rosterList, rosterRows } from '../roster';
@@ -528,7 +529,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
             'div',
             { class: 'bubble-nav' },
             h('span', { class: 'spacer' }),
-            h('button', { class: 'btn', onclick: () => ((picking = null), render()) }, '취소'),
+            h('button', { class: 'btn ghost', onclick: () => ((picking = null), render()) }, '취소'),
           ),
         ),
       );
@@ -557,40 +558,43 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
 
   function clueList(): HTMLElement {
     const seen = g.investigated.flatMap((v, i) => (v ? [i] : []));
+    // 줄 공책 한 장: 여백에 칸 번호, 글줄은 괘선에 앉는다
     return h(
       'section',
-      { class: 'clues' },
-      h('h2', {}, '진술 기록', h('small', {}, `${seen.length} / ${def.w * def.h}명 조사`)),
+      { class: 'leaf clues' },
+      tape(),
+      h('h2', {}, '진술 기록', h('small', {}, `${seen.length} / ${def.w * def.h}명`)),
       seen.length === 0
-        ? h('p', { class: 'empty' }, '아직 조사한 사람이 없습니다. 칸을 눌러 조사하세요.')
+        ? h('p', { class: 'empty ruled' }, '아직 조사한 사람이 없습니다. 칸을 눌러 조사하세요.')
         : h(
             'ol',
-            {},
+            { class: 'ruled' },
             seen.map((i) => {
               const side = g.arrested[i] ? sideOf(trueRole(def, i)) : undefined;
               return h(
                 'li',
                 { class: side ? `arrested side-${side}` : '', 'data-line': i },
-                h('span', { class: 'ln-num' }, `${i + 1}번`),
+                h('span', { class: 'ln-num', 'aria-label': `${i + 1}번` }, String(i + 1)),
                 h(
                   'span',
                   { class: `ln-body${marks?.key === `line:${i}` ? ' marked' : ''}` },
                   h('button', { class: 'ln-role', onclick: () => showRole(def.faces[i], i) }, role(def.faces[i]).name),
                   h('span', { class: 'ln-text', 'data-mark': i, onclick: () => toggleMarks(`line:${i}`, marksOf(i)) }, `: ${statements(g, i).join(' / ')}`),
                 ),
-                side && h('span', { class: 'ln-tag' }, `${SIDE_MARK[side]} ${SIDE_NAME[side]}`),
+                side && h('span', { class: 'ln-tag' }, SIDE_NAME[side]),
               );
             }),
           ),
+      g.confessions.length > 0 && h('small', { class: 'label confessions-head' }, '자백'),
       g.confessions.length > 0 &&
         h(
           'ol',
-          { class: 'confessions' },
+          { class: 'confessions ruled' },
           g.confessions.map((cf) =>
             h(
               'li',
               { class: 'ln-confession', 'data-confession': cf.cell },
-              h('span', { class: 'ln-num' }, `${cf.cell + 1}번`),
+              h('span', { class: 'ln-num', 'aria-label': `${cf.cell + 1}번` }, String(cf.cell + 1)),
               h('span', { class: 'ln-body' }, confessionText(cf, def.w, def.h)),
             ),
           ),

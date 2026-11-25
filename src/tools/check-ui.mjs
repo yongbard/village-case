@@ -191,7 +191,7 @@ try {
   check('uninvestigated card shows its back, no photo', !!(await page.$('.cell[data-cell="8"] .back')) && !(await page.$('.cell[data-cell="8"] .photo')));
   check('investigated card shows a photo', !!(await page.$('.cell[data-cell="4"] .photo')));
   check('investigate costs 2 hours', (await text('[data-stat="hour"]')) === '2시간');
-  const want4 = `5번${role(s1.def.faces[4]).name}: ${clueText(s1.def.clues[4], 4, 3, 3, s1.def.faces[4])}`;
+  const want4 = `5${role(s1.def.faces[4]).name}: ${clueText(s1.def.clues[4], 4, 3, 3, s1.def.faces[4])}`;
   check('clue line in list names the job voice and cells', (await text('.clues li[data-line="4"]')) === want4, `${await text('.clues li[data-line="4"]')} / want ${want4}`);
   // 진술을 누르면 그 진술이 가리키는 칸에 빨간 동그라미, 다시 누르면 지운다
   await page.$eval('[data-mark="4"]', (e) => e.click());
@@ -240,6 +240,8 @@ try {
       check(`arrested cell ${i + 1} stamped 주범 체포`, (await text(`.cell[data-cell="${i}"] .stamp`)) === '주범 체포', await text(`.cell[data-cell="${i}"] .stamp`));
       check(`arrested cell ${i + 1} names its side`, ((await text(`.cell[data-cell="${i}"] .sub`)) ?? '').includes('악'), await text(`.cell[data-cell="${i}"] .sub`));
       await shot('06-arrested');
+      const tag = await page.$eval(`.clues li[data-line="${i}"] .ln-tag`, (e) => ({ r: getComputedStyle(e).borderTopLeftRadius, t: e.textContent.trim() })).catch(() => null);
+      check('arrested line shows a verdict stamp, not a pill', tag?.r === '0px' && ['선', '악'].includes(tag.t), JSON.stringify(tag));
     }
   }
 
@@ -364,12 +366,14 @@ try {
   check('stage 30: ability result in list', new RegExp(`취재해 보니 ${a + 1}번과 ${b + 1}번은 (같은|다른) 편이에요\\.$`).test((await line(rep)) ?? ''), await line(rep));
   await new Promise((r) => setTimeout(r, 2500)); // 알림이 사라진 뒤
   await shot('11-stage30-all', true);
+  const ruled = await page.$$eval('.clues li', (ls) => ls.map((l) => ({ h: l.getBoundingClientRect().height, lh: getComputedStyle(l.querySelector('.ln-body')).lineHeight })));
+  check('statements sit on the ruled lines', ruled.length >= 20 && ruled.every((r) => r.lh === '28px' && Math.abs(r.h - 28 * Math.round(r.h / 28)) <= 1 && r.h >= 27), JSON.stringify(ruled.filter((r) => r.lh !== '28px' || Math.abs(r.h - 28 * Math.round(r.h / 28)) > 1).slice(0, 5)));
   // 공범이 있으면 먼저 하나 잡아 자백과 도장을 본다
   const acc30 = s30.def.truth.roles.findIndex((r) => r !== '*w' && role(r).camp === 'accomplice');
   if (acc30 >= 0) {
     await tapCell(acc30, 'arrest');
     check('accomplice arrest stamped 공범 체포', (await text(`.cell[data-cell="${acc30}"] .stamp`)) === '공범 체포', await text(`.cell[data-cell="${acc30}"] .stamp`));
-    check('accomplice arrest adds a confession line', /^\d+번자백: /.test((await text('.ln-confession')) ?? ''), await text('.ln-confession'));
+    check('accomplice arrest adds a confession line', /^\d+자백: /.test((await text('.ln-confession')) ?? ''), await text('.ln-confession'));
   }
   for (const i of bossOf(s30.def)) await tapCell(i, 'arrest');
   await page.waitForSelector('[data-result]', { timeout: 5000 });

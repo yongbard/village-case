@@ -63,7 +63,7 @@ export function guideBubble(
       { class: 'bubble-nav' },
       h('button', { class: 'btn ghost', onclick: () => onNav(-1) }, '안내 닫기'),
       h('span', { class: 'spacer' }),
-      index > 0 && h('button', { class: 'btn', onclick: () => onNav(index - 1) }, '이전'),
+      index > 0 && h('button', { class: 'btn ghost', onclick: () => onNav(index - 1) }, '이전'),
       h(
         'button',
         { class: 'btn primary', 'data-action': 'guide-next', onclick: () => onNav(last ? -1 : index + 1) },
