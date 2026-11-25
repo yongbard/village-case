@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { rosterRows } from './roster';
+import { rosterRows, rosterSummary } from './roster';
 
 test('rows: boss, accomplice, trouble, witness; roles in table order; zero roles dropped', () => {
   const rows = rosterRows({ chief: 1, briber: 1, thief: 2, braggart: 1, pharmacist: 4, postman: 3, mayor: 0 });
@@ -18,4 +18,9 @@ test('a camp with nobody still shows with 0', () => {
   expect(rows.map((r) => [r.label, r.total, r.items.length])).toEqual([
     ['주범', 1, 1], ['공범', 0, 0], ['말썽꾼', 0, 0], ['증인', 8, 1],
   ]);
+});
+
+test('summary lists non-witness roles by count, boss → accomplice → trouble', () => {
+  expect(rosterSummary({ chief: 2, thief: 1, blackmailer: 1, gossip: 2, postman: 3 })).toBe('두목 2 · 좀도둑 1 · 협박꾼 1 · 소문쟁이 2');
+  expect(rosterSummary({ postman: 9 })).toBe('');
 });

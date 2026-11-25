@@ -113,7 +113,8 @@ try {
   await settle();
   await shot('03a-roster');
   const rosterText = (await text('[data-sheet="roster"] table.roster')) ?? '';
-  check('stage 1: roster sheet lists camps and roles with counts', /주범 1/.test(rosterText) && /우체부 1/.test(rosterText) && /약사 7/.test(rosterText), rosterText);
+  check('stage 1: roster sheet lists camps and roles with counts', /두목 1/.test(rosterText) && /우체부 1/.test(rosterText) && /약사 7/.test(rosterText), rosterText);
+  check('stage 1: roster explains 수상한 사람', ((await text('.roster-note')) ?? '').includes('수상한 사람'), await text('.roster-note'));
   check('stage 1: roster says the goal', ((await text('.roster-goal')) ?? '').includes('주범 1명을 모두 체포'), await text('.roster-goal'));
   const rosterBox = await (await page.$('[data-sheet="roster"]')).boundingBox();
   check('roster sheet fits the width', rosterBox.x >= 0 && rosterBox.x + rosterBox.width <= W, `x ${rosterBox.x} w ${rosterBox.width}`);
@@ -123,7 +124,9 @@ try {
   check('roster reopens from the header memo', ((await text('[data-action="roster-close"]')) ?? '') === '닫기');
   await page.click('[data-action="roster-close"]');
   await page.waitForSelector('.overlay', { hidden: true });
-  check('header memo counts caught bosses', ((await text('[data-stat="bosses"]')) ?? '').startsWith('주범 0/1 체포'), await text('[data-stat="bosses"]'));
+  check('header memo counts caught bosses', ((await text('[data-stat="bosses"]')) ?? '').startsWith('체포 0/1 · 두목 1'), await text('[data-stat="bosses"]'));
+  const memoBox = await (await page.$('[data-stat="bosses"]')).boundingBox();
+  check('header memo fits the width', memoBox.x >= 0 && memoBox.x + memoBox.width <= W, `x ${memoBox.x} w ${memoBox.width}`);
   await page.waitForSelector('.guide-bubble');
   const bubble = await text('.guide-bubble .bubble-text');
   check('stage 1: first GUIDE bubble visible', bubble === GUIDE[1][0].text, bubble ?? 'none');

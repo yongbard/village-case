@@ -21,3 +21,11 @@ export function rosterRows(roster: Record<RoleId, number>): RosterRow[] {
     return { camp, label: CAMP_NAME[camp], total: items.reduce((s, x) => s + x.count, 0), items };
   });
 }
+
+/** 증인을 뺀 직업별 인원 한 줄: "두목 2 · 좀도둑 1 · 소문쟁이 2" (주범 → 공범 → 말썽꾼). 사건 화면 위 메모 줄에 쓴다. */
+export function rosterSummary(roster: Record<RoleId, number>): string {
+  return rosterRows(roster)
+    .filter((row) => row.camp !== 'witness')
+    .flatMap((row) => row.items.map((x) => `${x.name} ${x.count}`))
+    .join(' · ');
+}

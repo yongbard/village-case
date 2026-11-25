@@ -20,7 +20,7 @@ import { h, mount, overlay, toast } from '../dom';
 import { CAMP_NAME, SIDE_MARK, SIDE_NAME } from '../labels';
 import { guideBubble } from '../tutorialOverlay';
 import { photo } from '../portraits';
-import { rosterRows } from '../roster';
+import { rosterRows, rosterSummary } from '../roster';
 import { speechList } from '../speech';
 import { requestHint } from '../workerClient';
 import { showStageList } from './stageList';
@@ -228,6 +228,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
         { class: 'sheet roster-sheet', role: 'dialog', 'aria-modal': 'true', 'data-sheet': 'roster' },
         h('h2', { class: 'roster-title' }, '이번 사건의 인원'),
         h('p', { class: 'roster-goal' }, `주범 ${bossTotal}명을 모두 체포하면 해결입니다.`),
+        h('p', { class: 'roster-note' }, "증언의 '수상한 사람'은 악(공범·주범)입니다."),
         h(
           'table',
           { class: 'roster' },
@@ -235,7 +236,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
             h(
               'tr',
               { class: `camp-${row.camp}` },
-              h('th', {}, `${row.label} ${row.total}`),
+              h('th', {}, row.label),
               h(
                 'td',
                 {},
@@ -411,8 +412,6 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
   }
 
   function header(): HTMLElement {
-    const camps = def.inPlay.map((id) => role(id).camp);
-    const count = (c: string) => camps.filter((x) => x === c).length;
     const caught = g.arrested.filter((a, i) => a && role(trueRole(def, i)).camp === 'boss').length;
     const title = opts.mode === 'stage' ? `${opts.stageId}스테이지` : (opts.title ?? '무한 모드');
     return h(
@@ -450,7 +449,7 @@ export function showCase(def: CaseDef, opts: CaseOpts): void {
           'button',
           { class: 'stat ratio', 'data-action': 'roster', onclick: () => showRoster() },
           h('small', {}, '인원표 보기'),
-          h('b', { 'data-stat': 'bosses' }, `주범 ${caught}/${bossTotal} 체포 · 공범 ${count('accomplice')} · 말썽꾼 ${count('trouble')}`),
+          h('b', { 'data-stat': 'bosses' }, `체포 ${caught}/${bossTotal} · ${rosterSummary(def.roster)}`),
         ),
       ),
       h(

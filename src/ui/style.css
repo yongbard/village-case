@@ -221,7 +221,7 @@ button { font: inherit; color: inherit; }
 .stat b { font-size: 17px; font-variant-numeric: tabular-nums; line-height: 1.35; }
 .stat.low b { color: var(--red); }
 .stat.ratio { flex: 1; }
-.stat.ratio b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat.ratio b { font-size: 14px; }
 /* 이번 사건의 말썽꾼·악 직업: 꼬리표 */
 .roles { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 .chip {
@@ -701,9 +701,10 @@ button.stat.ratio small { text-decoration: underline dotted; }
 .grid[style*='--w:4'] .cell.camp-accomplice .stamp, .grid[style*='--w:5'] .cell.camp-accomplice .stamp { font-size: 12px; }
 .grid[style*='--w:4'] .cell.camp-boss .stamp, .grid[style*='--w:5'] .cell.camp-boss .stamp { font-size: 13px; }
 .roster-sheet .roster-title { font-family: var(--title); font-weight: 400; font-size: 22px; margin: 0 0 4px; }
-.roster-goal { color: var(--red); font-weight: 700; margin: 0 0 10px; }
+.roster-goal { color: var(--red); font-weight: 700; margin: 0 0 4px; }
+.roster-note { color: var(--muted); font-size: 14px; margin: 0 0 10px; }
 table.roster { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
-table.roster th { text-align: left; white-space: nowrap; padding: 8px 10px 8px 0; vertical-align: top; font-size: 15px; width: 1%; }
+table.roster th { text-align: left; white-space: nowrap; padding: 8px 10px 8px 0; vertical-align: top; font-size: 13px; width: 1%; }
 table.roster td { padding: 6px 0; display: flex; flex-wrap: wrap; gap: 6px; }
 table.roster tr { border-bottom: 1px dashed var(--line); }
 table.roster tr.camp-boss th { color: var(--red); }
