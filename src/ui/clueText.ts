@@ -1,4 +1,5 @@
 // 진술·능력 결과·자백을 화면 문장으로 (주범 사냥 설계 4.3). 직업 말머리 + 사실. 사실에는 칸 번호를 직접 적는다(1부터).
+// 증언 속 악은 "수상한 사람"으로 말한다 (읽기 쉽게 다듬기 설계 3).
 // 문장은 겉 직업과 진술만으로 만든다: 위장한 악인이나 거짓말하게 된 증인도 똑같은 문장으로 말한다.
 import { halvesOf, sideCells, steps } from '../core/board';
 import { countCells, isCountKind } from '../core/rules';
@@ -31,31 +32,38 @@ const PREFIX: Record<RoleId, string> = {
 /** 칸 목록 "2·4·6·8" (1부터, 오름차순) */
 const list = (cells: number[]) => [...cells].sort((a, b) => a - b).map((i) => i + 1).join('·');
 
-const DIR_NAME: Record<Dir, string> = { up: '위쪽 가로줄', down: '아래쪽 가로줄', left: '왼쪽 세로줄', right: '오른쪽 세로줄' };
+const DIR_NAME: Record<Dir, string> = { up: '위쪽', down: '아래쪽', left: '왼쪽', right: '오른쪽' };
 
-/** 진술 c 의 사실 부분 */
-function fact(c: Clue, w: number, h: number): string {
-  const many = (n: number) => (n === 0 ? '악은 없어요.' : `악은 ${n}명이에요.`);
+/** 진술 c 의 사실 부분. 악은 "수상한 사람"으로 말한다. 기준 칸이 말하는 칸(cell)이면 "우리 집"·"제", 아니면 "N번 집" */
+function fact(c: Clue, cell: number, w: number, h: number): string {
+  const own = c.base === cell;
+  const home = own ? '우리 집' : `${c.base + 1}번 집`;
+  const line = (name: string) => (own ? `우리 ${name}` : `${home} ${name}`);
+  const cells = () => list(countCells(w, h, c));
+  const saw = (n: number) => (n === 0 ? '수상한 사람은 못 봤어요.' : `수상한 사람을 ${n}명 봤어요.`);
+  const there = (n: number, none: string) => (n === 0 ? none : `에 수상한 사람이 ${n}명 있어요.`);
   switch (c.kind) {
-    case 'evil4': return `상하좌우 ${list(countCells(w, h, c))}번 중 ${many(c.n!)}`;
-    case 'evil8': return `둘러싼 ${list(countCells(w, h, c))}번 중 ${many(c.n!)}`;
-    case 'evilRow': return `같은 가로줄 ${list(countCells(w, h, c))}번 중 ${many(c.n!)}`;
-    case 'evilCol': return `같은 세로줄 ${list(countCells(w, h, c))}번 중 ${many(c.n!)}`;
-    case 'diag': return `대각선 ${list(countCells(w, h, c))}번 중 ${many(c.n!)}`;
-    case 'nearest': return c.n === 0 ? '저 말고는 악이 없어요.' : `가장 가까운 악은 상하좌우로 ${c.n}칸 가야 있어요.`;
-    case 'pairOne': return `${c.a! + 1}번과 ${c.b! + 1}번 중 정확히 1명이 악이에요.`;
-    case 'atLeastOne': return `${list(c.cells!)}번 중 적어도 1명은 악이에요.`;
-    case 'adjPair': return `악끼리 상하좌우로 붙어 사는 집이 ${c.n === 1 ? '있어요' : '없어요'}.`;
+    case 'evil4': return `${home} 위아래 양옆(${cells()}번)에서 ${saw(c.n!)}`;
+    case 'evil8': return `${home} 둘레(${cells()}번)${there(c.n!, '에 수상한 사람은 없어요.')}`;
+    case 'evilRow': return `${line('가로줄')}(${cells()}번)${there(c.n!, '에는 수상한 사람이 없어요.')}`;
+    case 'evilCol': return `${line('세로줄')}(${cells()}번)${there(c.n!, '에는 수상한 사람이 없어요.')}`;
+    case 'diag': return `${home} 대각선 길(${cells()}번)에서 ${saw(c.n!)}`;
+    case 'nearest':
+      if (c.n === 0) return own ? '저 말고는 수상한 사람이 없어요.' : `${home} 말고는 수상한 사람이 없어요.`;
+      return `제일 가까운 수상한 사람은 ${home}에서 위아래·양옆으로 ${c.n}칸 가야 있어요.`;
+    case 'pairOne': return `${c.a! + 1}번과 ${c.b! + 1}번 중 딱 1명만 수상해요.`;
+    case 'atLeastOne': return `${list(c.cells!)}번 중에 수상한 사람이 적어도 1명 있어요.`;
+    case 'adjPair': return `수상한 사람끼리 위아래나 양옆으로 붙어 사는 집이 ${c.n === 1 ? '있어요' : '없어요'}.`;
     case 'halves': {
       const [L, R] = halvesOf(w, h);
       const l = `왼쪽(${list(L)}번)`;
       const r = `오른쪽(${list(R)}번)`;
-      if (c.n === 0) return `${l}과 ${r}의 악 수가 같아요.`;
-      return c.n === 1 ? `악은 ${l}보다 ${r}에 더 많아요.` : `악은 ${r}보다 ${l}에 더 많아요.`;
+      if (c.n === 0) return `${l}과 ${r}에 수상한 사람 수가 같아요.`;
+      return c.n === 1 ? `수상한 사람은 ${l}보다 ${r}에 더 많아요.` : `수상한 사람은 ${r}보다 ${l}에 더 많아요.`;
     }
-    case 'bossDir': return `${DIR_NAME[c.dir!]}(${list(sideCells(w, h, c.base, c.dir!))}번)에 주범이 있어요.`;
-    case 'alibi': return `${c.a! + 1}번은 선이에요.`;
-    case 'accuse': return `${c.a! + 1}번은 악이에요.`;
+    case 'bossDir': return `${own ? '제' : home} ${DIR_NAME[c.dir!]}(${list(sideCells(w, h, c.base, c.dir!))}번)에서 주범을 봤어요.`;
+    case 'alibi': return `${c.a! + 1}번은 수상한 사람이 아니에요.`;
+    case 'accuse': return `${c.a! + 1}번은 수상한 사람이에요.`;
     case 'sameSide': return `${c.a! + 1}번과 ${c.b! + 1}번은 같은 편이에요.`;
     case 'bossRow': {
       const row = `위에서 ${c.r}번째 가로줄(${list(rowCells(w, c.r!))}번)에`;
@@ -72,9 +80,8 @@ function prefix(face: RoleId, a?: number, b?: number): string {
 
 /** w×h 판에서 칸 cell 이 겉 직업 face 로 한 진술 c 의 문장 */
 export function clueText(c: Clue, cell: number, w: number, h: number, face: RoleId): string {
-  void cell;
   const p = prefix(face, c.a, c.b);
-  return p ? `${p} ${fact(c, w, h)}` : fact(c, w, h);
+  return p ? `${p} ${fact(c, cell, w, h)}` : fact(c, cell, w, h);
 }
 
 /** 진술 c 가 가리키는 칸 (판에 빨간 동그라미), 두 사람 관계면 잇는 실 */
