@@ -51,17 +51,20 @@ export function clueRefs(w: number, h: number, c: Clue): number[] {
 }
 
 /**
- * 시간 한도 (힌트용). deadline(performance.now 기준)을 넘으면 탐색을 멈추고 expired 를 켠다.
+ * 한도 (힌트용). deadline(performance.now 기준)을 넘으면 탐색을 멈추고 expired 를 켠다.
+ * work 가 있으면 overBudget 을 부를 때마다 1 씩 줄여 0 아래에서도 멈춘다: 기기 속도와 상관없이 같은 곳에서 멈춘다.
  * 멈춘 탐색은 세계를 다 찾지 못했으므로, 부른 쪽은 expired 를 보고 결과를 증명으로 쓰지 않는다.
  */
 export interface Budget {
   deadline: number;
   expired: boolean;
+  work?: number;
 }
 
 /** 한도를 넘었는가 (넘었으면 expired 를 켠다) */
 export function overBudget(b: Budget | undefined): boolean {
   if (!b) return false;
+  if (!b.expired && b.work !== undefined && --b.work < 0) b.expired = true;
   if (!b.expired && performance.now() > b.deadline) b.expired = true;
   return b.expired;
 }

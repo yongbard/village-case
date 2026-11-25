@@ -1,7 +1,8 @@
 import { expect, test } from 'vitest';
-import { describeStep, difficulty, explain, explainWithin, nextHint, type Step } from './explain';
+import { describeStep, difficulty, explain, explainWithin, explainWork, nextHint, type Step } from './explain';
 import { endlessParams, generateValid } from './generate';
 import { claimHolds, campAt, consistent } from './rules';
+import { ROLES } from './roles';
 import { solve } from './solve';
 import { investigate, knowledgeOf, newGame } from './game';
 import { emptyKnowledgeOf, TIME_SCALE } from './testcases';
@@ -242,3 +243,29 @@ test('explainWithin: null when the budget runs out, same as explain otherwise', 
   expect(explainWithin(k, 0)).toBeNull();
   expect(explainWithin(k, 60_000)).toEqual(explain(k));
 }, 60_000);
+
+// 일의 양 한도: 기기 속도와 상관없이 같은 입력이면 같은 곳에서 멈춘다 (무한 모드 사건 고르기)
+const smallPool = Object.values(ROLES).filter((r) => r.tier <= 2).map((r) => r.id);
+const smallCase = () => generateValid({ w: 3, h: 4, trouble: 1, accomplice: 1, boss: 1, pool: smallPool }, 5);
+
+test('explainWork with enough work equals explain', () => {
+  const k = solvedKnowledge(smallCase());
+  expect(explainWork(k, 1e9)).toEqual(explain(k));
+});
+
+test('explainWork with tiny work gives up', () => {
+  expect(explainWork(solvedKnowledge(smallCase()), 1)).toBeNull();
+});
+
+test('explainWork is deterministic: the least work that finishes is the same every time', () => {
+  const k = solvedKnowledge(generateValid({ w: 4, h: 4, trouble: 1, accomplice: 2, boss: 2, pool: smallPool }, 8));
+  const least = () => {
+    let w = 1;
+    while (explainWork(k, w) === null) w *= 2;
+    return w;
+  };
+  const a = least();
+  expect(a).toBeGreaterThan(1);
+  expect(least()).toBe(a);
+  expect(explainWork(k, a)).toEqual(explain(k));
+});

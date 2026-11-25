@@ -397,7 +397,15 @@ export function explain(k: Knowledge): Step[] {
  * 주범 3명·모사꾼이 있는 큰 판은 해설에 수십 초가 걸릴 수 있어, 스테이지 고르기와 무한 모드 결과 화면이 쓴다.
  */
 export function explainWithin(k: Knowledge, ms: number): Step[] | null {
-  const budget: Budget = { deadline: performance.now() + ms, expired: false };
+  return explainBudget(k, { deadline: performance.now() + ms, expired: false });
+}
+
+/** explain 을 정해진 일의 양 안에서만 (시간 대신): 같은 입력이면 어느 기기에서나 같은 결과. 무한 모드 사건 고르기가 쓴다. */
+export function explainWork(k: Knowledge, work: number): Step[] | null {
+  return explainBudget(k, { deadline: Infinity, expired: false, work });
+}
+
+function explainBudget(k: Knowledge, budget: Budget): Step[] | null {
   const { worlds, capped } = solve(k, WORLD_CAP, budget);
   if (overBudget(budget)) return null;
   const out = stepsFrom(k, worlds, capped, Infinity, budget);
