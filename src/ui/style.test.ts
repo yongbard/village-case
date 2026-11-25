@@ -16,3 +16,9 @@ test('only pins are round', () => {
   const round = rules.filter((r) => /border-radius:\s*50%/.test(r.body)).map((r) => r.sel);
   expect(round.filter((s) => !/pin/.test(s) && !/^(\.cell\.[\w-]+::after,?\s*)+$/.test(s))).toEqual([]);
 });
+test('every design token is used', () => {
+  // --paper-line·--paper-deep·--wood·--pin 은 이 검사 전부터 안 쓰였다 (지우지 않고 둔다)
+  const declared = [...css.matchAll(/(--[\w-]+):/g)].map((m) => m[1]);
+  const unused = declared.filter((t) => !css.includes(`var(${t}`) && !['--paper-line', '--paper-deep', '--wood', '--pin'].includes(t));
+  expect([...new Set(unused)]).toEqual([]);
+});

@@ -248,6 +248,14 @@ try {
       await shot('06-arrested');
       const tag = await page.$eval(`.clues li[data-line="${i}"] .ln-tag`, (e) => ({ r: getComputedStyle(e).borderTopLeftRadius, t: e.textContent.trim() })).catch(() => null);
       check('arrested line shows a verdict stamp, not a pill', tag?.r === '0px' && ['선', '악'].includes(tag.t), JSON.stringify(tag));
+      // 체포한 칸의 진술도 단서로 다시 읽는다: 연필색으로 낮춰도 종이 위 대비 4.5:1 이상
+      const contrast = await page.$eval(`.clues li[data-line="${i}"] .ln-body`, (e) => {
+        const rgb = (c) => c.match(/[\d.]+/g).slice(0, 3).map(Number);
+        const lum = ([r, g, b]) => [r, g, b].map((v) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4)).reduce((s, v, k) => s + v * [0.2126, 0.7152, 0.0722][k], 0);
+        const [a, b] = [lum(rgb(getComputedStyle(e).color)), lum(rgb(getComputedStyle(e.closest('.leaf')).backgroundColor))];
+        return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+      });
+      check('arrested statement text keeps 4.5:1 contrast', contrast >= 4.5, contrast.toFixed(2));
     }
   }
 
@@ -257,6 +265,8 @@ try {
   check('result: verdict is a stamp', await page.$eval('[data-result]', (e) => e.classList.contains('stamp-ink')));
   const steps = await page.$$eval('.steps li', (ls) => ls.map((l) => l.textContent));
   check('result: explanation lines', steps.length >= 1, `${steps.length} lines, first: ${steps[0]}`);
+  const subPx = await page.$eval('.result-sub', (e) => parseFloat(getComputedStyle(e).fontSize));
+  check('result: summary line is body size (15px or more)', subPx >= 15, `${subPx}px`);
   const facts = await page.$$eval('.result-screen .form-grid td', (ts) => ts.map((t) => t.textContent));
   check('result: report has 3 facts', facts.length === 3, JSON.stringify(facts));
   const stepNo = await page.$eval('.steps li', (l) => { const s = getComputedStyle(l, '::before'); return { content: s.content, r: s.borderTopLeftRadius, bg: s.backgroundColor }; });

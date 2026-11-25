@@ -16,17 +16,13 @@
   --ink: #2a241d;
   --ink-soft: #6b5a45;
   --muted: #6b5a45;
-  --line: #d6c7aa;
   --red: #b3261e;
   --red-soft: #f3dcd6;
   --on-cork: #f4ecdc;
   /* 진영 */
   --good: #2b6a55;
-  --good-soft: #e1eee7;
   --evil: #a3271d;
-  --evil-soft: #f5dfdb;
   --trouble: #94660f;
-  --trouble-soft: #f3e8cf;
   --mark: #f3d566;
   /* 서류 괘선·연필·볼펜 */
   --rule: #c5d0d3;
@@ -41,13 +37,11 @@
   --body: 'Village Sans', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   --hand: 'Village Hand', 'Village Sans', cursive;
   --mono: 'Village Mono', var(--body); /* 숫자: 칸·쪽·사건 번호, 경과·평판 값, 시드 (한글은 본문 글꼴로) */
-  --serif: var(--title);
   --sans: var(--body);
   color-scheme: light;
 }
 
 /* 재질 부품 */
-.paper { background: var(--card); color: var(--ink); box-shadow: 0 3px 8px rgba(20, 12, 4, 0.45); }
 .manila {
   background: repeating-linear-gradient(45deg, var(--manila-deep) 0 6px, var(--manila) 6px 12px);
   color: #6a5228;
@@ -143,10 +137,7 @@ button { font: inherit; color: inherit; }
 .btn.danger { color: var(--red); border-color: var(--red); }
 .btn.ghost { background: transparent; border-color: transparent; color: var(--muted); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px; }
 .btn.wide { width: 100%; }
-.btn.big { min-height: 60px; font-size: 18px; flex-direction: column; gap: 0; }
-.btn.big small { font-weight: 500; opacity: 0.85; }
 .spacer { flex: 1; }
-.kicker { color: var(--red); font-size: 13px; font-weight: 700; letter-spacing: 0.08em; }
 
 /* ---------- 타이틀: 서류철 표지 ---------- */
 .title-screen {
@@ -499,7 +490,7 @@ button { font: inherit; color: inherit; }
 .ln-tag { flex: none; align-self: center; margin-left: 6px; font-family: var(--title); font-size: 14px; line-height: 18px; padding: 0 4px; border: 1.5px solid currentColor; border-radius: 0; transform: rotate(-4deg); }
 .clues li.side-evil .ln-tag { color: var(--red); }
 .clues li.side-good .ln-tag { color: var(--good); }
-.clues li.arrested .ln-body { color: var(--pencil); }
+.clues li.arrested .ln-body { color: var(--ink-soft); } /* 연필색으로 낮추되 다시 읽을 수 있는 대비 */
 .empty { color: var(--muted); padding: 0 0 0 54px; }
 
 /* ---------- 창 ---------- */
@@ -607,7 +598,7 @@ button { font: inherit; color: inherit; }
 .result-head { text-align: center; }
 .report .form-grid { text-align: left; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
 .report .form-grid .val { font-size: 18px; }
-.result-sub { color: var(--ink-soft); font-size: 14px; margin-bottom: 14px; }
+.result-sub { color: var(--ink-soft); margin-bottom: 14px; }
 /* 다음 사건은 먹 테두리 목차 줄 하나, 다시 하기·목록은 밑줄 글자 */
 .result-actions { display: flex; flex-wrap: wrap; justify-content: center; column-gap: 24px; }
 .result-actions .toc-row, .result-actions .btn.wide { width: 100%; }
